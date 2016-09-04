@@ -10,7 +10,7 @@ use Medz\Component\StreamWrapper\AliyunOSS\AliyunOSS as AliyunOssClient;
  * 因为原包名称主要针对StreamWrapper的封装
  * 容易让人产生误解，曲解了包的作用。
  * 所以针对原有包做一个别名包。
- * 
+ *
  * @author Seven Du <lovevipdsw@outlook.com>
  **/
 class AliyunOSS extends AliyunOssClient
