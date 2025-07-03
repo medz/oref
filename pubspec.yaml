@@ -1,10 +1,13 @@
 name: oref
-description: "A new Flutter package project."
+description: "TODO"
 version: 1.0.0-dev.1
 
 environment:
   sdk: ^3.8.1
   flutter: ">=1.17.0"
+
+workspace:
+  - example
 
 dependencies:
   flutter:

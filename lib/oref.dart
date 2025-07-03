@@ -1,14 +1,5 @@
-import 'package:alien_signals/alien_signals.dart';
-import 'package:flutter/widgets.dart';
-
-class Test extends StatelessWidget {
-  const Test({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final count = ref(context, key);
-
-    // TODO: implement build
-    throw UnimplementedError();
-  }
-}
+export 'src/core.dart' show getCurrentContext, setCurrentContext;
+export 'src/effect.dart' show Effect, autoCreateContextEffect, useEffect;
+export 'src/effect_scope.dart'
+    show EffectScope, autoCreateContextScope, useEffectScope;
+export 'src/signal.dart' show useSignal;
