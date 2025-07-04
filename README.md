@@ -2,7 +2,7 @@
 
 A reactive state management library for Flutter that adds magic to any Widget with signals, computed values, and effects powered by [alien_signals](https://github.com/medz/alien_signals).
 
-[![Oref testing](https://github.com/medz/webfetch/actions/workflows/test.yml/badge.svg)](https://github.com/medz/webfetch/actions/workflows/test.yml)
+[![Oref testing](https://github.com/medz/oref/actions/workflows/test.yml/badge.svg)](https://github.com/medz/oref/actions/workflows/test.yml)
 [![Oref version](https://img.shields.io/pub/v/oref)](https://pub.dev/packages/oref)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
