@@ -1,5 +1,3 @@
-import 'dart:math';
-
 extension SignalNumOpers on num Function([num?, bool]) {
   num operator +(num other) => this() + other;
   num operator -(num other) => this() - other;
@@ -8,9 +6,6 @@ extension SignalNumOpers on num Function([num?, bool]) {
   num operator %(num other) => this() % other;
   int operator ~/(num other) => this() ~/ other;
   num operator -() => -this();
-
-  num increment([num value = 1]) => this(this + value);
-  num decrement([num value = 1]) => this(this - value);
 }
 
 extension SignalIntOpers on int Function([int?, bool]) {
@@ -28,9 +23,6 @@ extension SignalIntOpers on int Function([int?, bool]) {
   int operator >>>(int other) => this() >>> other;
   int operator ~() => ~this();
   int operator -() => -this();
-
-  int increment([int value = 1]) => this(this + value);
-  int decrement([int value = 1]) => this(this - value);
 }
 
 extension SignalDoubleOpers on double Function([double?, bool]) {
@@ -41,13 +33,56 @@ extension SignalDoubleOpers on double Function([double?, bool]) {
   double operator %(num other) => this() % other;
   int operator ~/(num other) => this() ~/ other;
   double operator -() => -this();
-
-  double increment([double value = 1]) => this(this + value);
-  double decrement([double value = 1]) => this(this - value);
 }
 
 extension SignalStringOpers on String Function([String?, bool]) {
   String operator +(String other) => this() + other;
+  String operator [](int index) => this()[index];
+  int codeUnitAt(int index) => this().codeUnitAt(index);
+  int get length => this().length;
+  bool endsWith(String other) => this().endsWith(other);
+  bool startsWith(Pattern pattern, [int index = 0]) =>
+      this().startsWith(pattern, index);
+  int indexOf(Pattern pattern, [int start = 0]) =>
+      this().indexOf(pattern, start);
+  int lastIndexOf(Pattern pattern, [int? start]) =>
+      this().lastIndexOf(pattern, start);
+  bool get isEmpty => this().isEmpty;
+  bool get isNotEmpty => !isEmpty;
+  String substring(int start, [int? end]) => this().substring(start, end);
+  String trim() => this().trim();
+  String trimLeft() => this().trimLeft();
+  String trimRight() => this().trimRight();
+  String operator *(int times) => this() * times;
+  String padLeft(int width, [String padding = ' ']) =>
+      this().padLeft(width, padding);
+  String padRight(int width, [String padding = ' ']) =>
+      this().padRight(width, padding);
+  bool contains(Pattern other, [int startIndex = 0]) =>
+      this().contains(other, startIndex);
+  String replaceFirst(Pattern from, String to, [int startIndex = 0]) =>
+      this().replaceFirst(from, to, startIndex);
+  String replaceFirstMapped(
+    Pattern from,
+    String Function(Match match) replace, [
+    int startIndex = 0,
+  ]) => this().replaceFirstMapped(from, replace, startIndex);
+  String replaceAll(Pattern from, String replace) =>
+      this().replaceAll(from, replace);
+  String replaceAllMapped(Pattern from, String Function(Match match) replace) =>
+      this().replaceAllMapped(from, replace);
+  String replaceRange(int start, int? end, String replacement) =>
+      this().replaceRange(start, end, replacement);
+  List<String> split(Pattern pattern) => this().split(pattern);
+  String splitMapJoin(
+    Pattern pattern, {
+    String Function(Match)? onMatch,
+    String Function(String)? onNonMatch,
+  }) => this().splitMapJoin(pattern, onMatch: onMatch, onNonMatch: onNonMatch);
+  List<int> get codeUnits => this().codeUnits;
+  Runes get runes => this().runes;
+  String toLowerCase() => this().toLowerCase();
+  String toUpperCase() => this().toUpperCase();
 }
 
 extension SignalBoolOpers on bool Function([bool?, bool]) {
@@ -94,22 +129,4 @@ extension SignalIterableOpers<E, T extends Iterable<E>>
       this().singleWhere(test, orElse: orElse);
   E elementAt(int index) => this().elementAt(index);
   E? elementAtOrNull(int index) => this().elementAtOrNull(index);
-}
-
-extension SignalListOpers<E, T extends List<E>> on T Function([T?, bool]) {
-  E operator [](int index) => this()[index];
-  void operator []=(int index, E value) {
-    this()[index] = value;
-  }
-
-  Iterable<E> get reversed => this().reversed;
-
-  set first(E value) => this(this()..first = value);
-  set last(E value) => this(this()..last = value);
-  set length(int newLength) => this(this()..length = newLength);
-
-  void add(E value) => this(this()..add(value));
-  void addAll(Iterable<E> iterable) => this(this()..addAll(iterable));
-  void sort([int Function(E a, E b)? compare]) => this(this()..sort(compare));
-  void shuffle([Random? random]) => this(this()..shuffle(random));
 }

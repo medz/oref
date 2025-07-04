@@ -25,10 +25,6 @@ class HomeScrren extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      debugPrint('Home: Post-frame callback executed');
-    });
-
     return Scaffold(
       appBar: AppBar(title: const Text("Oref Example")),
       body: const OrefTestWidget(),
@@ -44,6 +40,14 @@ class OrefTestWidget extends StatelessWidget {
     final count = useSignal(context, 0);
 
     void increment() => count(count + 1);
+
+    useEffect(context, () {
+      debugPrint('useEffect 1, count: ${count()}');
+    });
+
+    useEffect(context, () {
+      debugPrint('useEffect 2, count: ${untrack(count)}');
+    });
 
     return Center(
       child: Column(

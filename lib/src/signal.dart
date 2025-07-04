@@ -3,6 +3,7 @@ import 'dart:developer' as developer;
 import 'package:alien_signals/alien_signals.dart';
 import 'package:flutter/widgets.dart';
 
+import 'core.dart';
 import 'effect.dart';
 
 class Signal<T> {
@@ -49,7 +50,6 @@ T Function([T? value, bool nulls]) useSignal<T>(
     developer.log("Type mismatch in useSignal<$T>", name: "oref", level: 900);
   }
 
-  final effect = autoCreateContextEffect(context);
   final oper = signal<T>(initialValue);
   store.add(Signal<T>(oper));
 
@@ -58,8 +58,10 @@ T Function([T? value, bool nulls]) useSignal<T>(
       return oper(value, nulls);
     }
 
-    final shouldUseContextEffect = getCurrentSub() == null;
-    if (shouldUseContextEffect) {
+    final prevSub = getCurrentSub();
+    final shouldTriggerContextEffect = getCurrentShouldTriggerContextEffect();
+    if (shouldTriggerContextEffect && prevSub == null) {
+      final effect = autoCreateContextEffect(context);
       setCurrentSub(effect.node);
       trackContextEffectOperation(context, oper);
     }
@@ -67,9 +69,20 @@ T Function([T? value, bool nulls]) useSignal<T>(
     try {
       return oper(value, nulls);
     } finally {
-      if (shouldUseContextEffect) {
-        setCurrentSub(null);
+      if (shouldTriggerContextEffect) {
+        setCurrentSub(prevSub);
       }
     }
   };
+}
+
+T untrack<T>(T Function() callback) {
+  final prevSub = setCurrentSub(null);
+  final prevShouldTriggerContextEffect = setShouldTriggerContextEffect(false);
+  try {
+    return callback();
+  } finally {
+    setCurrentSub(prevSub);
+    setShouldTriggerContextEffect(prevShouldTriggerContextEffect);
+  }
 }
