@@ -3,6 +3,15 @@ description: A reactive state management library for Flutter that adds magic to 
 version: 1.0.0
 repository: https://github.com/medz/oref
 
+topics:
+  - signal
+  - reactive
+  - state
+
+funding:
+  - https://github.com/sponsors/medz
+  - https://opencollective.com/openodroe
+
 environment:
   sdk: ^3.8.1
   flutter: ">=1.17.0"
