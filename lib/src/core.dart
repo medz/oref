@@ -1,3 +1,4 @@
+import 'package:alien_signals/alien_signals.dart';
 import 'package:flutter/widgets.dart';
 
 BuildContext? activeContext;
@@ -32,4 +33,13 @@ bool setShouldTriggerContextEffect(bool value) {
   shouldTriggerContextEffect = value;
 
   return prev;
+}
+
+T batch<T>(T Function() callback) {
+  try {
+    startBatch();
+    return callback();
+  } finally {
+    endBatch();
+  }
 }
