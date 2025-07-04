@@ -15,19 +15,41 @@ class ExampleApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: const HomeScrren(),
+      home: const Counter(),
     );
   }
 }
 
-class HomeScrren extends StatelessWidget {
-  const HomeScrren({super.key});
+class Counter extends StatelessWidget {
+  const Counter({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final count = useSignal(context, 0);
+    final doubleCount = useComputed(context, (_) => count * 2);
+
+    void increment() => count(count + 1);
+
+    useEffect(context, () {
+      debugPrint('useEffect 1, count: ${count()}');
+    });
+
+    useEffect(context, () {
+      debugPrint('useEffect 2, count: ${doubleCount()}');
+    });
+
     return Scaffold(
       appBar: AppBar(title: const Text("Oref Example")),
-      body: const OrefTestWidget(),
+      body: Center(
+        child: Text(
+          "Count: ${count()}, Double: ${doubleCount()}",
+          style: TextStyle(fontSize: 36),
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: increment,
+        child: const Icon(Icons.plus_one),
+      ),
     );
   }
 }
@@ -38,6 +60,7 @@ class OrefTestWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final count = useSignal(context, 0);
+    final doubleCount = useComputed(context, (_) => count * 2);
 
     void increment() => count(count + 1);
 
@@ -46,7 +69,7 @@ class OrefTestWidget extends StatelessWidget {
     });
 
     useEffect(context, () {
-      debugPrint('useEffect 2, count: ${untrack(count)}');
+      debugPrint('useEffect 2, count: ${doubleCount()}');
     });
 
     return Center(

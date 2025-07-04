@@ -4,6 +4,7 @@ export 'src/core.dart'
         setCurrentContext,
         getCurrentShouldTriggerContextEffect,
         setShouldTriggerContextEffect;
+export 'src/computed.dart' show useComputed;
 export 'src/effect.dart' show useEffect;
 export 'src/effect_scope.dart' show useEffectScope;
 export 'src/ref.dart' show ref;
