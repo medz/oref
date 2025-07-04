@@ -49,20 +49,27 @@ T Function([T? value, bool nulls]) useSignal<T>(
     developer.log("Type mismatch in useSignal<$T>", name: "oref", level: 900);
   }
 
+  final effect = autoCreateContextEffect(context);
   final oper = signal<T>(initialValue);
   store.add(Signal<T>(oper));
 
   return ([value, nulls = false]) {
-    final contextEffect = autoCreateContextEffect(context);
-    final demo = getCurrentSub() ?? contextEffect.node;
-    final prevSub = setCurrentSub(getCurrentSub() ?? contextEffect.node);
+    if (context is Element && !context.dirty) {
+      return oper(value, nulls);
+    }
 
-    debugPrint('Getter, Current Sub, ${demo.hashCode}');
+    final shouldUseContextEffect = getCurrentSub() == null;
+    if (shouldUseContextEffect) {
+      setCurrentSub(effect.node);
+      trackContextEffectOperation(context, oper);
+    }
 
     try {
       return oper(value, nulls);
     } finally {
-      setCurrentSub(prevSub);
+      if (shouldUseContextEffect) {
+        setCurrentSub(null);
+      }
     }
   };
 }

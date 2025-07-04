@@ -11,6 +11,22 @@ class Effect {
   final void Function() stop;
 }
 
+final contextEffectTrackedOpers = Expando<Set<VoidCallback>>(
+  "oref: Context effect tracked opers",
+);
+
+void runContextEffectTrackedOpers(BuildContext context) {
+  final opers = contextEffectTrackedOpers[context];
+  if (opers == null || opers.isEmpty) return;
+  for (final oper in opers) {
+    oper();
+  }
+}
+
+void trackContextEffectOperation(BuildContext context, VoidCallback oper) {
+  (contextEffectTrackedOpers[context] ??= {}).add(oper);
+}
+
 final contextEffectBindings = Expando<Effect>("oref: Context effect bindings");
 
 Effect autoCreateContextEffect(BuildContext context) {
@@ -25,14 +41,13 @@ Effect autoCreateContextEffect(BuildContext context) {
     late final ReactiveNode node;
     bool firstRun = true;
     final stop = effect(() {
+      runContextEffectTrackedOpers(context);
       if (firstRun) {
         firstRun = false;
         node = getCurrentSub()!;
       } else if (context is Element && !context.dirty) {
         context.markNeedsBuild();
       }
-
-      debugPrint("Context Effect Node, ${node.hashCode}");
     });
 
     return contextEffectBindings[context] = Effect(node: node, stop: stop);
