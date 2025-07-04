@@ -1,6 +1,6 @@
 name: oref
-description: "TODO"
-version: 1.0.0-dev.1
+description: A reactive state management library for Flutter that adds magic to any Widget with signals, computed values, and effects powered by alien_signals.
+version: 1.0.0
 
 environment:
   sdk: ^3.8.1
