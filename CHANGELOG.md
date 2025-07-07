@@ -1,3 +1,11 @@
+## v1.1.0
+
+- refactor: refactor core code to make it easier to maintain and less redundant
+- refactor: Remove `createGlobalAsyncComputed` and `useAsyncComputed`
+- feat: `createGlobalSignal` supports automatic trigger of Widget
+- feat: `createGlobalComputed` supports automatic trigger of Widget
+- feat: Added `createGlobalAsyncResult` and `useAsyncResult` to replace `createGlobalAsyncComputed`/`useAsyncComputed`
+
 ## v1.0.0
 
 ### Added

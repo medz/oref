@@ -64,7 +64,7 @@ T Function([T? value, bool nulls]) useSignal<T>(
   BuildContext context,
   T initialValue,
 ) {
-  final exists = resolveHookInstance<Signal<T>>(
+  final (exists, _) = resolveHookInstance<Signal<T>>(
     context,
     (e) => e is Signal && e.whereType<T>(),
   );
@@ -100,7 +100,7 @@ T Function() useComputed<T>(
   BuildContext context,
   T Function(T? prevValue) callback,
 ) {
-  final exists = resolveHookInstance<Computed<T>>(
+  final (exists, _) = resolveHookInstance<Computed<T>>(
     context,
     (e) => e is Computed && e.whereType<T>(),
   );
@@ -131,7 +131,10 @@ T Function() useComputed<T>(
 }
 
 VoidCallback useEffect(BuildContext context, VoidCallback callback) {
-  final exists = resolveHookInstance<Effect>(context, (e) => e is Effect);
+  final (exists, resetCallIndex) = resolveHookInstance<Effect>(
+    context,
+    (e) => e is Effect,
+  );
   if (exists != null) return exists.stop;
 
   final prevContext = setCurrentContext(context);
@@ -143,14 +146,13 @@ VoidCallback useEffect(BuildContext context, VoidCallback callback) {
     return effect.stop;
   } catch (_) {
     activeContext = prevContext;
-    final index = hooksCallIndex[context]!;
-    hooksCallIndex[context] = index - 1;
+    resetCallIndex();
     rethrow;
   }
 }
 
 VoidCallback useEffectScope(BuildContext context, VoidCallback callback) {
-  final scope = resolveHookInstance<EffectScope>(
+  final (scope, resetCallIndex) = resolveHookInstance<EffectScope>(
     context,
     (e) => e is EffectScope,
   );
@@ -164,8 +166,7 @@ VoidCallback useEffectScope(BuildContext context, VoidCallback callback) {
 
     return stop;
   } catch (_) {
-    final index = hooksCallIndex[context]!;
-    hooksCallIndex[context] = index - 1;
+    resetCallIndex();
     rethrow;
   } finally {
     activeContext = prevContext;
@@ -226,30 +227,25 @@ void addPostFrameCallback(FrameCallback callback) {
   };
 }
 
-T? resolveHookInstance<T extends Object>(
+(T?, VoidCallback) resolveHookInstance<T extends Object>(
   BuildContext context,
   bool Function(Object) has,
 ) {
-  final start = hooksCallIndex[context] ??= 0;
-  if (start == 0) {
+  final index = hooksCallIndex[context] ??= 0;
+  if (index == 0) {
     addPostFrameCallback((_) => hooksCallIndex[context] = 0);
   }
 
+  void reset() => hooksCallIndex[context] = index + 1;
+
   final container = hooks[context] ??= [];
-  if (container.isEmpty) {
-    hooksCallIndex[context] = 1;
-    return null;
+  final hook = container.elementAtOrNull(index);
+
+  if (hook != null && has(hook)) {
+    return (hook as T, reset);
+  } else if (hook == null && index < container.length) {
+    container.length = index;
   }
 
-  final length = container.length;
-  for (int index = start; index < length; index++) {
-    final hook = container.elementAt(index);
-    if (has(hook)) {
-      hooksCallIndex[context] = index + 1;
-      return hook as T;
-    }
-  }
-
-  hooksCallIndex[context] = length + 1;
-  return null;
+  return (null, reset);
 }

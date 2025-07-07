@@ -28,6 +28,8 @@ class Counter extends StatelessWidget {
     final count = useSignal(context, 0);
     void increment() => count(count + 1);
 
+    ListTile();
+
     return Scaffold(
       appBar: AppBar(title: const Text('Counter')),
       body: Center(child: Text("Count: ${count()}")),
