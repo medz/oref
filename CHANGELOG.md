@@ -1,6 +1,4 @@
-## v1.1.1-wip
-
-> status: In progress
+## v1.1.1
 
 - fix: Nested hooks cause context binding to be reset
 
