@@ -1,8 +1,3 @@
-import 'dart:math';
-
-import 'system.dart';
-import 'utils.dart';
-
 extension SignalNumOpers on num Function([num?, bool]) {
   num operator +(num other) => this() + other;
   num operator -(num other) => this() - other;
@@ -136,142 +131,143 @@ extension SignalIterableOpers<E, T extends Iterable<E>>
   E? elementAtOrNull(int index) => this().elementAtOrNull(index);
 }
 
-extension SignalListOpers<E, T extends List<E>> on T Function([T?, bool]) {
-  /// The object at the given [index] in the list.
-  ///
-  /// The [index] must be a valid index of this list,
-  /// which means that `index` must be non-negative and
-  /// less than [length].
-  E operator [](int index) => this()[index];
+// extension SignalListOpers<E, T extends List<E>> on T Function([T?, bool]) {
+//   /// The object at the given [index] in the list.
+//   ///
+//   /// The [index] must be a valid index of this list,
+//   /// which means that `index` must be non-negative and
+//   /// less than [length].
+//   E operator [](int index) => this()[index];
 
-  /// Sets the value at the given [index] in the list to [value].
-  ///
-  /// The [index] must be a valid index of this list,
-  /// which means that `index` must be non-negative and
-  /// less than [length].
-  void operator []=(int index, E value) {
-    untrack(this)[index] = value;
-    triggerSignal(this);
-  }
+//   /// Sets the value at the given [index] in the list to [value].
+//   ///
+//   /// The [index] must be a valid index of this list,
+//   /// which means that `index` must be non-negative and
+//   /// less than [length].
+//   void operator []=(int index, E value) {
+//     untrack(this)[index] = value;
+//     triggerSignal(this);
+//   }
 
-  /// The first element of the list.
-  set first(E value) {
-    untrack(this).first = value;
-    triggerSignal(this);
-  }
+//   /// The first element of the list.
+//   set first(E value) {
+//     untrack(this).first = value;
+//     triggerSignal(this);
+//   }
 
-  /// The last element of the list.
-  set last(E value) {
-    untrack(this).last = value;
-    triggerSignal(this);
-  }
+//   /// The last element of the list.
+//   set last(E value) {
+//     untrack(this).last = value;
+//     triggerSignal(this);
+//   }
 
-  set length(int newLength) {
-    untrack(this).length = newLength;
-    triggerSignal(this);
-  }
+//   // TODO: Dart bug.
+//   // set length(int newLength) {
+//   //   untrack(this).length = newLength;
+//   //   triggerSignal(this);
+//   // }
 
-  void add(E value) {
-    untrack(this).add(value);
-    triggerSignal(this);
-  }
+//   void add(E value) {
+//     untrack(this).add(value);
+//     triggerSignal(this);
+//   }
 
-  void addAll(Iterable<E> iterable) {
-    untrack(this).addAll(iterable);
-    triggerSignal(this);
-  }
+//   void addAll(Iterable<E> iterable) {
+//     untrack(this).addAll(iterable);
+//     triggerSignal(this);
+//   }
 
-  Iterable<E> get reversed => this().reversed;
+//   Iterable<E> get reversed => this().reversed;
 
-  void sort([int Function(E a, E b)? compare]) {
-    untrack(this).sort(compare);
-    triggerSignal(this);
-  }
+//   void sort([int Function(E a, E b)? compare]) {
+//     untrack(this).sort(compare);
+//     triggerSignal(this);
+//   }
 
-  void shuffle([Random? random]) {
-    untrack(this).shuffle(random);
-    triggerSignal(this);
-  }
+//   void shuffle([Random? random]) {
+//     untrack(this).shuffle(random);
+//     triggerSignal(this);
+//   }
 
-  void clear() {
-    final list = untrack(this);
-    if (list.isEmpty) return;
+//   void clear() {
+//     final list = untrack(this);
+//     if (list.isEmpty) return;
 
-    list.clear();
-    triggerSignal(this);
-  }
+//     list.clear();
+//     triggerSignal(this);
+//   }
 
-  void insert(int index, E element) {
-    untrack(this).insert(index, element);
-    triggerSignal(this);
-  }
+//   void insert(int index, E element) {
+//     untrack(this).insert(index, element);
+//     triggerSignal(this);
+//   }
 
-  void insertAll(int index, Iterable<E> iterable) {
-    untrack(this).insertAll(index, iterable);
-    triggerSignal(this);
-  }
+//   void insertAll(int index, Iterable<E> iterable) {
+//     untrack(this).insertAll(index, iterable);
+//     triggerSignal(this);
+//   }
 
-  void setAll(int index, Iterable<E> iterable) {
-    untrack(this).setAll(index, iterable);
-    triggerSignal(this);
-  }
+//   void setAll(int index, Iterable<E> iterable) {
+//     untrack(this).setAll(index, iterable);
+//     triggerSignal(this);
+//   }
 
-  bool remove(Object? value) {
-    try {
-      return untrack(this).remove(value);
-    } finally {
-      triggerSignal(this);
-    }
-  }
+//   bool remove(Object? value) {
+//     try {
+//       return untrack(this).remove(value);
+//     } finally {
+//       triggerSignal(this);
+//     }
+//   }
 
-  E removeAt(int index) {
-    try {
-      return untrack(this).removeAt(index);
-    } finally {
-      triggerSignal(this);
-    }
-  }
+//   E removeAt(int index) {
+//     try {
+//       return untrack(this).removeAt(index);
+//     } finally {
+//       triggerSignal(this);
+//     }
+//   }
 
-  E removeLast() {
-    try {
-      return untrack(this).removeLast();
-    } finally {
-      triggerSignal(this);
-    }
-  }
+//   E removeLast() {
+//     try {
+//       return untrack(this).removeLast();
+//     } finally {
+//       triggerSignal(this);
+//     }
+//   }
 
-  void removeWhere(bool Function(E element) test) {
-    untrack(this).removeWhere(test);
-    triggerSignal(this);
-  }
+//   void removeWhere(bool Function(E element) test) {
+//     untrack(this).removeWhere(test);
+//     triggerSignal(this);
+//   }
 
-  void retainWhere(bool Function(E element) test) {
-    untrack(this).retainWhere(test);
-    triggerSignal(this);
-  }
+//   void retainWhere(bool Function(E element) test) {
+//     untrack(this).retainWhere(test);
+//     triggerSignal(this);
+//   }
 
-  List<E> operator +(List<E> other) => this() + other;
-  List<E> sublist(int start, [int? end]) => this().sublist(start, end);
-  Iterable<E> getRange(int start, int end) => this().getRange(start, end);
-  void setRange(int start, int end, Iterable<E> iterable, [int skipCount = 0]) {
-    untrack(this).setRange(start, end, iterable, skipCount);
-    triggerSignal(this);
-  }
+//   List<E> operator +(List<E> other) => this() + other;
+//   List<E> sublist(int start, [int? end]) => this().sublist(start, end);
+//   Iterable<E> getRange(int start, int end) => this().getRange(start, end);
+//   void setRange(int start, int end, Iterable<E> iterable, [int skipCount = 0]) {
+//     untrack(this).setRange(start, end, iterable, skipCount);
+//     triggerSignal(this);
+//   }
 
-  void removeRange(int start, int end) {
-    untrack(this).removeRange(start, end);
-    triggerSignal(this);
-  }
+//   void removeRange(int start, int end) {
+//     untrack(this).removeRange(start, end);
+//     triggerSignal(this);
+//   }
 
-  void fillRange(int start, int end, [E? fillValue]) {
-    untrack(this).fillRange(start, end, fillValue);
-    triggerSignal(this);
-  }
+//   void fillRange(int start, int end, [E? fillValue]) {
+//     untrack(this).fillRange(start, end, fillValue);
+//     triggerSignal(this);
+//   }
 
-  void replaceRange(int start, int end, Iterable<E> replacements) {
-    untrack(this).replaceRange(start, end, replacements);
-    triggerSignal(this);
-  }
+//   void replaceRange(int start, int end, Iterable<E> replacements) {
+//     untrack(this).replaceRange(start, end, replacements);
+//     triggerSignal(this);
+//   }
 
-  Map<int, E> asMap() => this().asMap();
-}
+//   Map<int, E> asMap() => this().asMap();
+// }

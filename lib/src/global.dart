@@ -24,7 +24,7 @@ T Function([T? value, bool nulls]) createGlobalSignal<T>(T initialValue) {
 
     try {
       setCurrentSub(getContextEffect(element).node);
-      return oper();
+      return oper(value, nulls);
     } finally {
       setCurrentSub(null);
     }

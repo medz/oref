@@ -1,8 +1,7 @@
-## v1.2.0-wip
+## v1.1.1-wip
 
 > status: In progress
 
-- feat: Add SignalListOpers extension for reactive list operations
 - fix: Nested hooks cause context binding to be reset
 
 ## v1.1.0

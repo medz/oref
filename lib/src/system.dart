@@ -40,7 +40,7 @@ class EffectScope {
 BuildContext? activeContext;
 FrameCallback? postFrameCallback;
 bool shouldTriggerContextEffect = true;
-bool shouldForceTrigger = false;
+// bool shouldForceTrigger = false;
 bool withoutContext = false;
 
 final contextEffect = Expando<Effect>("oref context effect");
@@ -282,13 +282,13 @@ void addPostFrameCallback(FrameCallback callback) {
   return (null, reset);
 }
 
-void triggerSignal(VoidCallback callback) {
-  try {
-    startBatch();
-    shouldForceTrigger = true;
-    callback();
-  } finally {
-    shouldForceTrigger = false;
-    endBatch();
-  }
-}
+// void triggerSignal(VoidCallback callback) {
+//   try {
+//     startBatch();
+//     shouldForceTrigger = true;
+//     callback();
+//   } finally {
+//     shouldForceTrigger = false;
+//     endBatch();
+//   }
+// }

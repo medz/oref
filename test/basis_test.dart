@@ -177,4 +177,40 @@ void main() {
     final c = hooks[needsCheckContext];
     expect(c?.length, equals(2));
   });
+
+  // testWidgets("List reaction", (tester) async {
+  //   await tester.pumpWidget(
+  //     MaterialApp(
+  //       home: Builder(
+  //         builder: (context) {
+  //           final s = useSignal(context, <int>[]);
+  //           return Column(
+  //             children: [
+  //               Text('length: ${s.reversed.length}'),
+  //               TextButton(onPressed: () => s.add(1), child: const Text('add')),
+  //               TextButton(
+  //                 onPressed: () => s.removeLast(),
+  //                 child: const Text('remove'),
+  //               ),
+  //             ],
+  //           );
+  //         },
+  //       ),
+  //     ),
+  //   );
+
+  //   expect(find.text('length: 0'), findsOneWidget);
+
+  //   await tester.tap(find.text('add'));
+  //   await tester.pump();
+  //   expect(find.text('length: 1'), findsOneWidget);
+
+  //   await tester.tap(find.text('add'));
+  //   await tester.pump();
+  //   expect(find.text('length: 2'), findsOneWidget);
+
+  //   await tester.tap(find.text('remove'));
+  //   await tester.pump();
+  //   expect(find.text('length: 1'), findsOneWidget);
+  // });
 }
