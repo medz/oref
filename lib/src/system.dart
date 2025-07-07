@@ -41,6 +41,7 @@ BuildContext? activeContext;
 FrameCallback? postFrameCallback;
 bool shouldTriggerContextEffect = true;
 bool shouldForceTrigger = false;
+bool withoutContext = false;
 
 final contextEffect = Expando<Effect>("oref context effect");
 final hooksCallIndex = Expando<int>("oref hooks call index");
@@ -65,6 +66,8 @@ T Function([T? value, bool nulls]) useSignal<T>(
   BuildContext context,
   T initialValue,
 ) {
+  if (withoutContext) return signal(initialValue);
+
   final (exists, _) = resolveHookInstance<Signal<T>>(
     context,
     (e) => e is Signal && e.whereType<T>(),
@@ -101,6 +104,8 @@ T Function() useComputed<T>(
   BuildContext context,
   T Function(T? prevValue) callback,
 ) {
+  if (withoutContext) return computed(callback);
+
   final (exists, _) = resolveHookInstance<Computed<T>>(
     context,
     (e) => e is Computed && e.whereType<T>(),
@@ -108,12 +113,19 @@ T Function() useComputed<T>(
   if (exists != null) return exists.oper;
 
   final oper = computed<T>((value) {
+    final prevWithoutContext = withoutContext;
+    withoutContext = true;
+
     final currentSub = getCurrentSub();
     final element = getCurrentContext() ?? context;
     if ((element is Element && !element.dirty) ||
         currentSub != null ||
         !shouldTriggerContextEffect) {
-      return callback(value);
+      try {
+        return callback(value);
+      } finally {
+        withoutContext = prevWithoutContext;
+      }
     }
 
     final prevContext = setCurrentContext(element);
@@ -121,6 +133,7 @@ T Function() useComputed<T>(
       setCurrentSub(getContextEffect(element).node);
       return callback(value);
     } finally {
+      withoutContext = prevWithoutContext;
       setCurrentContext(prevContext);
       setCurrentSub(null);
     }
@@ -132,6 +145,8 @@ T Function() useComputed<T>(
 }
 
 VoidCallback useEffect(BuildContext context, VoidCallback callback) {
+  if (withoutContext) return effect(callback);
+
   final (exists, resetCallIndex) = resolveHookInstance<Effect>(
     context,
     (e) => e is Effect,
@@ -153,6 +168,8 @@ VoidCallback useEffect(BuildContext context, VoidCallback callback) {
 }
 
 VoidCallback useEffectScope(BuildContext context, VoidCallback callback) {
+  if (withoutContext) return effectScope(callback);
+
   final (scope, resetCallIndex) = resolveHookInstance<EffectScope>(
     context,
     (e) => e is EffectScope,
@@ -161,7 +178,15 @@ VoidCallback useEffectScope(BuildContext context, VoidCallback callback) {
 
   final prevContext = setCurrentContext(context);
   try {
-    final stop = effectScope(callback);
+    final stop = effectScope(() {
+      final prevWithoutContext = withoutContext;
+      withoutContext = true;
+      try {
+        callback();
+      } finally {
+        withoutContext = prevWithoutContext;
+      }
+    });
     final scope = EffectScope(stop);
     hooks[context]!.add(scope);
 
@@ -202,7 +227,13 @@ Effect createEffect(BuildContext context, VoidCallback callback) {
       node = getCurrentSub()!;
     }
 
-    callback();
+    final prevWithoutContext = withoutContext;
+    withoutContext = true;
+    try {
+      callback();
+    } finally {
+      withoutContext = prevWithoutContext;
+    }
   });
 
   return Effect(node, stop);
