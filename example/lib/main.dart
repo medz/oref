@@ -26,23 +26,11 @@ class Counter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final count = useSignal(context, 0);
-    final doubleCount = useComputed(context, (_) => count * 2);
-
-    void increment() => count(count() + 1);
-
-    useEffect(context, () {
-      debugPrint('useEffect 1, count: ${count()}');
-    });
-
-    useEffect(context, () {
-      debugPrint('useEffect 2, count: ${doubleCount()}');
-    });
+    void increment() => count(count + 1);
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Oref Example")),
-      body: Center(
-        child: Text("Count: ${count()}", style: TextStyle(fontSize: 36)),
-      ),
+      appBar: AppBar(title: const Text('Counter')),
+      body: Center(child: Text("Count: ${count()}")),
       floatingActionButton: FloatingActionButton(
         onPressed: increment,
         child: const Icon(Icons.plus_one),
