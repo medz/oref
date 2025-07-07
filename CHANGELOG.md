@@ -1,3 +1,9 @@
+## v1.2.0-wip
+
+> status: In progress
+
+- feat: Add SignalListOpers extension for reactive list operations
+
 ## v1.1.0
 
 - refactor: refactor core code to make it easier to maintain and less redundant
