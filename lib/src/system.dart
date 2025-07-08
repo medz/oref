@@ -36,16 +36,19 @@ class EffectScope {
   final void Function() stop;
 }
 
-class HookNode<T> {
-  HookNode({required this.value, this.next});
+class BindingNode<T> {
+  BindingNode({required this.value, this.next});
 
   final T value;
-  HookNode? next;
+  BindingNode? next;
 }
 
-class HookState {
-  HookNode? head;
-  HookNode? current;
+class BindingState {
+  BindingNode? head;
+
+  /// Tail pointer for O(1) append operations instead of O(n) traversal
+  BindingNode? tail;
+  BindingNode? current;
   bool isRendering = false;
 }
 
@@ -54,7 +57,7 @@ bool shouldTriggerContextEffect = true;
 bool withoutContext = false;
 
 final contextEffect = Expando<Effect>("oref context effect");
-final hooks = Expando<HookState>("oref hooks");
+final bindings = Expando<BindingState>("oref bindings");
 
 @pragma('vm:prefer-inline')
 @pragma('wasm:prefer-inline')
@@ -71,270 +74,174 @@ BuildContext? setCurrentContext(BuildContext? context) {
   return prev;
 }
 
+T _getOrCreateBinding<T>(BuildContext context, T Function() createBinding) {
+  if (withoutContext) return createBinding();
+
+  // Initialize binding state if needed
+  final bindingState = bindings[context] ??= BindingState();
+
+  // Check if we need to start a new render cycle
+  if (!bindingState.isRendering) {
+    bindingState.isRendering = true;
+    bindingState.current = bindingState.head;
+    // Schedule reset for next frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      bindingState.current = null;
+      bindingState.isRendering = false;
+    });
+  }
+
+  // Try to use existing binding at current position
+  final currentNode = bindingState.current;
+
+  if (currentNode != null && currentNode.value is T) {
+    // Move to next position for subsequent binding calls
+    bindingState.current = currentNode.next;
+    return currentNode.value as T;
+  }
+
+  // Need to create new binding
+  final bindingValue = createBinding();
+
+  // Create new binding node
+  final newNode = BindingNode<T>(value: bindingValue);
+
+  if (bindingState.head == null) {
+    // This is the very first binding
+    bindingState.head = newNode;
+    bindingState.tail = newNode;
+    // Don't move current - let the next binding call handle it
+  } else if (currentNode == null) {
+    // We're past the end of the existing bindings, append new one
+    bindingState.tail!.next = newNode;
+    bindingState.tail = newNode;
+  }
+
+  return bindingValue;
+}
+
+/// Creates a signal that can be used within a Flutter widget.
+///
+/// The signal will automatically trigger rebuilds when its value changes,
+/// but only if the widget is not already marked as dirty.
 T Function([T? value, bool nulls]) useSignal<T>(
   BuildContext context,
   T initialValue,
 ) {
-  if (withoutContext) return signal(initialValue);
+  final instance = _getOrCreateBinding<Signal<T>>(context, () {
+    final oper = signal(initialValue);
+    return Signal<T>(([value, nulls = false]) {
+      if (value is T && (value != null || (value == null && nulls))) {
+        return oper(value, nulls);
+      }
 
-  // Initialize hook state if needed
-  final hookState = hooks[context] ??= HookState();
+      final currentSub = getCurrentSub();
+      final element = getCurrentContext() ?? context;
+      if ((element is Element && !element.dirty) ||
+          currentSub != null ||
+          !shouldTriggerContextEffect) {
+        return oper(value, nulls);
+      }
 
-  // Check if we need to start a new render cycle
-  if (!hookState.isRendering) {
-    hookState.isRendering = true;
-    hookState.current = hookState.head;
-    // Schedule reset for next frame
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      hookState.current = null;
-      hookState.isRendering = false;
+      try {
+        setCurrentSub(getContextEffect(element).node);
+        return oper();
+      } finally {
+        setCurrentSub(null);
+      }
     });
-  }
-
-  // Try to use existing hook at current position
-  final currentNode = hookState.current;
-
-  if (currentNode != null && currentNode.value is Signal<T>) {
-    // Move to next position for subsequent hook calls
-    hookState.current = currentNode.next;
-    return (currentNode.value as Signal<T>).oper;
-  }
-
-  // Need to create new hook
-  final oper = signal(initialValue);
-  final instance = Signal<T>(([value, nulls = false]) {
-    if (value is T && (value != null || (value == null && nulls))) {
-      return oper(value, nulls);
-    }
-
-    final currentSub = getCurrentSub();
-    final element = getCurrentContext() ?? context;
-    if ((element is Element && !element.dirty) ||
-        currentSub != null ||
-        !shouldTriggerContextEffect) {
-      return oper(value, nulls);
-    }
-
-    try {
-      setCurrentSub(getContextEffect(element).node);
-      return oper();
-    } finally {
-      setCurrentSub(null);
-    }
   });
-
-  // Create new hook node
-  final newNode = HookNode<Signal<T>>(value: instance);
-
-  if (hookState.head == null) {
-    // This is the very first hook
-    hookState.head = newNode;
-    // Don't move current - let the next hook call handle it
-  } else if (currentNode == null) {
-    // We're past the end of the existing hooks, append new one
-    var last = hookState.head!;
-    while (last.next != null) {
-      last = last.next!;
-    }
-    last.next = newNode;
-  }
 
   return instance.oper;
 }
 
+/// Creates a computed value that automatically updates when its dependencies change.
+///
+/// The computed value will be recalculated whenever any signal it reads changes,
+/// and will trigger widget rebuilds when accessed outside of a reactive context.
 T Function() useComputed<T>(
   BuildContext context,
   T Function(T? prevValue) callback,
 ) {
-  if (withoutContext) return computed(callback);
+  final instance = _getOrCreateBinding<Computed<T>>(context, () {
+    final oper = computed<T>((value) {
+      final prevWithoutContext = withoutContext;
+      withoutContext = true;
 
-  // Initialize hook state if needed
-  final hookState = hooks[context] ??= HookState();
+      final currentSub = getCurrentSub();
+      final element = getCurrentContext() ?? context;
+      if ((element is Element && !element.dirty) ||
+          currentSub != null ||
+          !shouldTriggerContextEffect) {
+        try {
+          return callback(value);
+        } finally {
+          withoutContext = prevWithoutContext;
+        }
+      }
 
-  // Check if we need to start a new render cycle
-  if (!hookState.isRendering) {
-    hookState.isRendering = true;
-    hookState.current = hookState.head;
-    // Schedule reset for next frame
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      hookState.current = null;
-      hookState.isRendering = false;
-    });
-  }
-
-  // Try to use existing hook at current position
-  final currentNode = hookState.current;
-
-  if (currentNode != null && currentNode.value is Computed<T>) {
-    // Move to next position for subsequent hook calls
-    hookState.current = currentNode.next;
-    return (currentNode.value as Computed<T>).oper;
-  }
-
-  // Need to create new hook
-  final oper = computed<T>((value) {
-    final prevWithoutContext = withoutContext;
-    withoutContext = true;
-
-    final currentSub = getCurrentSub();
-    final element = getCurrentContext() ?? context;
-    if ((element is Element && !element.dirty) ||
-        currentSub != null ||
-        !shouldTriggerContextEffect) {
+      final prevContext = setCurrentContext(element);
       try {
+        setCurrentSub(getContextEffect(element).node);
         return callback(value);
       } finally {
         withoutContext = prevWithoutContext;
+        setCurrentContext(prevContext);
+        setCurrentSub(null);
       }
-    }
-
-    final prevContext = setCurrentContext(element);
-    try {
-      setCurrentSub(getContextEffect(element).node);
-      return callback(value);
-    } finally {
-      withoutContext = prevWithoutContext;
-      setCurrentContext(prevContext);
-      setCurrentSub(null);
-    }
+    });
+    return Computed<T>(oper);
   });
-  final instance = Computed<T>(oper);
-
-  // Create new hook node
-  final newNode = HookNode<Computed<T>>(value: instance);
-
-  if (hookState.head == null) {
-    // This is the very first hook
-    hookState.head = newNode;
-    // Don't move current - let the next hook call handle it
-  } else if (currentNode == null) {
-    // We're past the end of the existing hooks, append new one
-    var last = hookState.head!;
-    while (last.next != null) {
-      last = last.next!;
-    }
-    last.next = newNode;
-  }
 
   return instance.oper;
 }
 
+/// Creates an effect that runs whenever its dependencies change.
+///
+/// Returns a dispose function that should be called to stop the effect.
 VoidCallback useEffect(BuildContext context, VoidCallback callback) {
-  if (withoutContext) return effect(callback);
-
-  // Initialize hook state if needed
-  final hookState = hooks[context] ??= HookState();
-
-  // Check if we need to start a new render cycle
-  if (!hookState.isRendering) {
-    hookState.isRendering = true;
-    hookState.current = hookState.head;
-    // Schedule reset for next frame
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      hookState.current = null;
-      hookState.isRendering = false;
-    });
-  }
-
-  // Try to use existing hook at current position
-  final currentNode = hookState.current;
-
-  if (currentNode != null && currentNode.value is Effect) {
-    // Move to next position for subsequent hook calls
-    hookState.current = currentNode.next;
-    return (currentNode.value as Effect).stop;
-  }
-
-  // Need to create new hook
   final prevContext = setCurrentContext(context);
   try {
-    final effectInstance = createEffect(context, callback);
-
-    // Create new hook node
-    final newNode = HookNode<Effect>(value: effectInstance);
-
-    if (hookState.head == null) {
-      // This is the very first hook
-      hookState.head = newNode;
-      // Don't move current - let the next hook call handle it
-    } else if (currentNode == null) {
-      // We're past the end of the existing hooks, append new one
-      var last = hookState.head!;
-      while (last.next != null) {
-        last = last.next!;
-      }
-      last.next = newNode;
-    }
-
-    return effectInstance.stop;
+    final instance = _getOrCreateBinding<Effect>(
+      context,
+      () => createEffect(context, callback),
+    );
+    return instance.stop;
   } catch (_) {
     activeContext = prevContext;
     rethrow;
   }
 }
 
+/// Creates an effect scope that can contain multiple effects.
+///
+/// All effects created within the callback will be automatically disposed
+/// when the returned dispose function is called.
 VoidCallback useEffectScope(BuildContext context, VoidCallback callback) {
-  if (withoutContext) return effectScope(callback);
-
-  // Initialize hook state if needed
-  final hookState = hooks[context] ??= HookState();
-
-  // Check if we need to start a new render cycle
-  if (!hookState.isRendering) {
-    hookState.isRendering = true;
-    hookState.current = hookState.head;
-    // Schedule reset for next frame
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      hookState.current = null;
-      hookState.isRendering = false;
-    });
-  }
-
-  // Try to use existing hook at current position
-  final currentNode = hookState.current;
-
-  if (currentNode != null && currentNode.value is EffectScope) {
-    // Move to next position for subsequent hook calls
-    hookState.current = currentNode.next;
-    return (currentNode.value as EffectScope).stop;
-  }
-
-  // Need to create new hook
   final prevContext = setCurrentContext(context);
   try {
-    final stop = effectScope(() {
-      final prevWithoutContext = withoutContext;
-      withoutContext = true;
-      try {
-        callback();
-      } finally {
-        withoutContext = prevWithoutContext;
-      }
+    final instance = _getOrCreateBinding<EffectScope>(context, () {
+      final stop = effectScope(() {
+        final prevWithoutContext = withoutContext;
+        withoutContext = true;
+        try {
+          callback();
+        } finally {
+          withoutContext = prevWithoutContext;
+        }
+      });
+      return EffectScope(stop);
     });
-    final scope = EffectScope(stop);
-
-    // Create new hook node
-    final newNode = HookNode<EffectScope>(value: scope);
-
-    if (hookState.head == null) {
-      // This is the very first hook
-      hookState.head = newNode;
-      // Don't move current - let the next hook call handle it
-    } else if (currentNode == null) {
-      // We're past the end of the existing hooks, append new one
-      var last = hookState.head!;
-      while (last.next != null) {
-        last = last.next!;
-      }
-      last.next = newNode;
-    }
-
-    return scope.stop;
+    return instance.stop;
   } finally {
     activeContext = prevContext;
   }
 }
 
+/// Gets or creates an effect that triggers widget rebuilds when signals change.
+///
+/// This effect is associated with the context and ensures that widgets
+/// rebuild when reactive values they depend on change.
 Effect getContextEffect(BuildContext context) {
   final effect = contextEffect[context];
   if (effect != null) return effect;
@@ -354,6 +261,9 @@ Effect getContextEffect(BuildContext context) {
   }
 }
 
+/// Creates an effect that runs the callback within a reactive context.
+///
+/// The effect will automatically track dependencies and re-run when they change.
 Effect createEffect(BuildContext context, VoidCallback callback) {
   late final ReactiveNode node;
   bool firstRun = true;
