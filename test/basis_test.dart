@@ -171,7 +171,7 @@ void main() {
     expect(threeCalled, isTrue);
   });
 
-  testWidgets("xxx", (tester) async {
+  testWidgets("returning signal as expected", (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Builder(
@@ -179,14 +179,11 @@ void main() {
             final a = useSignal(context, 0);
             final b = useSignal(context, 0);
 
-            print(a.hashCode);
-            print(b.hashCode);
-
-            return Text((a == b).toString());
+            return Text((a != b).toString());
           },
         ),
       ),
     );
-    expect(find.text("false"), findsOneWidget);
+    expect(find.text("true"), findsOneWidget);
   });
 }
