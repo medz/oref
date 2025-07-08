@@ -74,8 +74,10 @@ BuildContext? setCurrentContext(BuildContext? context) {
   return prev;
 }
 
-T _getOrCreateBinding<T>(BuildContext context, T Function() createBinding) {
-  if (withoutContext) return createBinding();
+/// Finds an existing binding at the current position or returns null.
+/// Also handles render cycle initialization and moves the current pointer.
+T? _findBinding<T>(BuildContext context) {
+  if (withoutContext) return null;
 
   // Initialize binding state if needed
   final bindingState = bindings[context] ??= BindingState();
@@ -100,24 +102,29 @@ T _getOrCreateBinding<T>(BuildContext context, T Function() createBinding) {
     return currentNode.value as T;
   }
 
-  // Need to create new binding
-  final bindingValue = createBinding();
+  return null;
+}
+
+/// Stores a new binding value at the current position in the binding chain.
+/// Must be called after _findBinding when a new binding needs to be created.
+void _storeBinding<T>(BuildContext context, T value) {
+  if (withoutContext) return;
+
+  final bindingState = bindings[context]!;
+  final currentNode = bindingState.current;
 
   // Create new binding node
-  final newNode = BindingNode<T>(value: bindingValue);
+  final newNode = BindingNode<T>(value: value);
 
   if (bindingState.head == null) {
     // This is the very first binding
     bindingState.head = newNode;
     bindingState.tail = newNode;
-    // Don't move current - let the next binding call handle it
   } else if (currentNode == null) {
     // We're past the end of the existing bindings, append new one
     bindingState.tail!.next = newNode;
     bindingState.tail = newNode;
   }
-
-  return bindingValue;
 }
 
 /// Creates a signal that can be used within a Flutter widget.
@@ -128,30 +135,35 @@ T Function([T? value, bool nulls]) useSignal<T>(
   BuildContext context,
   T initialValue,
 ) {
-  final instance = _getOrCreateBinding<Signal<T>>(context, () {
-    final oper = signal(initialValue);
-    return Signal<T>(([value, nulls = false]) {
-      if (value is T && (value != null || (value == null && nulls))) {
-        return oper(value, nulls);
-      }
+  // Try to find existing binding
+  final existing = _findBinding<Signal<T>>(context);
+  if (existing != null) return existing.oper;
 
-      final currentSub = getCurrentSub();
-      final element = getCurrentContext() ?? context;
-      if ((element is Element && !element.dirty) ||
-          currentSub != null ||
-          !shouldTriggerContextEffect) {
-        return oper(value, nulls);
-      }
+  // Create new signal
+  final oper = signal(initialValue);
+  final instance = Signal<T>(([value, nulls = false]) {
+    if (value is T && (value != null || (value == null && nulls))) {
+      return oper(value, nulls);
+    }
 
-      try {
-        setCurrentSub(getContextEffect(element).node);
-        return oper();
-      } finally {
-        setCurrentSub(null);
-      }
-    });
+    final currentSub = getCurrentSub();
+    final element = getCurrentContext() ?? context;
+    if ((element is Element && !element.dirty) ||
+        currentSub != null ||
+        !shouldTriggerContextEffect) {
+      return oper(value, nulls);
+    }
+
+    try {
+      setCurrentSub(getContextEffect(element).node);
+      return oper();
+    } finally {
+      setCurrentSub(null);
+    }
   });
 
+  // Store the new binding
+  _storeBinding(context, instance);
   return instance.oper;
 }
 
@@ -163,36 +175,40 @@ T Function() useComputed<T>(
   BuildContext context,
   T Function(T? prevValue) callback,
 ) {
-  final instance = _getOrCreateBinding<Computed<T>>(context, () {
-    final oper = computed<T>((value) {
-      final prevWithoutContext = withoutContext;
-      withoutContext = true;
+  // Try to find existing binding
+  final existing = _findBinding<Computed<T>>(context);
+  if (existing != null) return existing.oper;
 
-      final currentSub = getCurrentSub();
-      final element = getCurrentContext() ?? context;
-      if ((element is Element && !element.dirty) ||
-          currentSub != null ||
-          !shouldTriggerContextEffect) {
-        try {
-          return callback(value);
-        } finally {
-          withoutContext = prevWithoutContext;
-        }
-      }
+  // Create new computed
+  final oper = computed<T>((value) {
+    final prevWithoutContext = withoutContext;
+    withoutContext = true;
 
-      final prevContext = setCurrentContext(element);
+    final currentSub = getCurrentSub();
+    final element = getCurrentContext() ?? context;
+    if ((element is Element && !element.dirty) ||
+        currentSub != null ||
+        !shouldTriggerContextEffect) {
       try {
-        setCurrentSub(getContextEffect(element).node);
         return callback(value);
       } finally {
         withoutContext = prevWithoutContext;
-        setCurrentContext(prevContext);
-        setCurrentSub(null);
       }
-    });
-    return Computed<T>(oper);
+    }
+
+    final prevContext = setCurrentContext(element);
+    try {
+      setCurrentSub(getContextEffect(element).node);
+      return callback(value);
+    } finally {
+      withoutContext = prevWithoutContext;
+      setCurrentContext(prevContext);
+      setCurrentSub(null);
+    }
   });
 
+  final instance = Computed<T>(oper);
+  _storeBinding(context, instance);
   return instance.oper;
 }
 
@@ -200,13 +216,16 @@ T Function() useComputed<T>(
 ///
 /// Returns a dispose function that should be called to stop the effect.
 VoidCallback useEffect(BuildContext context, VoidCallback callback) {
+  // Try to find existing binding
+  final existing = _findBinding<Effect>(context);
+  if (existing != null) return existing.stop;
+
+  // Create new effect
   final prevContext = setCurrentContext(context);
   try {
-    final instance = _getOrCreateBinding<Effect>(
-      context,
-      () => createEffect(context, callback),
-    );
-    return instance.stop;
+    final effect = createEffect(context, callback);
+    _storeBinding(context, effect);
+    return effect.stop;
   } catch (_) {
     activeContext = prevContext;
     rethrow;
@@ -218,21 +237,26 @@ VoidCallback useEffect(BuildContext context, VoidCallback callback) {
 /// All effects created within the callback will be automatically disposed
 /// when the returned dispose function is called.
 VoidCallback useEffectScope(BuildContext context, VoidCallback callback) {
+  // Try to find existing binding
+  final existing = _findBinding<EffectScope>(context);
+  if (existing != null) return existing.stop;
+
+  // Create new effect scope
   final prevContext = setCurrentContext(context);
   try {
-    final instance = _getOrCreateBinding<EffectScope>(context, () {
-      final stop = effectScope(() {
-        final prevWithoutContext = withoutContext;
-        withoutContext = true;
-        try {
-          callback();
-        } finally {
-          withoutContext = prevWithoutContext;
-        }
-      });
-      return EffectScope(stop);
+    final stop = effectScope(() {
+      final prevWithoutContext = withoutContext;
+      withoutContext = true;
+      try {
+        callback();
+      } finally {
+        withoutContext = prevWithoutContext;
+      }
     });
-    return instance.stop;
+
+    final scope = EffectScope(stop);
+    _storeBinding(context, scope);
+    return scope.stop;
   } finally {
     activeContext = prevContext;
   }
