@@ -171,39 +171,22 @@ void main() {
     expect(threeCalled, isTrue);
   });
 
-  // testWidgets("List reaction", (tester) async {
-  //   await tester.pumpWidget(
-  //     MaterialApp(
-  //       home: Builder(
-  //         builder: (context) {
-  //           final s = useSignal(context, <int>[]);
-  //           return Column(
-  //             children: [
-  //               Text('length: ${s.reversed.length}'),
-  //               TextButton(onPressed: () => s.add(1), child: const Text('add')),
-  //               TextButton(
-  //                 onPressed: () => s.removeLast(),
-  //                 child: const Text('remove'),
-  //               ),
-  //             ],
-  //           );
-  //         },
-  //       ),
-  //     ),
-  //   );
+  testWidgets("xxx", (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) {
+            final a = useSignal(context, 0);
+            final b = useSignal(context, 0);
 
-  //   expect(find.text('length: 0'), findsOneWidget);
+            print(a.hashCode);
+            print(b.hashCode);
 
-  //   await tester.tap(find.text('add'));
-  //   await tester.pump();
-  //   expect(find.text('length: 1'), findsOneWidget);
-
-  //   await tester.tap(find.text('add'));
-  //   await tester.pump();
-  //   expect(find.text('length: 2'), findsOneWidget);
-
-  //   await tester.tap(find.text('remove'));
-  //   await tester.pump();
-  //   expect(find.text('length: 1'), findsOneWidget);
-  // });
+            return Text((a == b).toString());
+          },
+        ),
+      ),
+    );
+    expect(find.text("false"), findsOneWidget);
+  });
 }

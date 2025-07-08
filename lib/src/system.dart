@@ -36,13 +36,12 @@ class EffectScope {
   final void Function() stop;
 }
 
-class Hook<T> {
-  Hook({required this.value, this.next, this.head, this.wasCreateNew = false});
+class HookNode<T> {
+  HookNode({required this.value, this.next, this.head});
 
   final T value;
-  Hook? next;
-  Hook? head;
-  bool wasCreateNew;
+  HookNode? next;
+  HookNode? head;
 }
 
 BuildContext? activeContext;
@@ -50,7 +49,7 @@ bool shouldTriggerContextEffect = true;
 bool withoutContext = false;
 
 final contextEffect = Expando<Effect>("oref context effect");
-final hooks = Expando<Hook>("oref hooks");
+final hooks = Expando<HookNode>("oref hooks");
 
 @pragma('vm:prefer-inline')
 @pragma('wasm:prefer-inline')
@@ -226,26 +225,19 @@ Effect createEffect(BuildContext context, VoidCallback callback) {
   return Effect(node, stop);
 }
 
-Hook<T>? moveNextHook<T>(BuildContext context) {
+HookNode<T>? moveNextHook<T>(BuildContext context) {
   final hook = hooks[context];
   final next = hook?.next;
-  if (hook != null && hook.value is T && (next != null || !hook.wasCreateNew)) {
+  if (hook != null && hook.value is T) {
     if (hook == hook.head) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         hooks[context] = hook.head;
-        for (var e = hook.head; e != null; e = e.next) {
-          e.wasCreateNew = false;
-        }
       });
     }
 
-    if (next != null) {
-      hooks[context] = next;
-    } else {
-      hook.wasCreateNew = true;
-    }
+    hooks[context] = next;
 
-    return hook as Hook<T>;
+    return hook as HookNode<T>;
   }
 
   return null;
@@ -253,7 +245,7 @@ Hook<T>? moveNextHook<T>(BuildContext context) {
 
 void setNextHook<T>(BuildContext context, T value) {
   final prevHook = hooks[context];
-  final newHook = Hook(value: value, head: prevHook?.head);
+  final newHook = HookNode(value: value, head: prevHook?.head);
 
   if (prevHook != null) {
     hooks[context] = prevHook.next = newHook;
