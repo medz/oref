@@ -1,5 +1,4 @@
 import 'package:alien_signals/alien_signals.dart';
-import 'package:flutter/scheduler.dart' show FrameCallback;
 import 'package:flutter/widgets.dart';
 
 class Signal<T> {
@@ -37,15 +36,21 @@ class EffectScope {
   final void Function() stop;
 }
 
+class Hook<T> {
+  Hook({required this.value, this.next, this.head, this.wasCreateNew = false});
+
+  final T value;
+  Hook? next;
+  Hook? head;
+  bool wasCreateNew;
+}
+
 BuildContext? activeContext;
-FrameCallback? postFrameCallback;
 bool shouldTriggerContextEffect = true;
-// bool shouldForceTrigger = false;
 bool withoutContext = false;
 
 final contextEffect = Expando<Effect>("oref context effect");
-final hooksCallIndex = Expando<int>("oref hooks call index");
-final hooks = Expando<List<Object>>("oref hooks");
+final hooks = Expando<Hook>("oref hooks");
 
 @pragma('vm:prefer-inline')
 @pragma('wasm:prefer-inline')
@@ -67,12 +72,8 @@ T Function([T? value, bool nulls]) useSignal<T>(
   T initialValue,
 ) {
   if (withoutContext) return signal(initialValue);
-
-  final (exists, _) = resolveHookInstance<Signal<T>>(
-    context,
-    (e) => e is Signal && e.whereType<T>(),
-  );
-  if (exists != null) return exists.oper;
+  final hook = moveNextHook<Signal<T>>(context);
+  if (hook != null) return hook.value.oper;
 
   final oper = signal(initialValue);
   final instance = Signal<T>(([value, nulls = false]) {
@@ -95,7 +96,8 @@ T Function([T? value, bool nulls]) useSignal<T>(
       setCurrentSub(null);
     }
   });
-  hooks[context]!.add(instance);
+
+  setNextHook(context, instance);
 
   return instance.oper;
 }
@@ -106,11 +108,8 @@ T Function() useComputed<T>(
 ) {
   if (withoutContext) return computed(callback);
 
-  final (exists, _) = resolveHookInstance<Computed<T>>(
-    context,
-    (e) => e is Computed && e.whereType<T>(),
-  );
-  if (exists != null) return exists.oper;
+  final hook = moveNextHook<Computed<T>>(context);
+  if (hook != null) return hook.value.oper;
 
   final oper = computed<T>((value) {
     final prevWithoutContext = withoutContext;
@@ -139,7 +138,7 @@ T Function() useComputed<T>(
     }
   });
   final instance = Computed<T>(oper);
-  hooks[context]!.add(instance);
+  setNextHook(context, instance);
 
   return instance.oper;
 }
@@ -147,34 +146,25 @@ T Function() useComputed<T>(
 VoidCallback useEffect(BuildContext context, VoidCallback callback) {
   if (withoutContext) return effect(callback);
 
-  final (exists, resetCallIndex) = resolveHookInstance<Effect>(
-    context,
-    (e) => e is Effect,
-  );
-  if (exists != null) return exists.stop;
+  final hook = moveNextHook<Effect>(context);
+  if (hook != null) return hook.value.stop;
 
   final prevContext = setCurrentContext(context);
   try {
-    final container = hooks[context]!;
     final effect = createEffect(context, callback);
-    container.add(effect);
+    setNextHook(context, effect);
 
     return effect.stop;
   } catch (_) {
     activeContext = prevContext;
-    resetCallIndex();
     rethrow;
   }
 }
 
 VoidCallback useEffectScope(BuildContext context, VoidCallback callback) {
   if (withoutContext) return effectScope(callback);
-
-  final (scope, resetCallIndex) = resolveHookInstance<EffectScope>(
-    context,
-    (e) => e is EffectScope,
-  );
-  if (scope != null) return scope.stop;
+  final hook = moveNextHook<EffectScope>(context);
+  if (hook != null) return hook.value.stop;
 
   final prevContext = setCurrentContext(context);
   try {
@@ -188,12 +178,9 @@ VoidCallback useEffectScope(BuildContext context, VoidCallback callback) {
       }
     });
     final scope = EffectScope(stop);
-    hooks[context]!.add(scope);
+    setNextHook(context, scope);
 
     return stop;
-  } catch (_) {
-    resetCallIndex();
-    rethrow;
   } finally {
     activeContext = prevContext;
   }
@@ -239,56 +226,42 @@ Effect createEffect(BuildContext context, VoidCallback callback) {
   return Effect(node, stop);
 }
 
-void addPostFrameCallback(FrameCallback callback) {
-  final prevCallback = postFrameCallback;
-  if (prevCallback == null) {
-    postFrameCallback = callback;
-    WidgetsBinding.instance.addPostFrameCallback(
-      debugLabel: 'oref post frame callback',
-      (timeStamp) {
-        postFrameCallback?.call(timeStamp);
-        postFrameCallback = null;
-      },
-    );
-    return;
+Hook<T>? moveNextHook<T>(BuildContext context) {
+  final hook = hooks[context];
+  final next = hook?.next;
+  if (hook != null && hook.value is T && (next != null || !hook.wasCreateNew)) {
+    if (hook == hook.head) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        hooks[context] = hook.head;
+        for (var e = hook.head; e != null; e = e.next) {
+          e.wasCreateNew = false;
+        }
+      });
+    }
+
+    if (next != null) {
+      hooks[context] = next;
+    } else {
+      hook.wasCreateNew = true;
+    }
+
+    return hook as Hook<T>;
   }
 
-  postFrameCallback = (timeStamp) {
-    prevCallback(timeStamp);
-    callback(timeStamp);
-  };
+  return null;
 }
 
-(T?, VoidCallback) resolveHookInstance<T extends Object>(
-  BuildContext context,
-  bool Function(Object) has,
-) {
-  final index = hooksCallIndex[context] ??= 0;
-  if (index == 0) {
-    addPostFrameCallback((_) => hooksCallIndex[context] = 0);
+void setNextHook<T>(BuildContext context, T value) {
+  final prevHook = hooks[context];
+  final newHook = Hook(value: value, head: prevHook?.head);
+
+  if (prevHook != null) {
+    hooks[context] = prevHook.next = newHook;
+  } else {
+    newHook.head = newHook;
+    hooks[context] = newHook;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      hooks[context] = newHook;
+    });
   }
-
-  void reset() => hooksCallIndex[context] = index + 1;
-
-  final container = hooks[context] ??= [];
-  final hook = container.elementAtOrNull(index);
-
-  if (hook != null && has(hook)) {
-    return (hook as T, reset);
-  } else if (hook == null && index < container.length) {
-    container.length = index;
-  }
-
-  return (null, reset);
 }
-
-// void triggerSignal(VoidCallback callback) {
-//   try {
-//     startBatch();
-//     shouldForceTrigger = true;
-//     callback();
-//   } finally {
-//     shouldForceTrigger = false;
-//     endBatch();
-//   }
-// }

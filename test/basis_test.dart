@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:oref/oref.dart';
-import 'package:oref/src/system.dart';
 
 void main() {
   testWidgets("track in context effect", (tester) async {
@@ -142,7 +141,6 @@ void main() {
 
   testWidgets("nested hooks without context binding", (tester) async {
     dynamic cache;
-    late BuildContext needsCheckContext;
     bool threeCalled = false;
     await tester.pumpWidget(
       MaterialApp(
@@ -155,8 +153,6 @@ void main() {
                 threeCalled = true;
               });
             });
-
-            needsCheckContext = context;
 
             return TextButton(
               onPressed: () => s(s() + 1),
@@ -173,9 +169,6 @@ void main() {
 
     expect(prevCache != cache, isTrue);
     expect(threeCalled, isTrue);
-
-    final c = hooks[needsCheckContext];
-    expect(c?.length, equals(2));
   });
 
   // testWidgets("List reaction", (tester) async {
