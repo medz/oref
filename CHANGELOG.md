@@ -1,3 +1,7 @@
+## v1.1.2
+
+- Not returning use* hooks as expected
+
 ## v1.1.1
 
 - fix: Nested hooks cause context binding to be reset
