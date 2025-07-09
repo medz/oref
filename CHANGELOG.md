@@ -1,3 +1,7 @@
+## v1.1.3
+
+- pref: Refactor binding system to use LinkedBindingNode hierarchy
+
 ## v1.1.2
 
 - Not returning use* hooks as expected
