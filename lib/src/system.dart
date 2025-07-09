@@ -1,8 +1,14 @@
 import 'package:alien_signals/alien_signals.dart';
 import 'package:flutter/widgets.dart';
 
-class Signal<T> {
-  const Signal(this.oper);
+import 'warn.dart';
+
+class LinkedBindingNode {
+  LinkedBindingNode? next;
+}
+
+class Signal<T> extends LinkedBindingNode {
+  Signal(this.oper);
 
   final T Function([T? value, bool nulls]) oper;
 
@@ -12,8 +18,8 @@ class Signal<T> {
   bool whereType<V>() => T == V;
 }
 
-class Computed<T> {
-  const Computed(this.oper);
+class Computed<T> extends LinkedBindingNode {
+  Computed(this.oper);
 
   final T Function() oper;
 
@@ -23,32 +29,24 @@ class Computed<T> {
   bool whereType<V>() => T == V;
 }
 
-class Effect {
-  const Effect(this.node, this.stop);
+class Effect extends LinkedBindingNode {
+  Effect(this.node, this.stop);
 
   final ReactiveNode node;
   final void Function() stop;
 }
 
-class EffectScope {
-  const EffectScope(this.stop);
+class EffectScope extends LinkedBindingNode {
+  EffectScope(this.stop);
 
   final void Function() stop;
 }
 
-class BindingNode<T> {
-  BindingNode({required this.value, this.next});
-
-  final T value;
-  BindingNode? next;
-}
-
-class BindingState {
-  BindingNode? head;
-
-  /// Tail pointer for O(1) append operations instead of O(n) traversal
-  BindingNode? tail;
-  BindingNode? current;
+class Bindings {
+  LinkedBindingNode? headNode;
+  LinkedBindingNode? tailNode;
+  LinkedBindingNode? currentNode;
+  Effect? effect;
   bool isRendering = false;
 }
 
@@ -56,8 +54,13 @@ BuildContext? activeContext;
 bool shouldTriggerContextEffect = true;
 bool withoutContext = false;
 
-final contextEffect = Expando<Effect>("oref context effect");
-final bindings = Expando<BindingState>("oref bindings");
+final bindings = Expando<Bindings>("oref bindings");
+
+@pragma('vm:prefer-inline')
+@pragma('wasm:prefer-inline')
+@pragma('dart2js:prefer-inline')
+Bindings findOrCreareBindings(BuildContext context) =>
+    bindings[context] ??= Bindings();
 
 @pragma('vm:prefer-inline')
 @pragma('wasm:prefer-inline')
@@ -74,59 +77,6 @@ BuildContext? setCurrentContext(BuildContext? context) {
   return prev;
 }
 
-/// Finds an existing binding at the current position or returns null.
-/// Also handles render cycle initialization and moves the current pointer.
-T? _findBinding<T>(BuildContext context) {
-  if (withoutContext) return null;
-
-  // Initialize binding state if needed
-  final bindingState = bindings[context] ??= BindingState();
-
-  // Check if we need to start a new render cycle
-  if (!bindingState.isRendering) {
-    bindingState.isRendering = true;
-    bindingState.current = bindingState.head;
-    // Schedule reset for next frame
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      bindingState.current = null;
-      bindingState.isRendering = false;
-    });
-  }
-
-  // Try to use existing binding at current position
-  final currentNode = bindingState.current;
-
-  if (currentNode != null && currentNode.value is T) {
-    // Move to next position for subsequent binding calls
-    bindingState.current = currentNode.next;
-    return currentNode.value as T;
-  }
-
-  return null;
-}
-
-/// Stores a new binding value at the current position in the binding chain.
-/// Must be called after _findBinding when a new binding needs to be created.
-void _storeBinding<T>(BuildContext context, T value) {
-  if (withoutContext) return;
-
-  final bindingState = bindings[context]!;
-  final currentNode = bindingState.current;
-
-  // Create new binding node
-  final newNode = BindingNode<T>(value: value);
-
-  if (bindingState.head == null) {
-    // This is the very first binding
-    bindingState.head = newNode;
-    bindingState.tail = newNode;
-  } else if (currentNode == null) {
-    // We're past the end of the existing bindings, append new one
-    bindingState.tail!.next = newNode;
-    bindingState.tail = newNode;
-  }
-}
-
 /// Creates a signal that can be used within a Flutter widget.
 ///
 /// The signal will automatically trigger rebuilds when its value changes,
@@ -135,8 +85,7 @@ T Function([T? value, bool nulls]) useSignal<T>(
   BuildContext context,
   T initialValue,
 ) {
-  // Try to find existing binding
-  final existing = _findBinding<Signal<T>>(context);
+  final existing = moveNextBindingNode<Signal<T>>(context);
   if (existing != null) return existing.oper;
 
   // Create new signal
@@ -162,8 +111,7 @@ T Function([T? value, bool nulls]) useSignal<T>(
     }
   });
 
-  // Store the new binding
-  _storeBinding(context, instance);
+  linkBindingNode(context, instance);
   return instance.oper;
 }
 
@@ -175,8 +123,7 @@ T Function() useComputed<T>(
   BuildContext context,
   T Function(T? prevValue) callback,
 ) {
-  // Try to find existing binding
-  final existing = _findBinding<Computed<T>>(context);
+  final existing = moveNextBindingNode<Computed<T>>(context);
   if (existing != null) return existing.oper;
 
   // Create new computed
@@ -208,7 +155,8 @@ T Function() useComputed<T>(
   });
 
   final instance = Computed<T>(oper);
-  _storeBinding(context, instance);
+  linkBindingNode(context, instance);
+
   return instance.oper;
 }
 
@@ -216,15 +164,15 @@ T Function() useComputed<T>(
 ///
 /// Returns a dispose function that should be called to stop the effect.
 VoidCallback useEffect(BuildContext context, VoidCallback callback) {
-  // Try to find existing binding
-  final existing = _findBinding<Effect>(context);
+  final existing = moveNextBindingNode<Effect>(context);
   if (existing != null) return existing.stop;
 
   // Create new effect
   final prevContext = setCurrentContext(context);
   try {
     final effect = createEffect(context, callback);
-    _storeBinding(context, effect);
+    linkBindingNode(context, effect);
+
     return effect.stop;
   } catch (_) {
     activeContext = prevContext;
@@ -237,8 +185,7 @@ VoidCallback useEffect(BuildContext context, VoidCallback callback) {
 /// All effects created within the callback will be automatically disposed
 /// when the returned dispose function is called.
 VoidCallback useEffectScope(BuildContext context, VoidCallback callback) {
-  // Try to find existing binding
-  final existing = _findBinding<EffectScope>(context);
+  final existing = moveNextBindingNode<EffectScope>(context);
   if (existing != null) return existing.stop;
 
   // Create new effect scope
@@ -255,7 +202,8 @@ VoidCallback useEffectScope(BuildContext context, VoidCallback callback) {
     });
 
     final scope = EffectScope(stop);
-    _storeBinding(context, scope);
+    linkBindingNode(context, scope);
+
     return scope.stop;
   } finally {
     activeContext = prevContext;
@@ -267,7 +215,8 @@ VoidCallback useEffectScope(BuildContext context, VoidCallback callback) {
 /// This effect is associated with the context and ensures that widgets
 /// rebuild when reactive values they depend on change.
 Effect getContextEffect(BuildContext context) {
-  final effect = contextEffect[context];
+  final bindings = findOrCreareBindings(context);
+  final effect = bindings.effect;
   if (effect != null) return effect;
 
   final prevSub = setCurrentSub(null);
@@ -277,7 +226,7 @@ Effect getContextEffect(BuildContext context) {
         context.markNeedsBuild();
       }
     });
-    contextEffect[context] = effect;
+    bindings.effect = effect;
 
     return effect;
   } finally {
@@ -307,4 +256,56 @@ Effect createEffect(BuildContext context, VoidCallback callback) {
   });
 
   return Effect(node, stop);
+}
+
+T? moveNextBindingNode<T>(BuildContext context) {
+  if (withoutContext) return null;
+  final bindings = findOrCreareBindings(context);
+
+  if (!bindings.isRendering) {
+    bindings.isRendering = true;
+    bindings.currentNode = bindings.headNode;
+    // Schedule reset for next frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      bindings.currentNode = null;
+      bindings.isRendering = false;
+    });
+  }
+
+  final currentNode = bindings.currentNode;
+  if (currentNode != null && currentNode is T) {
+    // Move to next position for subsequent binding calls
+    bindings.currentNode = currentNode.next;
+    return currentNode as T;
+  }
+
+  return null;
+}
+
+void linkBindingNode<T extends LinkedBindingNode>(
+  BuildContext context,
+  T node,
+) {
+  if (withoutContext) return;
+  final bindings = findOrCreareBindings(context);
+
+  if (bindings.headNode == null) {
+    bindings.headNode = node;
+    bindings.tailNode = node;
+  } else if (bindings.currentNode == null) {
+    bindings.tailNode!.next = node;
+    bindings.tailNode = node;
+  } else if (bindings.currentNode != null) {
+    final next = bindings.currentNode!.next;
+    if (next != null) {
+      warn(
+        'Do not use hooks like useSignal inside conditional statements. '
+        'This will cause a reset of subsequent calls and may lead to unexpected behavior.',
+      );
+    }
+
+    bindings.currentNode!.next = node;
+    bindings.currentNode = node;
+    bindings.tailNode = node;
+  }
 }
