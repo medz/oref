@@ -128,27 +128,22 @@ T Function() useComputed<T>(
 
   // Create new computed
   final oper = computed<T>((value) {
-    final prevWithoutContext = withoutContext;
-    withoutContext = true;
-
     final currentSub = getCurrentSub();
     final element = getCurrentContext() ?? context;
-    if ((element is Element && !element.dirty) ||
-        currentSub != null ||
-        !shouldTriggerContextEffect) {
-      try {
-        return callback(value);
-      } finally {
-        withoutContext = prevWithoutContext;
-      }
+    
+    // For computed values, we need to ensure dependencies are tracked
+    // Only skip dependency tracking if we're already in a reactive context
+    if (currentSub != null) {
+      // Already in a reactive context, just execute callback
+      return callback(value);
     }
 
+    // Set up reactive context for dependency tracking
     final prevContext = setCurrentContext(element);
     try {
       setCurrentSub(getContextEffect(element).node);
       return callback(value);
     } finally {
-      withoutContext = prevWithoutContext;
       setCurrentContext(prevContext);
       setCurrentSub(null);
     }

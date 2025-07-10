@@ -35,20 +35,25 @@ T Function() createGlobalComputed<T>(T Function(T? prevValue) callback) {
   return computed((value) {
     final currentSub = getCurrentSub();
     final element = getCurrentContext();
-    if (element == null ||
-        (element is Element && !element.dirty) ||
-        currentSub != null ||
-        !shouldTriggerContextEffect) {
+    
+    // For global computed, only skip dependency tracking if already in a reactive context
+    if (currentSub != null) {
       return callback(value);
     }
-
-    final prevContext = setCurrentContext(element);
-    try {
-      setCurrentSub(getContextEffect(element).node);
-      return callback(value);
-    } finally {
-      setCurrentContext(prevContext);
-      setCurrentSub(null);
+    
+    // If we have a context, set up dependency tracking
+    if (element != null) {
+      final prevContext = setCurrentContext(element);
+      try {
+        setCurrentSub(getContextEffect(element).node);
+        return callback(value);
+      } finally {
+        setCurrentContext(prevContext);
+        setCurrentSub(null);
+      }
     }
+    
+    // No context available, execute without tracking (this is expected for truly global computed)
+    return callback(value);
   });
 }
