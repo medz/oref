@@ -1,6 +1,8 @@
 import 'package:alien_signals/alien_signals.dart' as alien;
 import 'package:flutter/widgets.dart';
-import 'package:oref/oref.dart';
+
+import 'memoized.dart';
+import 'widget_scope.dart';
 
 void Function() effect(
   BuildContext context,
