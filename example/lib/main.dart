@@ -26,11 +26,17 @@ class Counter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final count = signal(context, 0);
+
     void increment() => count(count() + 1);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Counter')),
-      body: Center(child: Text("Count: ${count()}")),
+      body: Center(
+        child: SignalBuilder(
+          getter: count,
+          builder: (_, count) => Text("Count: $count"),
+        ),
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: increment,
         child: const Icon(Icons.plus_one),

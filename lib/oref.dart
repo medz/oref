@@ -3,5 +3,8 @@ export 'src/core/effect.dart' show effect;
 export 'src/core/effect_scope.dart' show effectScope;
 export 'src/core/memoized.dart' show useMemoized;
 export 'src/core/signal.dart' show signal;
+export 'src/core/signal_build_context.dart' show SignalBuildContext;
 export 'src/core/widget_effect.dart' show getWidgetEffect, WidgetEffect;
 export 'src/core/widget_scope.dart' show getWidgetScope, WidgetScope;
+
+export 'src/widgets/signal_builder.dart' show SignalBuilder;

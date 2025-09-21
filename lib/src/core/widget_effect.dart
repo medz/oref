@@ -10,15 +10,6 @@ class WidgetEffect {
   final void Function() stop;
   final ReactiveNode node;
 
-  T scopedUsing<T>(BuildContext context, T Function() run) {
-    if (getCurrentScope() != null) {
-      return using(run);
-    }
-
-    final scope = getWidgetScope(context);
-    return scope.using(() => using(run));
-  }
-
   T using<T>(T Function() run) {
     final prevSub = setCurrentSub(node);
     try {
@@ -48,7 +39,10 @@ WidgetEffect getWidgetEffect(BuildContext context) {
         node ??= getCurrentSub();
 
         if (!element.dirty) {
-          resetMemoized(element);
+          WidgetsBinding.instance.addPostFrameCallback((duration) async {
+            await Future.delayed(duration);
+            resetMemoized(element);
+          });
           element.markNeedsBuild();
         }
       });
