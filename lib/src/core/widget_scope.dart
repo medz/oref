@@ -2,10 +2,19 @@ import 'package:alien_signals/alien_signals.dart';
 import 'package:flutter/widgets.dart';
 
 class WidgetScope {
-  const WidgetScope({required this.stop, required this.node});
+  const WidgetScope({required this.stop, required this.effectScope});
 
   final void Function() stop;
-  final EffectScope node;
+  final EffectScope effectScope;
+
+  T using<T>(T Function() run) {
+    final prevScope = setCurrentScope(effectScope);
+    try {
+      return run();
+    } finally {
+      setCurrentScope(prevScope);
+    }
+  }
 }
 
 final _store = Expando<WidgetScope>("oref:widget effect scope");
@@ -16,17 +25,17 @@ WidgetScope getWidgetScope(BuildContext context) {
 
   final prevScope = setCurrentScope(null);
   try {
-    EffectScope? node;
+    EffectScope? scope;
     final stop = effectScope(() {
-      node ??= getCurrentScope();
+      scope ??= getCurrentScope();
     });
 
-    assert(node != null, "oref: Widget scope initialization failed");
+    assert(scope != null, "oref: Widget scope initialization failed");
 
-    final scope = WidgetScope(stop: stop, node: node!);
-    _store[context] = scope;
+    final e = WidgetScope(stop: stop, effectScope: scope!);
+    _store[context] = e;
 
-    return scope;
+    return e;
   } finally {
     setCurrentScope(prevScope);
   }

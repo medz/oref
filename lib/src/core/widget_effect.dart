@@ -8,6 +8,28 @@ class WidgetEffect {
 
   final void Function() stop;
   final ReactiveNode node;
+
+  T using<T>(BuildContext context, T Function() run) {
+    if (getCurrentScope() != null) {
+      return _reuse(context, run);
+    }
+
+    final scope = getWidgetScope(context);
+    return scope.using(() => _reuse(context, run));
+  }
+
+  T _reuse<T>(BuildContext context, T Function() run) {
+    if (getCurrentSub() != null) {
+      return run();
+    }
+
+    final prevSub = setCurrentSub(node);
+    try {
+      return run();
+    } finally {
+      setCurrentSub(prevSub);
+    }
+  }
 }
 
 final _store = Expando<WidgetEffect>("oref:widget effect");
@@ -18,26 +40,28 @@ WidgetEffect getWidgetEffect(BuildContext context) {
 
   assert(context is Element, 'oref: The `context` must be an Element');
   final element = context as Element;
-  final prevScope = setCurrentScope(getWidgetScope(element).node);
-  final prevSub = setCurrentScope(null);
+  final scope = getWidgetScope(element);
 
-  try {
-    ReactiveNode? node;
-    final stop = effect(() {
-      node ??= getCurrentSub();
+  return scope.using(() {
+    final prevSub = setCurrentScope(null);
 
-      if (element.dirty) {
-        element.markNeedsBuild();
-      }
-    });
+    try {
+      ReactiveNode? node;
+      final stop = effect(() {
+        node ??= getCurrentSub();
 
-    assert(node != null, 'oref: Widget effect initialization failed');
-    final e = WidgetEffect(stop: stop, node: node!);
-    _store[element] = e;
+        if (element.dirty) {
+          element.markNeedsBuild();
+        }
+      });
 
-    return e;
-  } finally {
-    setCurrentScope(prevScope);
-    setCurrentSub(prevSub);
-  }
+      assert(node != null, 'oref: Widget effect initialization failed');
+      final e = WidgetEffect(stop: stop, node: node!);
+      _store[element] = e;
+
+      return e;
+    } finally {
+      setCurrentSub(prevSub);
+    }
+  });
 }

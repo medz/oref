@@ -1,10 +1,8 @@
 import 'package:alien_signals/alien_signals.dart' as alien;
 import 'package:flutter/widgets.dart';
+import 'package:oref/oref.dart';
 
-import 'memoized.dart';
-import 'widget_scope.dart';
-
-void Function() effectScope(
+void Function() effect(
   BuildContext context,
   void Function() run, {
   bool detach = false,
@@ -12,16 +10,20 @@ void Function() effectScope(
   return useMemoized(context, () {
     if (detach) {
       final prevScope = alien.setCurrentScope(null);
+      final prevSub = alien.setCurrentSub(null);
       try {
-        return alien.effectScope(run);
+        return alien.effect(run);
       } finally {
         alien.setCurrentScope(prevScope);
+        alien.setCurrentSub(prevSub);
       }
-    } else if (alien.getCurrentScope() != null) {
-      return alien.effectScope(run);
+    }
+
+    if (alien.getCurrentScope() != null) {
+      return alien.effect(run);
     }
 
     final scope = getWidgetScope(context);
-    return scope.using(() => alien.effectScope(run));
+    return scope.using(() => alien.effect(run));
   });
 }
