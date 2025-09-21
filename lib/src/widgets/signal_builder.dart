@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
 
 import '../core/computed.dart';
-import '../core/signal_build_context.dart';
+import '../utils/signal_build_context.dart';
 
 class SignalBuilder<T> extends StatelessWidget {
   const SignalBuilder({super.key, required this.getter, required this.builder});
