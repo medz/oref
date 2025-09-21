@@ -1,3 +1,7 @@
+## 2.0.0-dev.1
+
+Complete reconstruction
+
 ## v1.1.3
 
 - pref: Refactor binding system to use LinkedBindingNode hierarchy
