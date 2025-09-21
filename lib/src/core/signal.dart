@@ -12,10 +12,10 @@ T Function([T? value, bool nulls]) signal<T>(
   BuildContext context,
   T initialValue,
 ) {
-  final mask = useMemoized(context, () {
-    final signal = alien.signal<T>(initialValue);
-    return _Mask<T>(signal);
-  });
+  final mask = useMemoized(
+    context,
+    () => _Mask<T>(alien.signal<T>(initialValue)),
+  );
 
   return mask.signal;
 }

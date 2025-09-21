@@ -12,10 +12,6 @@ T Function() computed<T>(
   BuildContext context,
   T Function(T? previousValue) getter,
 ) {
-  final mask = useMemoized(context, () {
-    final computed = alien.computed<T>(getter);
-    return _Mask(computed);
-  });
-
+  final mask = useMemoized(context, () => _Mask(alien.computed<T>(getter)));
   return mask.computed;
 }
