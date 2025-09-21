@@ -1,1 +1,1 @@
-export 'src/memoized.dart' show useMemoized;
+export 'src/core/memoized.dart' show useMemoized;
