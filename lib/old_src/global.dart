@@ -15,19 +15,24 @@ T Function([T? value, bool nulls]) createGlobalSignal<T>(T initialValue) {
 
     final currentSub = getCurrentSub();
     final element = getCurrentContext();
-    if (element == null ||
-        (element is Element && !element.dirty) ||
-        currentSub != null ||
-        !shouldTriggerContextEffect) {
+    
+    // Only skip dependency tracking if already in a reactive context
+    if (currentSub != null) {
       return oper(value, nulls);
     }
-
-    try {
-      setCurrentSub(getContextEffect(element).node);
-      return oper(value, nulls);
-    } finally {
-      setCurrentSub(null);
+    
+    // If we have a context, set up dependency tracking
+    if (element != null) {
+      try {
+        setCurrentSub(getContextEffect(element).node);
+        return oper(value, nulls);
+      } finally {
+        setCurrentSub(null);
+      }
     }
+    
+    // No context available, just return the value
+    return oper(value, nulls);
   };
 }
 

@@ -20,19 +20,25 @@ class ExampleApp extends StatelessWidget {
   }
 }
 
-class Counter extends StatelessWidget {
+class Counter extends StatefulWidget {
   const Counter({super.key});
 
   @override
+  State<Counter> createState() => _CounterState();
+}
+
+class _CounterState extends State<Counter> {
+  int value = 0;
+
+  @override
   Widget build(BuildContext context) {
-    final count = useSignal(context, 0);
-    void increment() => count(count + 1);
+    final count = useMemoized(context, () => value);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Counter')),
-      body: Center(child: Text("Count: ${count()}")),
+      body: Center(child: Text("Count: $count")),
       floatingActionButton: FloatingActionButton(
-        onPressed: increment,
+        onPressed: () => setState(() => value++),
         child: const Icon(Icons.plus_one),
       ),
     );
