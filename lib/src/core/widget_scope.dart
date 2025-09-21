@@ -5,25 +5,29 @@ class WidgetScope {
   const WidgetScope({required this.stop, required this.node});
 
   final void Function() stop;
-  final ReactiveNode node;
+  final EffectScope node;
 }
 
-final _store = Expando<WidgetScope>("oref:widget scope");
+final _store = Expando<WidgetScope>("oref:widget effect scope");
 
 WidgetScope getWidgetScope(BuildContext context) {
   final cached = _store[context];
   if (cached != null) return cached;
 
-  late final ReactiveNode node;
-  final stop = effectScope(() {
-    final scope = getCurrentScope();
-    assert(scope != null, "WidgetScope must be created within a scope");
+  final prevScope = setCurrentScope(null);
+  try {
+    EffectScope? node;
+    final stop = effectScope(() {
+      node ??= getCurrentScope();
+    });
 
-    node = scope!;
-  });
+    assert(node != null, "oref: Widget scope initialization failed");
 
-  final scope = WidgetScope(stop: stop, node: node);
-  _store[context] = scope;
+    final scope = WidgetScope(stop: stop, node: node!);
+    _store[context] = scope;
 
-  return scope;
+    return scope;
+  } finally {
+    setCurrentScope(prevScope);
+  }
 }
