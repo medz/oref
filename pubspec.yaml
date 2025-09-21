@@ -22,7 +22,7 @@ workspace:
 dependencies:
   flutter:
     sdk: flutter
-  alien_signals: ^0.5.0
+  alien_signals: ^0.5.3
 
 dev_dependencies:
   flutter_test:
