@@ -24,20 +24,16 @@ class _Memoized<T> {
 final _store = Expando<_Memoized>("oref:memoized");
 
 T useMemoized<T>(BuildContext context, T Function() factory) {
-  final prev = _store[context], current = prev?.next;
+  final prev = _store[context] ??= _Memoized(value: '<root>'),
+      current = prev.next;
 
-  if (current == null &&
-      prev != null &&
-      prev.prev == null &&
-      prev.valueOf<T>()) {
-    return prev.value;
-  } else if (current != null && current.valueOf<T>()) {
+  if (current != null && current.valueOf<T>()) {
     _store[context] = current;
     return current.value;
   }
 
-  final memoized = _Memoized(value: factory(), prev: prev, head: prev?.head);
-  if (prev != null) prev.next = memoized;
+  final memoized = _Memoized(value: factory(), prev: prev, head: prev.head);
+  prev.next = memoized;
 
   _store[context] = memoized;
   return memoized.value;
