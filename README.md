@@ -18,11 +18,11 @@ The release of `alien_signals` completely changed Flutter's inefficient state ma
 class Counter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final count = useSignal(context, 0);
-    void increment() => count(count + 1);
+    final count = signal(context, 0);
+    void increment() => count(count() + 1);
 
     return Column(children: [
-      Text('Count: ${count()}'),
+      Text('Count: ${context.watch(count)}'),
       TextButton(
         onPressed: increment,
         child: Text('click me'),
