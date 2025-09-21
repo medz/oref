@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:oref/oref.dart';
-import 'package:alien_signals/alien_signals.dart'
-    show getCurrentScope, getCurrentSub;
 
 void main() {
   runApp(const ExampleApp());
@@ -29,13 +27,6 @@ class Counter extends StatelessWidget {
   Widget build(BuildContext context) {
     final count = signal(context, 0);
     void increment() => count(count() + 1);
-
-    final scope = getWidgetScope(context);
-    effect(context, () {
-      if (count() > 5) {
-        scope.stop();
-      }
-    });
 
     return Scaffold(
       appBar: AppBar(title: const Text('Counter')),
