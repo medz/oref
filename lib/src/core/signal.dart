@@ -5,13 +5,18 @@ import "memoized.dart";
 import "widget_effect.dart";
 import "widget_scope.dart";
 
+class _Mask<T> {
+  const _Mask(this.signal);
+  final T Function([T?, bool]) signal;
+}
+
 T Function([T? value, bool nulls]) signal<T>(
   BuildContext context,
   T initialValue,
 ) {
-  return useMemoized<T Function([T?, bool])>(context, () {
+  final mask = useMemoized(context, () {
     final signal = alien.signal<T>(initialValue);
-    return ([value, nulls = false]) {
+    return _Mask<T>(([value, nulls = false]) {
       if (value is T && (value != null || (value == null && nulls))) {
         return signal(value, nulls);
       }
@@ -31,6 +36,8 @@ T Function([T? value, bool nulls]) signal<T>(
       }
 
       return effect.scopedUsing(context, signal);
-    };
+    });
   });
+
+  return mask.signal;
 }

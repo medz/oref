@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:oref/oref.dart';
+import 'package:alien_signals/alien_signals.dart'
+    show getCurrentScope, getCurrentSub;
 
 void main() {
   runApp(const ExampleApp());
@@ -20,25 +22,26 @@ class ExampleApp extends StatelessWidget {
   }
 }
 
-class Counter extends StatefulWidget {
+class Counter extends StatelessWidget {
   const Counter({super.key});
 
   @override
-  State<Counter> createState() => _CounterState();
-}
-
-class _CounterState extends State<Counter> {
-  int value = 0;
-
-  @override
   Widget build(BuildContext context) {
-    final count = useMemoized(context, () => value);
+    final count = signal(context, 0);
+    void increment() => count(count() + 1);
+
+    final scope = getWidgetScope(context);
+    effect(context, () {
+      if (count() > 5) {
+        scope.stop();
+      }
+    });
 
     return Scaffold(
       appBar: AppBar(title: const Text('Counter')),
-      body: Center(child: Text("Count: $count")),
+      body: Center(child: Text("Count: ${count()}")),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => setState(() => value++),
+        onPressed: increment,
         child: const Icon(Icons.plus_one),
       ),
     );

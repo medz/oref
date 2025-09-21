@@ -22,26 +22,8 @@ class _Memoized<T> {
 }
 
 final _store = Expando<_Memoized>("oref:memoized");
-final _ticks = Expando<int>("oref:tikes");
-
-BuildContext? _activeContext;
-
-// BuildContext? getCurrentContext() => _activeContext;
-// BuildContext? setCurrentContext(BuildContext? context) {
-//   final prevContext = _activeContext;
-//   _activeContext = context;
-//   return prevContext;
-// }
 
 T useMemoized<T>(BuildContext context, T Function() factory) {
-  final prevTick = _ticks[context] ??= 0;
-  final tick = _tick(context);
-
-  if (prevTick != tick) {
-    _store[context] = _store[context]?.head;
-  }
-
-  _activeContext = context;
   final prev = _store[context], current = prev?.next;
 
   if (current == null &&
@@ -49,9 +31,7 @@ T useMemoized<T>(BuildContext context, T Function() factory) {
       prev.prev == null &&
       prev.valueOf<T>()) {
     return prev.value;
-  }
-
-  if (current != null && current.valueOf<T>()) {
+  } else if (current != null && current.valueOf<T>()) {
     _store[context] = current;
     return current.value;
   }
@@ -63,9 +43,6 @@ T useMemoized<T>(BuildContext context, T Function() factory) {
   return memoized.value;
 }
 
-int _tick(BuildContext context) {
-  final tick = _ticks[context] ??= 0;
-
-  if (context == _activeContext) return tick;
-  return _ticks[context] = tick + 1;
+void resetMemoized(BuildContext context) {
+  _store[context] = _store[context]?.head;
 }

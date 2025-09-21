@@ -1,6 +1,7 @@
 import 'package:alien_signals/alien_signals.dart';
 import 'package:flutter/widgets.dart';
 
+import 'memoized.dart';
 import 'widget_scope.dart';
 
 class WidgetEffect {
@@ -19,10 +20,6 @@ class WidgetEffect {
   }
 
   T using<T>(T Function() run) {
-    if (getCurrentSub() != null) {
-      return run();
-    }
-
     final prevSub = setCurrentSub(node);
     try {
       return run();
@@ -43,14 +40,15 @@ WidgetEffect getWidgetEffect(BuildContext context) {
   final scope = getWidgetScope(element);
 
   return scope.using(() {
-    final prevSub = setCurrentScope(null);
+    final prevSub = setCurrentSub(null);
 
     try {
       ReactiveNode? node;
       final stop = effect(() {
         node ??= getCurrentSub();
 
-        if (element.dirty) {
+        if (!element.dirty) {
+          resetMemoized(element);
           element.markNeedsBuild();
         }
       });

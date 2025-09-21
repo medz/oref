@@ -5,13 +5,18 @@ import "memoized.dart";
 import "widget_effect.dart";
 import "widget_scope.dart";
 
+final class _Mask<T> {
+  const _Mask(this.computed);
+  final T Function() computed;
+}
+
 T Function() computed<T>(
   BuildContext context,
   T Function(T? previousValue) getter,
 ) {
-  return useMemoized<T Function()>(context, () {
+  final mask = useMemoized(context, () {
     final computed = alien.computed<T>(getter);
-    return () {
+    return _Mask(() {
       if (alien.getCurrentSub() != null) {
         if (alien.getCurrentScope() != null) {
           return computed();
@@ -27,6 +32,8 @@ T Function() computed<T>(
       }
 
       return effect.scopedUsing(context, computed);
-    };
+    });
   });
+
+  return mask.computed;
 }

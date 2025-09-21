@@ -4,17 +4,22 @@ import 'package:flutter/widgets.dart';
 import 'memoized.dart';
 import 'widget_scope.dart';
 
+final class _Mask {
+  const _Mask(this.stop);
+  final void Function() stop;
+}
+
 void Function() effect(
   BuildContext context,
   void Function() run, {
   bool detach = false,
 }) {
-  return useMemoized(context, () {
+  final mask = useMemoized(context, () {
     if (detach) {
       final prevScope = alien.setCurrentScope(null);
       final prevSub = alien.setCurrentSub(null);
       try {
-        return alien.effect(run);
+        return _Mask(alien.effect(run));
       } finally {
         alien.setCurrentScope(prevScope);
         alien.setCurrentSub(prevSub);
@@ -22,10 +27,12 @@ void Function() effect(
     }
 
     if (alien.getCurrentScope() != null) {
-      return alien.effect(run);
+      return _Mask(alien.effect(run));
     }
 
     final scope = getWidgetScope(context);
-    return scope.using(() => alien.effect(run));
+    return scope.using(() => _Mask(alien.effect(run)));
   });
+
+  return mask.stop;
 }
