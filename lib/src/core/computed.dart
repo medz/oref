@@ -5,32 +5,28 @@ import "memoized.dart";
 import "widget_effect.dart";
 import "widget_scope.dart";
 
-T Function([T? value, bool nulls]) signal<T>(
+T Function() computed<T>(
   BuildContext context,
-  T initialValue,
+  T Function(T? previousValue) getter,
 ) {
-  return useMemoized<T Function([T?, bool])>(context, () {
-    final signal = alien.signal<T>(initialValue);
-    return ([value, nulls = false]) {
-      if (value is T && (value != null || (value == null && nulls))) {
-        return signal(value, nulls);
-      }
-
+  return useMemoized<T Function()>(context, () {
+    final computed = alien.computed<T>(getter);
+    return () {
       if (alien.getCurrentSub() != null) {
         if (alien.getCurrentScope() != null) {
-          return signal();
+          return computed();
         }
 
         final scope = getWidgetScope(context);
-        return scope.using(signal);
+        return scope.using(computed);
       }
 
       final effect = getWidgetEffect(context);
       if (alien.getCurrentScope() != null) {
-        return effect.using(signal);
+        return effect.using(computed);
       }
 
-      return effect.scopedUsing(context, signal);
+      return effect.scopedUsing(context, computed);
     };
   });
 }

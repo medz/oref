@@ -26,6 +26,13 @@ final _ticks = Expando<int>("oref:tikes");
 
 BuildContext? _activeContext;
 
+// BuildContext? getCurrentContext() => _activeContext;
+// BuildContext? setCurrentContext(BuildContext? context) {
+//   final prevContext = _activeContext;
+//   _activeContext = context;
+//   return prevContext;
+// }
+
 T useMemoized<T>(BuildContext context, T Function() factory) {
   final prevTick = _ticks[context] ??= 0;
   final tick = _tick(context);

@@ -9,16 +9,16 @@ class WidgetEffect {
   final void Function() stop;
   final ReactiveNode node;
 
-  T using<T>(BuildContext context, T Function() run) {
+  T scopedUsing<T>(BuildContext context, T Function() run) {
     if (getCurrentScope() != null) {
-      return _reuse(context, run);
+      return using(run);
     }
 
     final scope = getWidgetScope(context);
-    return scope.using(() => _reuse(context, run));
+    return scope.using(() => using(run));
   }
 
-  T _reuse<T>(BuildContext context, T Function() run) {
+  T using<T>(T Function() run) {
     if (getCurrentSub() != null) {
       return run();
     }
