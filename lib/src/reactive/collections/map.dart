@@ -1,11 +1,18 @@
 import 'dart:collection';
 
+import 'package:flutter/widgets.dart';
+
+import '../../core/memoized.dart';
 import '../reactive.dart';
 
 class ReactiveMap<K, V> extends MapBase<K, V>
     with Reactive<ReactiveMap<K, V>>
     implements Map<K, V> {
-  ReactiveMap._(this._source);
+  ReactiveMap.global(Map<K, V> source) : _source = source;
+
+  factory ReactiveMap(BuildContext context, Map<K, V> source) {
+    return useMemoized(context, () => ReactiveMap.global(source));
+  }
 
   final Map<K, V> _source;
 

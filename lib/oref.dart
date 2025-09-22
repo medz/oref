@@ -6,6 +6,11 @@ export 'src/core/signal.dart' show signal;
 export 'src/core/widget_effect.dart' show useWidgetEffect, WidgetEffect;
 export 'src/core/widget_scope.dart' show useWidgetScope, WidgetScope;
 
+export 'src/reactive/reactive.dart' show Reactive;
+export 'src/reactive/collections/list.dart' show ReactiveList;
+export 'src/reactive/collections/map.dart' show ReactiveMap;
+export 'src/reactive/collections/set.dart' show ReactiveSet;
+
 export 'src/utils/batch.dart' show batch;
 export 'src/utils/global_signals.dart' show GlobalSignals;
 export 'src/utils/ref.dart' show Ref, StateRef, WidgetRef;

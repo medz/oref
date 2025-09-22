@@ -1,11 +1,20 @@
 import 'dart:collection';
 
+import 'package:flutter/widgets.dart';
+
+import '../../core/memoized.dart';
 import '../reactive.dart';
 
 class ReactiveSet<T> extends SetBase<T>
     with Reactive<ReactiveSet<T>>
     implements Set<T> {
   ReactiveSet._(this._source);
+
+  ReactiveSet.global(Iterable<T> elements) : this._(Set.from(elements));
+
+  factory ReactiveSet(BuildContext context, Iterable<T> elements) {
+    return useMemoized(context, () => ReactiveSet.global(elements));
+  }
 
   final Set<T> _source;
 
