@@ -23,6 +23,17 @@ class _Memoized<T> {
 
 final _store = Expando<_Memoized>("oref:memoized");
 
+/// Memoizes a value for the given context.
+///
+/// The factory function is called only once per context, and the result is
+/// cached for future use.
+///
+/// The memoized value can be reset by calling [resetMemoizedFor].
+///
+/// ## Usage
+/// ```dart
+/// final value = useMemoized(context, () => expensiveComputation());
+/// ```
 T useMemoized<T>(BuildContext context, T Function() factory) {
   final prev = _store[context] ??= _Memoized(value: '<root>'),
       current = prev.next;
@@ -39,6 +50,9 @@ T useMemoized<T>(BuildContext context, T Function() factory) {
   return memoized.value;
 }
 
+/// Resets the memoized value for the given context.
+///
+/// This will cause the next call to [useMemoized] to recompute the value.
 void resetMemoizedFor(BuildContext context) {
   _store[context] = _store[context]?.head;
 }
