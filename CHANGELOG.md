@@ -1,3 +1,7 @@
+## 2.0.1
+
+- Fix `ReactiveList.add` implementation for non-nullable elements
+
 ## 2.0.0
 
 ### 💥 BREAKING CHANGES
