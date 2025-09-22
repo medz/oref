@@ -22,14 +22,8 @@ class _Memoized<T> {
 }
 
 final _store = Expando<_Memoized>("oref:memoized");
-late Element activeElement;
 
 T useMemoized<T>(BuildContext context, T Function() factory) {
-  assert(context is Element, 'oref: The `context` must be an Element');
-  activeElement = context as Element;
-
-  assert(activeElement.dirty, "oref: Wrong use of memoization!");
-
   final prev = _store[context] ??= _Memoized(value: '<root>'),
       current = prev.next;
 

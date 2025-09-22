@@ -17,7 +17,7 @@ T Function([T? value, bool nulls]) signal<T>(
   final mask = useMemoized(context, () {
     final signal = alien.signal<T>(initialValue);
     return _Mask<T>(([value, nulls = false]) {
-      if (alien.getCurrentSub() == null && activeElement.dirty) {
+      if (alien.getCurrentSub() == null && (context as Element).dirty) {
         return effect.using(() => signal(value, nulls));
       }
 
