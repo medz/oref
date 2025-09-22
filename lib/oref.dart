@@ -6,7 +6,9 @@ export 'src/core/signal.dart' show signal;
 export 'src/core/widget_effect.dart' show useWidgetEffect, WidgetEffect;
 export 'src/core/widget_scope.dart' show useWidgetScope, WidgetScope;
 
+export 'src/utils/batch.dart' show batch;
 export 'src/utils/ref.dart' show Ref, StateRef, WidgetRef;
 export 'src/utils/signal_build_context.dart' show SignalBuildContext;
+export 'src/utils/untrack.dart' show untrack;
 
 export 'src/widgets/signal_builder.dart' show SignalBuilder;
