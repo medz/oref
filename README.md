@@ -22,7 +22,7 @@ class Counter extends StatelessWidget {
     void increment() => count(count() + 1);
 
     return Column(children: [
-      Text('Count: ${context.watch(count)}'),
+      Text('Count: ${count()}'),
       TextButton(
         onPressed: increment,
         child: Text('click me'),
