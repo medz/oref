@@ -37,12 +37,9 @@ WidgetEffect useWidgetEffect(BuildContext context) {
       ReactiveNode? node;
       final stop = effect(() {
         node ??= getCurrentSub();
+        resetMemoizedFor(element);
 
         if (!element.dirty) {
-          WidgetsBinding.instance.addPostFrameCallback((duration) async {
-            await Future.delayed(duration);
-            resetMemoized(element);
-          });
           element.markNeedsBuild();
         }
       });
