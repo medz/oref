@@ -19,7 +19,7 @@ class WidgetScope {
 
 final _store = Expando<WidgetScope>("oref:widget effect scope");
 
-WidgetScope getWidgetScope(BuildContext context) {
+WidgetScope useWidgetScope(BuildContext context) {
   final cached = _store[context];
   if (cached != null) return cached;
 

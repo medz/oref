@@ -22,13 +22,13 @@ class WidgetEffect {
 
 final _store = Expando<WidgetEffect>("oref:widget effect");
 
-WidgetEffect getWidgetEffect(BuildContext context) {
+WidgetEffect useWidgetEffect(BuildContext context) {
   final cached = _store[context];
   if (cached != null) return cached;
 
   assert(context is Element, 'oref: The `context` must be an Element');
   final element = context as Element;
-  final scope = getWidgetScope(element);
+  final scope = useWidgetScope(element);
 
   return scope.using(() {
     final prevSub = setCurrentSub(null);

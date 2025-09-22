@@ -30,7 +30,7 @@ void Function() effect(
       return _Mask(alien.effect(run));
     }
 
-    final scope = getWidgetScope(context);
+    final scope = useWidgetScope(context);
     return scope.using(() => _Mask(alien.effect(run)));
   });
 

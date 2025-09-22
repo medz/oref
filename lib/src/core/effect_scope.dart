@@ -26,7 +26,7 @@ void Function() effectScope(
       return _Mask(alien.effectScope(run));
     }
 
-    final scope = getWidgetScope(context);
+    final scope = useWidgetScope(context);
     return scope.using(() => _Mask(alien.effectScope(run)));
   });
 
