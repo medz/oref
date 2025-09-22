@@ -44,4 +44,13 @@ class ReactiveList<T> extends ListBase<T>
     _source[index] = value;
     trigger();
   }
+
+  @override
+  void add(T element) {
+    /// Bug - `ListBase.add`: This implementation only works for lists which allow `null` as element.
+    ///
+    /// So we directly operate on the source.
+    _source.add(element);
+    trigger();
+  }
 }
