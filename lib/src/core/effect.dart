@@ -9,6 +9,31 @@ final class _Mask {
   final void Function() stop;
 }
 
+/// {@template oref.effect}
+/// Creates a reactive effect that automatically tracks its dependencies and re-runs when they change.
+///
+/// An effect is a reactive computation that automatically tracks any reactive values (signals or computed values)
+/// accessed during its execution. The effect will re-run whenever any of its tracked dependencies change.
+///
+/// The [run] function will be executed:
+/// 1. Immediately when the effect is created
+/// 2. Whenever any of its tracked dependencies change
+///
+/// Returns a cleanup function that can be called to dispose of the effect and stop tracking.
+/// {@endtemplate}
+///
+/// Example:
+/// ```dart
+/// final count = signal(context, 0);
+/// final stop = effect(context, () {
+///   print(count());
+/// }); // Print 0
+///
+/// count(1); // Print 1
+///
+/// stop();
+/// count(2); // No output
+/// ```
 void Function() effect(
   BuildContext context,
   void Function() run, {

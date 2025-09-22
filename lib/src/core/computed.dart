@@ -9,6 +9,31 @@ final class _Mask<T> {
   final T Function() computed;
 }
 
+/// {@template oref.computed}
+/// Creates a reactive computed value that automatically tracks its dependencies.
+/// {@endtemplate}
+///
+/// Example:
+/// ```dart
+/// class DoubleCounter extends StatelessWidget {
+///     Widget build() {
+///         final count = signal(context, 0);
+///         final doubleCount = computed(context, () => count() * 2);
+///
+///         void increment() => count(count() + 1);
+///
+///         return Column(
+///             children: [
+///                 Text("${doubleCount()}"),
+///                 TextButton(
+///                     onPressed: increment,
+///                     child: const Text("Increment"),
+///                 ),
+///             ],
+///         );
+///     }
+/// }
+/// ```
 T Function() computed<T>(
   BuildContext context,
   T Function(T? previousValue) getter,

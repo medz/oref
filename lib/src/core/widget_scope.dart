@@ -1,7 +1,21 @@
 import 'package:alien_signals/alien_signals.dart';
 import 'package:flutter/widgets.dart';
 
+/// Widget effect scope.
+///
+/// {@template oref.widget-scope}
+/// This class provides a way to manage the effect scope of a widget.
+///
+/// Example:
+/// ```dart
+/// final scope = useWidgetScope(context);
+/// final scope.stop(); // Stop all effects of widget.
+/// ```
+/// {@endtemplate}
 class WidgetScope {
+  /// Create a new widget scope.
+  ///
+  /// {@macro oref.widget-scope}
   const WidgetScope({required this.stop, required this.effectScope});
 
   final void Function() stop;

@@ -5,15 +5,18 @@ import 'package:flutter/widgets.dart';
 import '../../core/memoized.dart';
 import '../reactive.dart';
 
+/// A reactive set that tracks changes to its elements.
 class ReactiveSet<T> extends SetBase<T>
     with Reactive<ReactiveSet<T>>
     implements Set<T> {
   ReactiveSet._(this._source);
 
-  ReactiveSet.global(Iterable<T> elements) : this._(Set.from(elements));
+  /// Creates a new reactive set with the given elements.
+  ReactiveSet(Iterable<T> elements) : this._(Set.from(elements));
 
-  factory ReactiveSet(BuildContext context, Iterable<T> elements) {
-    return useMemoized(context, () => ReactiveSet.global(elements));
+  /// Creates a new reactive set with the given elements, scoped to the given context.
+  factory ReactiveSet.scoped(BuildContext context, Iterable<T> elements) {
+    return useMemoized(context, () => ReactiveSet(elements));
   }
 
   final Set<T> _source;

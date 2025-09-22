@@ -30,7 +30,7 @@ final _store = Expando<_Memoized>("oref:memoized");
 ///
 /// The memoized value can be reset by calling [resetMemoizedFor].
 ///
-/// ## Usage
+/// Example:
 /// ```dart
 /// final value = useMemoized(context, () => expensiveComputation());
 /// ```

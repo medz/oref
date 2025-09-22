@@ -5,13 +5,16 @@ import 'package:flutter/widgets.dart';
 import '../../core/memoized.dart';
 import '../reactive.dart';
 
+/// A reactive map that tracks changes to its source map.
 class ReactiveMap<K, V> extends MapBase<K, V>
     with Reactive<ReactiveMap<K, V>>
     implements Map<K, V> {
-  ReactiveMap.global(Map<K, V> source) : _source = source;
+  /// Creates a new [ReactiveMap]
+  ReactiveMap(Map<K, V> source) : _source = source;
 
-  factory ReactiveMap(BuildContext context, Map<K, V> source) {
-    return useMemoized(context, () => ReactiveMap.global(source));
+  /// Creates a widget scoped [ReactiveMap].
+  factory ReactiveMap.scoped(BuildContext context, Map<K, V> source) {
+    return useMemoized(context, () => ReactiveMap(source));
   }
 
   final Map<K, V> _source;

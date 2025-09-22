@@ -5,15 +5,18 @@ import 'package:flutter/widgets.dart';
 import '../../core/memoized.dart';
 import '../reactive.dart';
 
+/// A reactive [List] implementation.
 class ReactiveList<T> extends ListBase<T>
     with Reactive<ReactiveList<T>>
     implements List<T> {
   ReactiveList._(this._source);
 
-  ReactiveList.global(Iterable<T> elements) : this._(List.from(elements));
+  /// Create a new [ReactiveList] instance.
+  ReactiveList(Iterable<T> elements) : this._(List.from(elements));
 
-  factory ReactiveList(BuildContext context, Iterable<T> elements) {
-    return useMemoized(context, () => ReactiveList.global(elements));
+  /// Created a widget scoped [ReactiveList] instance.
+  factory ReactiveList.scoped(BuildContext context, Iterable<T> elements) {
+    return useMemoized(context, () => ReactiveList(elements));
   }
 
   final List<T> _source;
