@@ -4,13 +4,11 @@
 
 # Oref
 
-A high-performance Flutter state management tool built with [`alien_signals`](https://github.com/medz/alien-signals-dart), Oref is one of the fastest Flutter signals and state management solutions<sup>the other being [Solidart](https://github.com/nank1ro/solidart)</sup>.
+A high-performance Flutter state management tool built with [`alien_signals`](https://github.com/medz/alien-signals-dart), Oref is one of the fastest Flutter signals and state management solutions. - <sup>the other being [Solidart](https://github.com/nank1ro/solidart)</sup>.
 
 ## Overview
 
 Much of the pain in state management in Dart & Flutter comes from reacting to changes in given values, because the values themselves are not directly observable. We have to use `StatefulWidget` or other state management tools for state, which use inefficient proactive notifications or a large number of watchers to notify widgets to rebuild, and the boilerplate code is very redundant.
-
-Fortunately, there were later pioneers like `signals` built by [Rody Davis](https://github.com/rodydavis) and `Solidart` by [Alexandru Mariuti](https://github.com/nank1ro) who first brought signals to Flutter. However, they also faced a problem: requiring developers to abandon `StatelessWidget` and adopt their specific base classes or watchers.
 
 The release of `alien_signals` completely changed Flutter's inefficient state management situation, but Flutter state libraries still require a lot of boilerplate code! Oref completely changes this situation. In Flutter, when a Widget accesses a signal value, if that signal's value changes, the Widget is automatically rebuilt.
 
