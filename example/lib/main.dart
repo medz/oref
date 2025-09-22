@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:oref/oref.dart';
 
+import 'permanent_counter.dart';
 import 'todo.dart';
 
 void main() {
@@ -21,6 +22,7 @@ class ExampleApp extends StatelessWidget {
       routes: {
         "counter": (_) => const Counter(),
         "todo": (_) => const TodoApp(),
+        "permanent-counter": (_) => const PermanentCounter(),
       },
     );
   }
@@ -52,6 +54,16 @@ class Counter extends StatelessWidget {
             trailing: IconButton(
               icon: const Icon(Icons.chevron_right),
               onPressed: () => Navigator.of(context).pushNamed('todo'),
+            ),
+          ),
+          const Divider(),
+          ListTile(
+            title: const Text('Permanent Counter'),
+            subtitle: const Text('Store count across sessions'),
+            trailing: IconButton(
+              icon: const Icon(Icons.chevron_right),
+              onPressed: () =>
+                  Navigator.of(context).pushNamed('permanent-counter'),
             ),
           ),
         ],
