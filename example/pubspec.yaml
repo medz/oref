@@ -31,7 +31,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  oref: ^2.0.0-dev.1
+  oref: ^2.0.0
 
 dev_dependencies:
   flutter_test:
