@@ -2,22 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:oref/oref.dart';
 
-Widget counter(BuildContext context) {
-  final count = signal(context, 0);
-  return Column(
-    children: [
-      Text("${count()}"),
-      TextButton(
-        child: const Text("increment"),
-        onPressed: () => count(count() + 1),
-      ),
-    ],
-  );
-}
-
 void main() {
   testWidgets("track in widget", (tester) async {
-    await tester.pumpWidget(MaterialApp(home: const Builder(builder: counter)));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (BuildContext context) {
+            final count = signal(context, 0);
+            return Column(
+              children: [
+                Text("${count()}"),
+                TextButton(
+                  child: const Text("increment"),
+                  onPressed: () => count(count() + 1),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
 
     expect(find.text('0'), findsOneWidget);
 
