@@ -13,7 +13,7 @@ Status: Unreleased
 
 ## 2.0.2
 
-Status: Unreleased
+Status: Released (2025-09-23)
 
 ### ✨ NEW FEATURES
 
