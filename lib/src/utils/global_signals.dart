@@ -1,6 +1,12 @@
-import 'package:alien_signals/alien_signals.dart' as alien;
+import '../core/signal.dart' as core;
+import '../core/computed.dart' as core;
+import '../core/effect.dart' as core;
+import '../core/effect_scope.dart' as core;
+
+T _infer<T>(T input) => input;
 
 /// Global signal utilities.
+@Deprecated('Use `alien` directly')
 base class GlobalSignals {
   const GlobalSignals._();
 
@@ -8,32 +14,42 @@ base class GlobalSignals {
   ///
   /// Example:
   /// ```dart
-  /// final count = GlobalSignals.create(0);
+  /// final count = signal(null, 0);
   /// ```
-  static const create = alien.signal;
+  @Deprecated('Remove in 2.1 version, Use `signal` instead')
+  static final create = _infer(
+    <T>(T initialValue) => core.signal(null, initialValue),
+  );
 
   /// {@macro oref.computed}
   ///
   /// Example:
   /// ```dart
-  /// final count = GlobalSignals.create(0);
-  /// final double = GlobalSignals.computed(() => count() * 2);
+  /// final count = signal(null, 0);
+  /// final double = computed((_) => count() * 2);
   /// ```
-  static const computed = alien.computed;
+  @Deprecated('Remove in 2.1 version, Use `computed` instead')
+  static final computed = _infer(
+    <T>(T Function(T?) getter) => core.computed(null, getter),
+  );
 
   /// {@macro oref.effect}
   ///
   /// Example:
   /// ```dart
-  /// final count = GlobalSignals.create(0);
-  /// GlobalSignals.effect(() {
+  /// final count = signal(null, 0);
+  /// effect(() {
   ///   print('Count changed: ${count()}');
   /// });
   ///
   /// count(1);
   /// ```
-  static const effect = alien.effect;
+  @Deprecated('Remove in 2.1 version, Use `effect` instead')
+  static final effect = _infer((void Function() run) => core.effect(null, run));
 
   /// {@macro oref.effect-scope}
-  static const effectScope = alien.effectScope;
+  @Deprecated('Remove in 2.1 version, Use `effectScope` instead')
+  static final effectScope = _infer(
+    (void Function() run) => core.effectScope(null, run),
+  );
 }
