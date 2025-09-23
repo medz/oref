@@ -89,6 +89,7 @@ Now, `signal`/`computed`/`effect`/`effectScope` make reactive primitives
 ### 🔧 IMPROVEMENTS
 
 - Deprecate GlobalSignals in favor of direct imports
+- Fixed widgets being unmounted still triggering effects.
 
 ## 2.0.1
 
