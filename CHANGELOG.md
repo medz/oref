@@ -11,66 +11,44 @@ Status: Unreleased
 - `GlobalSignals.effect(callback)` -> `effect(null, callback)`
 - `GlobalSignals.effectScope(callback)` -> `effectScope(null, callback)`
 
-#### Widget Reference API Refactor
+#### Remove Widget Reference
 
-- Remove `useRef` -> `ref`
-- Remove `WidgetRef<T>` and `StateRef<T>` extensions
-- Refactor `Ref<T>` from concrete class to abstract interface
+The widget reference system was overly complex and unnecessary since widgets
+already handle their own context and props naturally.
 
-```diff
-// Before, in any widgets:
--final ref = useRef(context);
-
-// Before, in StatefullWidget state:
--final ref = useRef();
-
-// Now
-+final itself = ref<MyWidget>(context);
-```
-
-### ✨ NEW FEATURES
-
-#### New Widget Reference System
-
-`ref<T>(BuildContext context)`**: New top-level function replacing useRef.
-
-StatefulWidget Enhancement:
+Direct access to widget properties is now used instead of the ref abstraction.
 
 ```dart
-/// Stateless
-class SayHello extends StatelessWidget {
+class MyWidget extends StatelessWidget {
+  MyWidget({super.key, required this.name})
+
   final String name;
 
+  @override
   Widget build(BuildContext context) {
-    final itself = ref<MyWidget>(context).infer(this);
-
-    effect(() {
-      print('Hello, ${itself.widget.name}!');
+-    final ref = useRef(context);
+    effect(context, () {
+-      print(ref.widget.name);
++      print(name)
     });
-
     //...
   }
 }
 
-/// Statefull
-class Say extends StatefulWidget {
+class MyWidget2 extends StatefulWidget {
   final String name;
 
-  State<Say> createState() => _SayState(this);
+  createState() => MyState2(this);
 }
 
-class _SayState extends State<Say> {
-  int age = 18;
-
+class MyState2 extends State<MyWidget2> {
   @override
   Widget build(BuildContext context) {
-    final itself = ref<_SayState>(context).infer(this);
-
-    effect(() {
-      print('Hello, ${itself.widget.name}!');
-      print('Age: ${itself.state.age}');
+-    final ref = useRef();
+    effect(context, () {
+-     print(ref.widget.name);
++     print(name)
     });
-
     //...
   }
 }
