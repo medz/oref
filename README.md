@@ -1,6 +1,7 @@
 [![Oref testing](https://github.com/medz/oref/actions/workflows/test.yml/badge.svg)](https://github.com/medz/oref/actions/workflows/test.yml)
 [![Oref version](https://img.shields.io/pub/v/oref)](https://pub.dev/packages/oref)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/medz/oref)
 
 # Oref
 
