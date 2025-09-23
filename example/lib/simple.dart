@@ -11,8 +11,22 @@ class Counter extends StatelessWidget {
 
     return Column(
       children: [
-        // Only rebuild when count changes
-        SignalBuilder(builder: (_) => Text("Count: ${count()}")),
+        // Only rebuild the `Text` widget when count changes
+
+        // First way
+        SignalBuilder(builder: (_) => Text('Count: ${count()}')),
+
+        // Second way
+        Builder(builder: (context) => Text('Count: ${watch(context, count)}')),
+
+        // Third way
+        Builder(
+          builder: (context) {
+            final effect = useWidgetEffect(context);
+            return effect.using(() => Text("Count: ${count()}"));
+          },
+        ),
+
         TextButton(onPressed: increment, child: const Text('Increment')),
       ],
     );
