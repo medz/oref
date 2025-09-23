@@ -1,3 +1,38 @@
+## 2.1.0
+
+Status: Unreleased
+
+### 💥 BREAKING CHANGES
+
+#### Remove `GlobalSignals.*` APIs
+
+- `GlobalSignals.create(value)` -> `signal(null, value)`
+- `GlobalSignals.computed(getter)` -> `computed(null, getter)`
+- `GlobalSignals.effect(callback)` -> `effect(null, callback)`
+- `GlobalSignals.effectScope(callback)` -> `effectScope(null, callback)`
+
+## 2.0.2
+
+Status: Unreleased
+
+### ✨ NEW FEATURES
+
+#### Reactive Primitives
+
+Now, `signal`/`computed`/`effect`/`effectScope` make reactive primitives
+
+```dart
+// After
+final count = GlobalSignals.create(0);
+
+// Now
+final count = signal(null, 0);
+```
+
+### 🔧 IMPROVEMENTS
+
+- Deprecate GlobalSignals in favor of direct imports
+
 ## 2.0.1
 
 - Fix `ReactiveList.add` implementation for non-nullable elements
