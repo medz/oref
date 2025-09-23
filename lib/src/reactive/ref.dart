@@ -36,20 +36,10 @@ extension StatefulWidgetRef<T extends StatefulWidget, S extends State<T>>
 }
 
 ({Ref<T, S> Function<S>(S) infer}) ref<T extends Widget>(BuildContext context) {
-  final effect = useWidgetEffect(context);
-  assert(
-    effect.node == getCurrentSub(),
-    'The `ref` is only allowed to be used at the top level of `Widget.build`',
-  );
-
   return useMemoized(
     context,
     () => (
       infer: <S>(S state) {
-        assert(
-          effect.node == getCurrentSub(),
-          'The infer is only allowed to be used at the top level of `Widget.build`',
-        );
         assert(
           state is Widget || state is State,
           'Invalid infer type ${state.runtimeType}, expected State<$T> or $T',
