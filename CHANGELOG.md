@@ -18,7 +18,7 @@ already handle their own context and props naturally.
 
 Direct access to widget properties is now used instead of the ref abstraction.
 
-```dart
+```diff
 class MyWidget extends StatelessWidget {
   MyWidget({super.key, required this.name})
 
@@ -46,8 +46,8 @@ class MyState2 extends State<MyWidget2> {
   Widget build(BuildContext context) {
 -    final ref = useRef();
     effect(context, () {
--     print(ref.widget.name);
-+     print(name)
+-      print(ref.widget.name);
++      print(name)
     });
     //...
   }
