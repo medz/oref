@@ -35,9 +35,13 @@ final class _Mask<T> {
 /// }
 /// ```
 T Function() computed<T>(
-  BuildContext context,
+  BuildContext? context,
   T Function(T? previousValue) getter,
 ) {
+  if (context == null) {
+    return alien.computed(getter);
+  }
+
   final effect = useWidgetEffect(context);
   final mask = useMemoized(context, () {
     final computed = alien.computed(getter);

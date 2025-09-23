@@ -26,9 +26,13 @@ class _Mask<T> {
 /// count(1); // set value
 /// ```
 T Function([T? value, bool nulls]) signal<T>(
-  BuildContext context,
+  BuildContext? context,
   T initialValue,
 ) {
+  if (context == null) {
+    return alien.signal(initialValue);
+  }
+
   final effect = useWidgetEffect(context);
   final mask = useMemoized(context, () {
     final signal = alien.signal<T>(initialValue);

@@ -35,10 +35,23 @@ final class _Mask {
 /// count(2); // No output
 /// ```
 void Function() effect(
-  BuildContext context,
+  BuildContext? context,
   void Function() run, {
   bool detach = false,
 }) {
+  if (context == null && !detach) {
+    return alien.effect(run);
+  } else if (context == null) {
+    final prevScope = alien.setCurrentScope(null);
+    final prevSub = alien.setCurrentSub(null);
+    try {
+      return alien.effect(run);
+    } finally {
+      alien.setCurrentScope(prevScope);
+      alien.setCurrentSub(prevSub);
+    }
+  }
+
   final mask = useMemoized(context, () {
     if (detach) {
       final prevScope = alien.setCurrentScope(null);
