@@ -66,6 +66,10 @@ WidgetEffect useWidgetEffect(BuildContext context) {
     try {
       ReactiveNode? node;
       final stop = effect(() {
+        if (!context.mounted) {
+          return scope.stop();
+        }
+
         node ??= getCurrentSub();
         resetMemoizedFor(element);
 
