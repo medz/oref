@@ -11,6 +11,76 @@ Status: Unreleased
 - `GlobalSignals.effect(callback)` -> `effect(null, callback)`
 - `GlobalSignals.effectScope(callback)` -> `effectScope(null, callback)`
 
+#### Widget Reference API Refactor
+
+- Remove `useRef` -> `ref`
+- Remove `WidgetRef<T>` and `StateRef<T>` extensions
+- Refactor `Ref<T>` from concrete class to abstract interface
+
+```diff
+// Before, in any widgets:
+-final ref = useRef(context);
+
+// Before, in StatefullWidget state:
+-final ref = useRef();
+
+// Now
++final itself = ref<MyWidget>(context);
+```
+
+### ✨ NEW FEATURES
+
+#### New Widget Reference System
+
+`ref<T>(BuildContext context)`**: New top-level function replacing useRef.
+
+StatefulWidget Enhancement:
+
+```dart
+/// Stateless
+class SayHello extends StatelessWidget {
+  final String name;
+
+  Widget build(BuildContext context) {
+    final itself = ref<MyWidget>(context).infer(this);
+
+    effect(() {
+      print('Hello, ${itself.widget.name}!');
+    });
+
+    //...
+  }
+}
+
+/// Statefull
+class Say extends StatefulWidget {
+  final String name;
+
+  State<Say> createState() => _SayState(this);
+}
+
+class _SayState extends State<Say> {
+  int age = 18;
+
+  @override
+  Widget build(BuildContext context) {
+    final itself = ref<_SayState>(context).infer(this);
+
+    effect(() {
+      print('Hello, ${itself.widget.name}!');
+      print('Age: ${itself.state.age}');
+    });
+
+    //...
+  }
+}
+```
+
+### 🔧 IMPROVEMENTS
+
+- Enhanced type safety: New internal implementations `_GeneralRef` and `_StatefulRef`
+- Improved performance: Optimized ref creation and update logic, reducing unnecessary rebuilds
+
 ## 2.0.2
 
 Status: Released (2025-09-23)
@@ -21,12 +91,12 @@ Status: Released (2025-09-23)
 
 Now, `signal`/`computed`/`effect`/`effectScope` make reactive primitives
 
-```dart
+```diff
 // After
-final count = GlobalSignals.create(0);
+-final count = GlobalSignals.create(0);
 
 // Now
-final count = signal(null, 0);
++final count = signal(null, 0);
 ```
 
 ### 🔧 IMPROVEMENTS

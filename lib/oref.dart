@@ -10,9 +10,9 @@ export 'src/reactive/reactive.dart' show Reactive;
 export 'src/reactive/collections/list.dart' show ReactiveList;
 export 'src/reactive/collections/map.dart' show ReactiveMap;
 export 'src/reactive/collections/set.dart' show ReactiveSet;
+export 'src/reactive/ref.dart' show Ref, WidgetRef, StatefulWidgetRef, ref;
 
 export 'src/utils/batch.dart' show batch;
-export 'src/utils/ref.dart' show Ref, StateRef, WidgetRef;
 export 'src/utils/signal_build_context.dart' show SignalBuildContext;
 export 'src/utils/untrack.dart' show untrack;
 
