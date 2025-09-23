@@ -90,7 +90,7 @@ class AddTodoDialog extends StatelessWidget {
           ),
           TextField(
             decoration: const InputDecoration(labelText: 'Description'),
-            onChanged: title,
+            onChanged: description,
           ),
         ],
       ),
