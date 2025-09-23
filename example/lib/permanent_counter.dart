@@ -57,10 +57,7 @@ class PermanentCounter extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           spacing: 24,
           children: [
-            SignalBuilder(
-              getter: counter.value,
-              builder: (_, value) => Text('Count: $value'),
-            ),
+            SignalBuilder(builder: (_) => Text('Count: ${counter.value()}')),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               spacing: 16,

@@ -100,16 +100,19 @@ class AddTodoDialog extends StatelessWidget {
           child: const Text('Cancel'),
         ),
         SignalBuilder(
-          getter: title,
-          builder: (context, title) => TextButton(
-            onPressed: title.trim().isNotEmpty
-                ? () {
-                    store.insertTodo(title.trim(), description());
-                    Navigator.pop(context);
-                  }
-                : null,
-            child: const Text('Add'),
-          ),
+          builder: (context) {
+            final value = title().trim();
+
+            void onInsertTodo() {
+              store.insertTodo(value, description());
+              Navigator.pop(context);
+            }
+
+            return TextButton(
+              onPressed: value.isNotEmpty ? onInsertTodo : null,
+              child: const Text('Add'),
+            );
+          },
         ),
       ],
     );

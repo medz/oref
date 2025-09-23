@@ -36,16 +36,15 @@ class Counter extends StatelessWidget {
     final count = signal(context, 0);
     void increment() => count(count() + 1);
 
+    debugPrint("Counter build"); // Only print once.
+
     return Scaffold(
       appBar: AppBar(title: const Text('Counter')),
       body: ListView(
         children: [
           Center(
             // Only rebuild when count changes
-            child: SignalBuilder(
-              getter: count,
-              builder: (_, count) => Text("Count: $count"),
-            ),
+            child: SignalBuilder(builder: (_) => Text("Count: ${count()}")),
           ),
           const SizedBox(height: 16),
           ListTile(
