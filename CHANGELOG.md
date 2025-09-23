@@ -65,7 +65,6 @@ Defining external functions by extensions was always less than ideal, and now `w
 
 ### 🔧 IMPROVEMENTS
 
-- Enhanced type safety: New internal implementations `_GeneralRef` and `_StatefulRef`
 - Improved performance: Optimized ref creation and update logic, reducing unnecessary rebuilds
 
 ## 2.0.2
