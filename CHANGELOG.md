@@ -54,6 +54,15 @@ class MyState2 extends State<MyWidget2> {
 }
 ```
 
+### Remove `SignalBuildContext` extension
+
+Defining external functions by extensions was always less than ideal, and now `watch` has been moved to the top level.
+
+```diff
+-final value = context.watch(count);
++final value = watch(context,count);
+```
+
 ### 🔧 IMPROVEMENTS
 
 - Enhanced type safety: New internal implementations `_GeneralRef` and `_StatefulRef`

@@ -1,7 +1,6 @@
 import 'package:flutter/widgets.dart';
 
-import '../core/computed.dart';
-import '../utils/signal_build_context.dart';
+import '../utils/watch.dart';
 
 /// {@template oref.signal-builder}
 /// A [SignalBuilder] is a widget that builds a widget tree based on a signal/computed value.
@@ -32,10 +31,6 @@ class SignalBuilder<T> extends StatelessWidget {
   final Widget Function(BuildContext context, T value) builder;
 
   @override
-  Widget build(BuildContext context) {
-    final value = computed<T>(context, (_) => getter());
-    return Builder(
-      builder: (context) => builder(context, context.watch(value)),
-    );
-  }
+  Widget build(BuildContext context) =>
+      builder(context, watch(context, getter));
 }

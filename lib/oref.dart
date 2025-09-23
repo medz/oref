@@ -12,7 +12,7 @@ export 'src/reactive/collections/map.dart' show ReactiveMap;
 export 'src/reactive/collections/set.dart' show ReactiveSet;
 
 export 'src/utils/batch.dart' show batch;
-export 'src/utils/signal_build_context.dart' show SignalBuildContext;
+export 'src/utils/watch.dart' show watch;
 export 'src/utils/untrack.dart' show untrack;
 
 export 'src/widgets/signal_builder.dart' show SignalBuilder;
