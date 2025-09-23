@@ -12,7 +12,6 @@ export 'src/reactive/collections/map.dart' show ReactiveMap;
 export 'src/reactive/collections/set.dart' show ReactiveSet;
 
 export 'src/utils/batch.dart' show batch;
-export 'src/utils/global_signals.dart' show GlobalSignals;
 export 'src/utils/ref.dart' show Ref, StateRef, WidgetRef;
 export 'src/utils/signal_build_context.dart' show SignalBuildContext;
 export 'src/utils/untrack.dart' show untrack;

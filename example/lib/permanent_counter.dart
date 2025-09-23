@@ -8,7 +8,7 @@ T infer<T extends Function>(T func) => func;
 T inferReturnType<T>(T Function() factory) => factory();
 
 final usePrefs = inferReturnType(() {
-  final prefs = GlobalSignals.create<SharedPreferences?>(null);
+  final prefs = signal<SharedPreferences?>(null, null);
 
   unawaited(
     Future.microtask(() async {
