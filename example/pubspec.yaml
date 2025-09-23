@@ -11,7 +11,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  oref: ^2.0.1
+  oref: any
   shared_preferences: ^2.5.3
 
 dev_dependencies:
