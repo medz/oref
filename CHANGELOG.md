@@ -1,6 +1,6 @@
 ## 2.1.0
 
-Status: Unreleased
+Status: Released (2025-09-23)
 
 ### 💥 BREAKING CHANGES
 
