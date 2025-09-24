@@ -1,3 +1,17 @@
+## 2.1.1
+
+Status: Released (2025-09-24)
+
+### 🐛 BUG FIXES
+
+#### Fix reset state to memoized store root
+
+Previously, memoization reset depended on widget effects. If the widget itself used useMemoized , the memoized node would not be reset to the top.
+
+This has now been fixed, and widget effects no longer rely on signals to reset memoization.
+
+> Thx [@definev2 (Zen Bui)](https://x.com/definev2) - [1970659750242328584](https://x.com/definev2/status/1970659750242328584)
+
 ## 2.1.0
 
 Status: Released (2025-09-23)
