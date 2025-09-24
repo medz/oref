@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 
-import '../core/widget_effect.dart';
+import 'widget_effect.dart';
 
 /// Watch a signal in a widget.
 ///

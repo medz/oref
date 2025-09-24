@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 
-import '../utils/watch.dart';
+import 'watch.dart';
 
 /// {@template oref.signal-builder}
 /// A [SignalBuilder] is a widget that builds a widget tree based on a signal/computed.
