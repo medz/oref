@@ -16,7 +16,7 @@ class WidgetScope {
   /// Create a new widget scope.
   ///
   /// {@macro oref.widget-scope}
-  const WidgetScope({void Function() stop, required this.effectScope})
+  const WidgetScope({required void Function() stop, required this.effectScope})
     : _stop = stop;
 
   final void Function() _stop;
@@ -56,7 +56,7 @@ WidgetScope useWidgetScope(BuildContext context) {
     final e = WidgetScope(stop: stop, effectScope: scope!);
 
     _store[context] = e;
-    _finalizer.attach(context, e, detach: e);
+    _finalizer.attach(context, e, detach: scope);
 
     return e;
   } finally {
