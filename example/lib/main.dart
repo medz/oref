@@ -2,11 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:oref/oref.dart';
 
 import 'permanent_counter.dart';
+import 'simple.dart';
 import 'todo.dart';
 
 void main() {
   runApp(const ExampleApp());
 }
+
+final routes = <String, WidgetBuilder>{
+  "todo": (_) => const TodoApp(),
+  "permanent-counter": (_) => const PermanentCounter(),
+  "simple": (_) => const Simple(),
+};
 
 class ExampleApp extends StatelessWidget {
   const ExampleApp({super.key});
@@ -18,12 +25,8 @@ class ExampleApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      initialRoute: "counter",
-      routes: {
-        "counter": (_) => const Counter(),
-        "todo": (_) => const TodoApp(),
-        "permanent-counter": (_) => const PermanentCounter(),
-      },
+      home: const Counter(),
+      routes: routes,
     );
   }
 }
@@ -47,22 +50,14 @@ class Counter extends StatelessWidget {
             child: SignalBuilder(builder: (_) => Text("Count: ${count()}")),
           ),
           const SizedBox(height: 16),
-          ListTile(
-            title: const Text('Todo App'),
-            subtitle: const Text('Manage your tasks'),
-            trailing: IconButton(
-              icon: const Icon(Icons.chevron_right),
-              onPressed: () => Navigator.of(context).pushNamed('todo'),
-            ),
-          ),
-          const Divider(),
-          ListTile(
-            title: const Text('Permanent Counter'),
-            subtitle: const Text('Store count across sessions'),
-            trailing: IconButton(
-              icon: const Icon(Icons.chevron_right),
-              onPressed: () =>
-                  Navigator.of(context).pushNamed('permanent-counter'),
+
+          ...ListTile.divideTiles(
+            context: context,
+            tiles: routes.keys.map(
+              (name) => ListTile(
+                title: Text(name),
+                onTap: () => Navigator.of(context).pushNamed(name),
+              ),
             ),
           ),
         ],

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:oref/oref.dart';
 
-class Counter extends StatelessWidget {
-  const Counter({super.key});
+class Simple extends StatelessWidget {
+  const Simple({super.key});
 
   @override
   Widget build(BuildContext context) {
