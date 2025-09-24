@@ -1,3 +1,20 @@
+## 2.1.2
+
+Status: Unreleased
+
+### 🔧 IMPROVEMENTS
+
+#### Reorganize library exports and file structure
+
+Previously, `ReactiveMap`, `ReactiveList`, and `ReactiveSet` were exported from `oref.dart`. They are now exported from `collections.dart`.
+
+We plan to remove these exports from `oref.dart` starting with version 2.2.0.
+
+```diff
+import 'package:oref/oref.dart';
++import 'package:oref/collections.dart';
+```
+
 ## 2.1.1
 
 Status: Released (2025-09-24)
