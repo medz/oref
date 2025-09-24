@@ -5,7 +5,7 @@
 
 # Oref
 
-A high-performance Flutter state management tool built with [`alien_signals`](https://github.com/medz/alien-signals-dart), Oref is one of the fastest Flutter signals and state management solutions. - <sup>the other being [Solidart](https://github.com/nank1ro/solidart)</sup>.
+A high-performance Flutter state management tool built with [`alien_signals`](https://github.com/medz/alien-signals-dart), Oref is one of the fastest Flutter signals and state management solutions.
 
 ## Overview
 
@@ -48,9 +48,9 @@ flutter pub add oref
 
 ## Documentation
 
-> TODO
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/medz/oref)
 
-Oref doesn't have a dedicated documentation website, but you can view details through the [API Reference in pub.dev](https://pub.dev/documentation/oref/latest/oref/) or source code comments.
+You can view details through the [API Reference in pub.dev](https://pub.dev/documentation/oref/latest/oref/) or source code comments.
 
 ## Sponsors
 
