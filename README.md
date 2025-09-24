@@ -38,7 +38,7 @@ Signals are magically injected into the BuildContext to provide optimal performa
 You can install by editing your `pubspec.yaml` file:
 ```yaml
 dependencies:
-  oref: latest
+  oref: any
 ```
 
 Or install by running this command:
