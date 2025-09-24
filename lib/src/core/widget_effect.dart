@@ -88,7 +88,7 @@ WidgetEffect useWidgetEffect(BuildContext context) {
       final e = WidgetEffect(stop: stop, node: node!);
 
       _store[element] = e;
-      _finalizer.attach(context, e, detach: node);
+      _finalizer.attach(element, e, detach: node);
 
       return e;
     } finally {
