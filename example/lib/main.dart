@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:oref/oref.dart';
 
+import 'async_data.dart';
 import 'hashcode.dart';
 import 'permanent_counter.dart';
 import 'simple.dart';
@@ -15,6 +16,7 @@ final routes = <String, WidgetBuilder>{
   "permanent-counter": (_) => const PermanentCounter(),
   "simple": (_) => const Simple(),
   'hashcode': (_) => const HashCode(),
+  'async-data': (_) => const AsyncDataExample(),
 };
 
 class ExampleApp extends StatelessWidget {
