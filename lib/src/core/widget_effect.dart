@@ -11,10 +11,11 @@ import 'widget_scope.dart';
 /// {@endtemplate}
 class WidgetEffect {
   /// {@macro oref.widget-effect}
-  const WidgetEffect({required this.stop, required this.node});
+  const WidgetEffect({required void Function() stop, required this.node})
+    : _stop = stop;
 
   /// The stop function that will be called when the widget is disposed.
-  final void Function() stop;
+  final void Function() _stop;
 
   /// The reactive node that the effect is associated with.
   final ReactiveNode node;
@@ -38,9 +39,16 @@ class WidgetEffect {
       setCurrentSub(prevSub);
     }
   }
+
+  /// The stop function that will be called when the widget is disposed.
+  void stop() {
+    _stop();
+    _finalizer.detach(node);
+  }
 }
 
 final _store = Expando<WidgetEffect>("oref:widget effect");
+final _finalizer = Finalizer<WidgetEffect>((effect) => effect.stop());
 
 /// Use a [ReactiveEffect] to create a widget effect for a given [BuildContext].
 ///
@@ -78,7 +86,9 @@ WidgetEffect useWidgetEffect(BuildContext context) {
 
       assert(node != null, 'oref: Widget effect initialization failed');
       final e = WidgetEffect(stop: stop, node: node!);
+
       _store[element] = e;
+      _finalizer.attach(context, e, detach: node);
 
       return e;
     } finally {
