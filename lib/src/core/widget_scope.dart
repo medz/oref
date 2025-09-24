@@ -16,9 +16,10 @@ class WidgetScope {
   /// Create a new widget scope.
   ///
   /// {@macro oref.widget-scope}
-  const WidgetScope({required this.stop, required this.effectScope});
+  const WidgetScope({void Function() stop, required this.effectScope})
+    : _stop = stop;
 
-  final void Function() stop;
+  final void Function() _stop;
   final EffectScope effectScope;
 
   T using<T>(T Function() run) {
@@ -29,9 +30,15 @@ class WidgetScope {
       setCurrentScope(prevScope);
     }
   }
+
+  void stop() {
+    _stop();
+    _finalizer.detach(effectScope);
+  }
 }
 
 final _store = Expando<WidgetScope>("oref:widget effect scope");
+final _finalizer = Finalizer<WidgetScope>((scope) => scope.stop());
 
 WidgetScope useWidgetScope(BuildContext context) {
   final cached = _store[context];
@@ -47,7 +54,9 @@ WidgetScope useWidgetScope(BuildContext context) {
     assert(scope != null, "oref: Widget scope initialization failed");
 
     final e = WidgetScope(stop: stop, effectScope: scope!);
+
     _store[context] = e;
+    _finalizer.attach(context, e, detach: e);
 
     return e;
   } finally {
