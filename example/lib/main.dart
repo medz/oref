@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:oref/oref.dart';
 
+import 'hashcode.dart';
 import 'permanent_counter.dart';
 import 'simple.dart';
 import 'todo.dart';
@@ -13,6 +14,7 @@ final routes = <String, WidgetBuilder>{
   "todo": (_) => const TodoApp(),
   "permanent-counter": (_) => const PermanentCounter(),
   "simple": (_) => const Simple(),
+  'hashcode': (_) => const HashCode(),
 };
 
 class ExampleApp extends StatelessWidget {
