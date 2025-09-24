@@ -1,6 +1,7 @@
 import 'package:alien_signals/alien_signals.dart';
 import 'package:flutter/widgets.dart';
 
+import 'memoized.dart';
 import 'widget_scope.dart';
 
 /// {@template oref.widget-effect}
@@ -66,7 +67,9 @@ WidgetEffect useWidgetEffect(BuildContext context) {
       ReactiveNode? node;
       final stop = effect(() {
         node ??= getCurrentSub();
-        if (!context.mounted) {
+        resetMemoizedFor(element);
+
+        if (!element.mounted) {
           return scope.stop();
         } else if (!element.dirty) {
           element.markNeedsBuild();
