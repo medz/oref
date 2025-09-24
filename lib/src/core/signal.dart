@@ -9,7 +9,6 @@ class _Mask<T> {
   final T Function([T?, bool]) signal;
 }
 
-/// {@template oref.signal}
 /// Creates a reactive signal with an initial value.
 ///
 /// A signal is a reactive value container that notifies dependents when its
@@ -17,7 +16,6 @@ class _Mask<T> {
 /// - Get the current value when called with no arguments
 /// - Set a new value when called with a value argument
 /// - Control whether null values should be treated as updates when [nulls] is true
-/// {@endtemplate}
 ///
 /// Example:
 /// ```dart

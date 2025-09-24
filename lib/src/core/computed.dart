@@ -9,9 +9,7 @@ final class _Mask<T> {
   final T Function() computed;
 }
 
-/// {@template oref.computed}
 /// Creates a reactive computed value that automatically tracks its dependencies.
-/// {@endtemplate}
 ///
 /// Example:
 /// ```dart

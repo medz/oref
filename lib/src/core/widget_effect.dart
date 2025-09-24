@@ -4,13 +4,13 @@ import 'package:flutter/widgets.dart';
 import 'memoized.dart';
 import 'widget_scope.dart';
 
-/// {@template oref.widget-effect}
+/// {@template oref.core.widget_effect}
 /// Widget effect is a reactive effect that runs in the context of a widget.
 ///
 /// Each Widget has a unique WidgetEffect, which will automatically signal and computed.
 /// {@endtemplate}
 class WidgetEffect {
-  /// {@macro oref.widget-effect}
+  /// {@macro oref.core.widget_effect}
   const WidgetEffect({required void Function() stop, required this.node})
     : _stop = stop;
 
@@ -23,7 +23,7 @@ class WidgetEffect {
   /// Using a function to run within the context of the widget effect.
   ///
   /// Example:
-  /// {@template oref.widget-effect.using}
+  /// {@template oref.core.widget_effect.using}
   /// ```dart
   /// final effect = useWidgetEffect(context);
   /// effect.using(() {
@@ -52,7 +52,7 @@ final _finalizer = Finalizer<WidgetEffect>((effect) => effect.stop());
 
 /// Use a [ReactiveEffect] to create a widget effect for a given [BuildContext].
 ///
-/// {@macro oref.widget-effect.using}
+/// {@macro oref.core.widget_effect.using}
 ///
 /// Stop widget reactive effect.
 /// ```dart

@@ -3,8 +3,8 @@ import 'package:flutter/widgets.dart';
 
 /// Widget effect scope.
 ///
-/// {@template oref.widget-scope}
-/// This class provides a way to manage the effect scope of a widget.
+/// {@template oref.core.widget_scope}
+/// This provides a way to manage the effect scope of a widget.
 ///
 /// Example:
 /// ```dart
@@ -15,7 +15,7 @@ import 'package:flutter/widgets.dart';
 class WidgetScope {
   /// Create a new widget scope.
   ///
-  /// {@macro oref.widget-scope}
+  /// {@macro oref.core.widget_scope}
   const WidgetScope({required void Function() stop, required this.effectScope})
     : _stop = stop;
 

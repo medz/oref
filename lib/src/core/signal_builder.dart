@@ -2,7 +2,7 @@ import 'package:flutter/widgets.dart';
 
 import 'watch.dart';
 
-/// {@template oref.signal-builder}
+/// {@template oref.core.signal_builder}
 /// A [SignalBuilder] is a widget that builds a widget tree based on a signal/computed.
 ///
 /// Example:
@@ -23,7 +23,7 @@ import 'watch.dart';
 /// **[SignalBuilder] helps narrow the signal rebuild scope, updating only the widgets that must be rebuilt.**
 /// {@endtemplate}
 class SignalBuilder extends StatelessWidget {
-  /// {@macro oref.signal-builder}
+  /// {@macro oref.core.signal_builder}
   const SignalBuilder({super.key, required this.builder});
 
   /// A widget builder, automatically rebuild when signals value changes.

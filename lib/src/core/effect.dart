@@ -9,7 +9,6 @@ final class _Mask {
   final void Function() stop;
 }
 
-/// {@template oref.effect}
 /// Creates a reactive effect that automatically tracks its dependencies and re-runs when they change.
 ///
 /// An effect is a reactive computation that automatically tracks any reactive values (signals or computed values)
@@ -20,7 +19,6 @@ final class _Mask {
 /// 2. Whenever any of its tracked dependencies change
 ///
 /// Returns a cleanup function that can be called to dispose of the effect and stop tracking.
-/// {@endtemplate}
 ///
 /// Example:
 /// ```dart
