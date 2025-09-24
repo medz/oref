@@ -10,6 +10,3 @@ export 'src/core/watch.dart';
 export 'src/core/untrack.dart';
 export 'src/core/signal_builder.dart';
 export 'src/core/reactive.dart';
-
-@Deprecated('Will be removed in 2.2, Use `collections.dart` instead')
-export 'collections.dart';
