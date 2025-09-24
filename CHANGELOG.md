@@ -1,6 +1,65 @@
+## 2.2.0
+
+Status: Released (2025-09-25)
+
+### 💥 BREAKING CHANGES
+
+#### Remove deprecated collections export
+
+In previous versions, the structure has been standardized, and `oref.dart` no longer exports collections by default. Starting with version 2.2, please import collections from `collections.dart`.
+
+```diff
++import 'package:oref/collections.dart';
+```
+
+### ✨ NEW FEATURES
+
+#### Async data support
+
+you can use useAsyncData to get access to data that resolves asynchronously.
+
+##### Usage
+
+```dart
+final result = useAsyncData(context, () {
+  return oxy.get("https://example.com").then((e) => e.json());
+});
+```
+
+##### Watch Params
+
+You can listen to other signal sources directly in the handler to trigger data updates.
+
+```dart
+final page = signal(context, 1);
+final result = useAsyncData(context, () async {
+  final res = await oxy.get('https://example.com?page=${page()}');
+  if (!res.ok) throw Exception('Failed to fetch data');
+  return res.json();
+});
+
+effect(context, () {
+  print("Status: ${result.status}");
+  if (result.status == AsyncStatus.error) {
+    print("Error: ${result.error}");
+  }
+
+  print("Data: ${result.data}");
+});
+
+// Get the 2 page after 5 seconds
+Timer(const Duration(seconds: 5), () => page(2));
+```
+
+> See the full demo: [medz/oref - Async Data](https://github.com/medz/oref/blob/main/example/lib/async_data.dart)
+
+### 🐛 BUG FIXES
+
+- Fix widget effect not resetting memoization
+
 ## 2.1.2
 
-Status: Unreleased
+Status: Released (2025-09-24)
 
 ### 🔧 IMPROVEMENTS
 
