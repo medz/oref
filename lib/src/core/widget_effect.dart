@@ -1,6 +1,8 @@
 import 'package:alien_signals/alien_signals.dart';
 import 'package:flutter/widgets.dart';
 
+import '_utils.dart';
+import 'lifecycle.dart';
 import 'memoized.dart';
 import 'widget_scope.dart';
 
@@ -42,6 +44,7 @@ class WidgetEffect {
 
   /// The stop function that will be called when the widget is disposed.
   void stop() {
+    triggerEffectStopCallback(node);
     _stop();
     _finalizer.detach(node);
   }
@@ -72,11 +75,8 @@ WidgetEffect useWidgetEffect(BuildContext context) {
     final prevSub = setCurrentSub(null);
 
     try {
-      ReactiveNode? node;
-      final stop = effect(() {
-        node ??= getCurrentSub();
+      final (stop, sub) = createEffect(() {
         resetMemoizedFor(element);
-
         if (!element.mounted) {
           return scope.stop();
         } else if (!element.dirty) {
@@ -84,13 +84,11 @@ WidgetEffect useWidgetEffect(BuildContext context) {
         }
       });
 
-      assert(node != null, 'oref: Widget effect initialization failed');
-      final e = WidgetEffect(stop: stop, node: node!);
+      final effect = WidgetEffect(stop: stop, node: sub);
+      _store[element] = effect;
+      _finalizer.attach(element, effect, detach: element);
 
-      _store[element] = e;
-      _finalizer.attach(element, e, detach: node);
-
-      return e;
+      return effect;
     } finally {
       setCurrentSub(prevSub);
     }

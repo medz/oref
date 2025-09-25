@@ -1,6 +1,8 @@
 import 'package:alien_signals/alien_signals.dart';
 import 'package:flutter/widgets.dart';
 
+import 'lifecycle.dart';
+
 /// Widget effect scope.
 ///
 /// {@template oref.core.widget_scope}
@@ -32,6 +34,7 @@ class WidgetScope {
   }
 
   void stop() {
+    triggerEffectStopCallback(effectScope);
     _stop();
     _finalizer.detach(effectScope);
   }
@@ -50,15 +53,12 @@ WidgetScope useWidgetScope(BuildContext context) {
     final stop = effectScope(() {
       scope ??= getCurrentScope();
     });
+    final effect = WidgetScope(stop: stop, effectScope: scope!);
 
-    assert(scope != null, "oref: Widget scope initialization failed");
+    _store[context] = effect;
+    _finalizer.attach(context, effect, detach: scope);
 
-    final e = WidgetScope(stop: stop, effectScope: scope!);
-
-    _store[context] = e;
-    _finalizer.attach(context, e, detach: scope);
-
-    return e;
+    return effect;
   } finally {
     setCurrentScope(prevScope);
   }
