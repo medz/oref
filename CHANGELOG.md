@@ -1,3 +1,27 @@
+## 2.3.0
+
+Status: Unreleased
+
+### ✨ NEW FEATURES
+
+#### Effect Lifecycle.
+
+We added the `onEffectStop` lifecycle API, which allows you to do some cleanup work before the effect/efrect-scope is stopped.
+
+```dart
+final stop = effect(null, () {
+  print('Effect started');
+
+  onEffectStop(() {
+    print('Effect stopped');
+  });
+});
+
+stop(); // Stop the effect, and run the cleanup function
+```
+
+You typically don't need to manually call stop (similar to dispose in other frameworks) within the widget scope unless you want to clean up immediately. Automatic disposal is safe and won't prevent garbage collection from occurring because you didn't call stop; signal nodes aren't collected immediately. However, effects will automatically orphan them, so there's no need to worry about updating a signal without calling stop and causing an unintended effect to fire.
+
 ## 2.2.0
 
 Status: Released (2025-09-25)
