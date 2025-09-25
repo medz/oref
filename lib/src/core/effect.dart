@@ -1,6 +1,8 @@
 import 'package:alien_signals/alien_signals.dart' as alien;
 import 'package:flutter/widgets.dart';
 
+import '_utils.dart';
+import 'lifecycle.dart';
 import 'memoized.dart';
 import 'widget_scope.dart';
 
@@ -38,12 +40,20 @@ void Function() effect(
   bool detach = false,
 }) {
   if (context == null && !detach) {
-    return alien.effect(run);
+    final (stop, sub) = createEffect(run);
+    return () {
+      stop();
+      triggerEffectStopCallback(sub);
+    };
   } else if (context == null) {
     final prevScope = alien.setCurrentScope(null);
     final prevSub = alien.setCurrentSub(null);
     try {
-      return alien.effect(run);
+      final (stop, sub) = createEffect(run);
+      return () {
+        stop();
+        triggerEffectStopCallback(sub);
+      };
     } finally {
       alien.setCurrentScope(prevScope);
       alien.setCurrentSub(prevSub);
@@ -55,7 +65,11 @@ void Function() effect(
       final prevScope = alien.setCurrentScope(null);
       final prevSub = alien.setCurrentSub(null);
       try {
-        return _Mask(alien.effect(run));
+        final (stop, sub) = createEffect(run);
+        return _Mask(() {
+          stop();
+          triggerEffectStopCallback(sub);
+        });
       } finally {
         alien.setCurrentScope(prevScope);
         alien.setCurrentSub(prevSub);
@@ -63,11 +77,21 @@ void Function() effect(
     }
 
     if (alien.getCurrentScope() != null) {
-      return _Mask(alien.effect(run));
+      final (stop, sub) = createEffect(run);
+      return _Mask(() {
+        triggerEffectStopCallback(sub);
+        stop();
+      });
     }
 
     final scope = useWidgetScope(context);
-    return scope.using(() => _Mask(alien.effect(run)));
+    return scope.using(() {
+      final (stop, sub) = createEffect(run);
+      return _Mask(() {
+        triggerEffectStopCallback(sub);
+        stop();
+      });
+    });
   });
 
   return mask.stop;
