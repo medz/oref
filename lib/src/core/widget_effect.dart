@@ -1,20 +1,23 @@
 import 'package:alien_signals/alien_signals.dart';
 import 'package:flutter/widgets.dart';
 
+import '_utils.dart';
+import 'lifecycle.dart';
 import 'memoized.dart';
 import 'widget_scope.dart';
 
-/// {@template oref.widget-effect}
+/// {@template oref.core.widget_effect}
 /// Widget effect is a reactive effect that runs in the context of a widget.
 ///
 /// Each Widget has a unique WidgetEffect, which will automatically signal and computed.
 /// {@endtemplate}
 class WidgetEffect {
-  /// {@macro oref.widget-effect}
-  const WidgetEffect({required this.stop, required this.node});
+  /// {@macro oref.core.widget_effect}
+  const WidgetEffect({required void Function() stop, required this.node})
+    : _stop = stop;
 
   /// The stop function that will be called when the widget is disposed.
-  final void Function() stop;
+  final void Function() _stop;
 
   /// The reactive node that the effect is associated with.
   final ReactiveNode node;
@@ -22,7 +25,7 @@ class WidgetEffect {
   /// Using a function to run within the context of the widget effect.
   ///
   /// Example:
-  /// {@template oref.widget-effect.using}
+  /// {@template oref.core.widget_effect.using}
   /// ```dart
   /// final effect = useWidgetEffect(context);
   /// effect.using(() {
@@ -38,13 +41,21 @@ class WidgetEffect {
       setCurrentSub(prevSub);
     }
   }
+
+  /// The stop function that will be called when the widget is disposed.
+  void stop() {
+    triggerEffectStopCallback(node);
+    _stop();
+    _finalizer.detach(node);
+  }
 }
 
 final _store = Expando<WidgetEffect>("oref:widget effect");
+final _finalizer = Finalizer<WidgetEffect>((effect) => effect.stop());
 
 /// Use a [ReactiveEffect] to create a widget effect for a given [BuildContext].
 ///
-/// {@macro oref.widget-effect.using}
+/// {@macro oref.core.widget_effect.using}
 ///
 /// Stop widget reactive effect.
 /// ```dart
@@ -64,11 +75,8 @@ WidgetEffect useWidgetEffect(BuildContext context) {
     final prevSub = setCurrentSub(null);
 
     try {
-      ReactiveNode? node;
-      final stop = effect(() {
-        node ??= getCurrentSub();
+      final (stop, sub) = createEffect(() {
         resetMemoizedFor(element);
-
         if (!element.mounted) {
           return scope.stop();
         } else if (!element.dirty) {
@@ -76,11 +84,11 @@ WidgetEffect useWidgetEffect(BuildContext context) {
         }
       });
 
-      assert(node != null, 'oref: Widget effect initialization failed');
-      final e = WidgetEffect(stop: stop, node: node!);
-      _store[element] = e;
+      final effect = WidgetEffect(stop: stop, node: sub);
+      _store[element] = effect;
+      _finalizer.attach(element, effect, detach: element);
 
-      return e;
+      return effect;
     } finally {
       setCurrentSub(prevSub);
     }

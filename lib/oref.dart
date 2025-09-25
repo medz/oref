@@ -10,3 +10,4 @@ export 'src/core/watch.dart';
 export 'src/core/untrack.dart';
 export 'src/core/signal_builder.dart';
 export 'src/core/reactive.dart';
+export 'src/core/lifecycle.dart' hide triggerEffectStopCallback;
