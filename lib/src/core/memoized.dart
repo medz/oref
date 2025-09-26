@@ -1,13 +1,7 @@
 import 'package:flutter/widgets.dart';
 
 class _Memoized<T> {
-  _Memoized({
-    required this.value,
-    _Memoized? head,
-    _Memoized? tail,
-    this.next,
-    this.prev,
-  }) {
+  _Memoized({required this.value, this.next, this.prev, _Memoized? head}) {
     this.head = head ?? this;
   }
 
