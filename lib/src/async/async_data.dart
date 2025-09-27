@@ -74,6 +74,8 @@ class _AsyncDataExecutor<T> {
         isInitialized = true;
         if (context != null) {
           store[context] = alien.getCurrentSub()!;
+        } else {
+          node = alien.getCurrentSub()!;
         }
       }
 

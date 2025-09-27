@@ -1,3 +1,11 @@
+## 2.3.1
+
+Status: Released (2025-09-27)
+
+### 🐛 BUG FIXES
+
+- fix(async): Field 'node' has not been initialized.
+
 ## 2.3.0
 
 Status: Released (2025-09-25)
