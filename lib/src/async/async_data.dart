@@ -116,10 +116,10 @@ class _AsyncDataExecutor<T> {
     }
   }
 
-  R scoped<R>(R Function() run) {
+  Future<R> scoped<R>(FutureOr<R> Function() run) async {
     final prevSub = alien.setCurrentSub(node);
     try {
-      return run();
+      return await run();
     } finally {
       alien.setCurrentSub(prevSub);
     }
