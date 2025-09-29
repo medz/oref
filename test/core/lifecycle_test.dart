@@ -7,11 +7,11 @@ void main() {
     int tick = 0;
 
     final src = signal(null, 0);
-    final stop = effect(null, () {
-      src();
+    final Effect(:dispose) = effect(null, () {
+      src.value;
       tick++;
 
-      onEffectStop(() {
+      onEffectDispose(() {
         clean = true;
       });
     });
@@ -19,16 +19,16 @@ void main() {
     expect(clean, equals(false));
     expect(tick, equals(1));
 
-    src(1);
+    src.value = 1;
     expect(clean, equals(false));
     expect(tick, equals(2));
 
-    stop();
+    dispose();
     expect(clean, equals(true));
     expect(tick, equals(2));
 
     clean = false;
-    src(2);
+    src.value = 2;
     expect(clean, equals(false));
     expect(tick, equals(2));
   });

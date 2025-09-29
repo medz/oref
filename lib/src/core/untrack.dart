@@ -7,10 +7,10 @@ import 'package:alien_signals/alien_signals.dart';
 /// final value = untrack(count); // Does track the `count` signal.
 /// ```
 T untrack<T>(T Function() getter) {
-  final prevSub = setCurrentSub(null);
+  final prevSub = setActiveSub(null);
   try {
     return getter();
   } finally {
-    setCurrentSub(prevSub);
+    setActiveSub(prevSub);
   }
 }

@@ -41,7 +41,7 @@ class Counter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final count = signal(context, 0);
-    void increment() => count(count() + 1);
+    void increment() => count.value++;
 
     debugPrint("Counter build"); // Only print once.
 
@@ -51,7 +51,7 @@ class Counter extends StatelessWidget {
         children: [
           Center(
             // Only rebuild when count changes
-            child: SignalBuilder(builder: (_) => Text("Count: ${count()}")),
+            child: SignalBuilder(builder: (_) => Text("Count: ${count.value}")),
           ),
           const SizedBox(height: 16),
 

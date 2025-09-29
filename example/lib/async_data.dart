@@ -38,7 +38,7 @@ class AsyncDataExample extends StatelessWidget {
         // Performance optimization!
         // child: SignalBuilder(
         //   builder: (_) => result.when(
-        //     idle: () => const SizedBox.shrink(),
+        //     idle: (_) => const SizedBox.shrink(),
         //     pending: () => const CircularProgressIndicator(),
         //     error: (error) => Text(Error.safeToString(error)),
         //     success: (data) => Text(data.toString()),
@@ -46,7 +46,7 @@ class AsyncDataExample extends StatelessWidget {
         // ),
         child: result.when(
           idle: (_) => const SizedBox.shrink(),
-          pending: () => const CircularProgressIndicator(),
+          pending: (_) => const CircularProgressIndicator(),
           error: (error) => Text(Error.safeToString(error)),
           success: (data) => Text(data.toString()),
         ),

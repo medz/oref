@@ -7,24 +7,17 @@ class Simple extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final count = signal(context, 0);
-    void increment() => count(count() + 1);
+    void increment() => count.value++;
 
     return Column(
       children: [
-        // Only rebuild the `Text` widget when count changes
-
         // First way
-        SignalBuilder(builder: (_) => Text('Count: ${count()}')),
+        SignalBuilder(builder: (_) => Text('Count: ${count.value}')),
 
         // Second way
-        Builder(builder: (context) => Text('Count: ${watch(context, count)}')),
-
-        // Third way
         Builder(
-          builder: (context) {
-            final effect = useWidgetEffect(context);
-            return effect.using(() => Text("Count: ${count()}"));
-          },
+          builder: (context) =>
+              Text('Count: ${watch(context, () => count.value)}'),
         ),
 
         TextButton(onPressed: increment, child: const Text('Increment')),

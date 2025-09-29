@@ -55,11 +55,10 @@ abstract mixin class Reactive<T extends Reactive<T>> {
 
   /// Tracks the current reactive state.
   @protected
-  void track() => _signal();
+  void track() => _signal.value;
 
   /// Triggers a change in the reactive state.
-  void trigger() => _signal(_Wrap(this as T));
-
-  /// Returns reactive itself.
-  T call() => _signal().value;
+  void trigger() {
+    _signal.value = _Wrap(this as T);
+  }
 }

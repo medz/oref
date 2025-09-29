@@ -1,9 +1,7 @@
 import 'dart:collection';
 
 import 'package:flutter/widgets.dart';
-
-import '../core/memoized.dart';
-import '../core/reactive.dart';
+import 'package:oref/oref.dart';
 
 /// A reactive [List] implementation.
 class ReactiveList<T> extends ListBase<T>
