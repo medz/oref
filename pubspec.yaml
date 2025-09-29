@@ -4,9 +4,10 @@ version: 2.3.1
 repository: https://github.com/medz/oref
 
 topics:
-  - signal
+  - signals
   - reactive
-  - state
+  - state-management
+  - alien-signals
 
 funding:
   - https://github.com/sponsors/medz
