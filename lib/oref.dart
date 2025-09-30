@@ -18,4 +18,5 @@ export 'src/collections/set.dart';
 export 'src/async/async_data.dart';
 
 export 'src/legacy/effect_func_call.dart';
+export 'src/legacy/on_effect_stop.dart';
 export 'src/legacy/signals_func_call.dart';
