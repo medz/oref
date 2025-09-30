@@ -7,17 +7,16 @@ class Simple extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final count = signal(context, 0);
-    void increment() => count.value++;
+    void increment() => count(count() + 1);
 
     return Column(
       children: [
         // First way
-        SignalBuilder(builder: (_) => Text('Count: ${count.value}')),
+        SignalBuilder(builder: (_) => Text('Count: ${count()}')),
 
         // Second way
         Builder(
-          builder: (context) =>
-              Text('Count: ${watch(context, () => count.value)}'),
+          builder: (context) => Text('Count: ${watch(context, () => count())}'),
         ),
 
         TextButton(onPressed: increment, child: const Text('Increment')),

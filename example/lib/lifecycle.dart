@@ -11,9 +11,9 @@ class LifecycleExample extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Lifecycle Example')),
-      body: _Example(key: key.value),
+      body: _Example(key: key()),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => key.value = UniqueKey(),
+        onPressed: () => key(UniqueKey()),
         child: const Icon(Icons.refresh),
       ),
     );
@@ -31,32 +31,29 @@ class _Example extends StatelessWidget {
     final updateTick = signal(context, 0);
 
     onMounted(context, () {
-      mounted.value = true;
+      mounted(true);
     });
 
     onUpdated(context, () {
-      updateTick.value += 1;
+      updateTick(updateTick() + 1);
     });
 
-    onUnmounted(context, () {
-      debugPrint('Unmounted');
-    });
+    // Not yet implemented
+    // onUnmounted(context, () {
+    //   debugPrint('Unmounted');
+    // });
 
     return Scaffold(
       body: Column(
         spacing: 12,
         children: [
+          SignalBuilder(builder: (context) => Text('Trigger: ${trigger()}')),
+          SignalBuilder(builder: (context) => Text('Mounted: ${mounted()}')),
           SignalBuilder(
-            builder: (context) => Text('Trigger: ${trigger.value}'),
-          ),
-          SignalBuilder(
-            builder: (context) => Text('Mounted: ${mounted.value}'),
-          ),
-          SignalBuilder(
-            builder: (context) => Text('Update Tick: ${updateTick.value}'),
+            builder: (context) => Text('Update Tick: ${updateTick()}'),
           ),
           FilledButton(
-            onPressed: () => trigger.value += 1,
+            onPressed: () => trigger(trigger() + 1),
             child: const Text('Trigger'),
           ),
         ],

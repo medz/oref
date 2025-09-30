@@ -12,7 +12,7 @@ final usePrefs = inferReturnType(() {
 
   unawaited(
     Future.microtask(() async {
-      prefs.value = await SharedPreferences.getInstance();
+      prefs(await SharedPreferences.getInstance());
     }),
   );
 
@@ -22,17 +22,17 @@ final usePrefs = inferReturnType(() {
 final usePermanentCounter = infer((BuildContext context, String name) {
   final count = signal(context, 0);
 
-  void increment() => count.value++;
-  void decrement() => count.value--;
+  void increment() => count(count() + 1);
+  void decrement() => count(count() - 1);
 
   bool firstRun = false;
   effect(context, () {
-    final prefs = usePrefs.value;
+    final prefs = usePrefs();
     if (prefs == null) return;
 
-    final value = count.value;
+    final value = count();
     if (!firstRun) {
-      count.value = prefs.getInt(name) ?? 0;
+      count(prefs.getInt(name) ?? 0);
       firstRun = true;
       return;
     }
@@ -57,9 +57,7 @@ class PermanentCounter extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           spacing: 24,
           children: [
-            SignalBuilder(
-              builder: (_) => Text('Count: ${counter.count.value}'),
-            ),
+            SignalBuilder(builder: (_) => Text('Count: ${counter.count()}')),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               spacing: 16,

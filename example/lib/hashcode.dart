@@ -16,11 +16,11 @@ class HashCode extends StatelessWidget {
       body: Column(
         children: [
           Text('$parentBuildCount'),
-          SignalBuilder(builder: (_) => TextContextTest(index: count.value)),
+          SignalBuilder(builder: (_) => TextContextTest(index: count())),
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => count.value++,
+        onPressed: () => count(count() + 1),
         child: const Icon(Icons.add),
       ),
     );

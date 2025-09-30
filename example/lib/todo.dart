@@ -55,7 +55,7 @@ class TodoListView extends StatelessWidget {
     final count = computed(context, (_) => store.length);
 
     return ListView.builder(
-      itemCount: count.value,
+      itemCount: count(),
       itemBuilder: (context, index) {
         final todo = store[index];
         return ListTile(
@@ -86,11 +86,11 @@ class AddTodoDialog extends StatelessWidget {
         children: [
           TextField(
             decoration: const InputDecoration(labelText: 'Title'),
-            onChanged: (value) => title.value = value,
+            onChanged: title.call,
           ),
           TextField(
             decoration: const InputDecoration(labelText: 'Description'),
-            onChanged: (value) => description.value = value,
+            onChanged: description.call,
           ),
         ],
       ),
@@ -101,10 +101,10 @@ class AddTodoDialog extends StatelessWidget {
         ),
         SignalBuilder(
           builder: (context) {
-            final value = title.value.trim();
+            final value = title().trim();
 
             void onInsertTodo() {
-              store.insertTodo(value, description.value);
+              store.insertTodo(value, description());
               Navigator.pop(context);
             }
 
