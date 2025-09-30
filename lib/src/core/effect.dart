@@ -87,6 +87,8 @@ _OrefEffect _createEffect({
   late final _OrefEffect effect;
   void withCleanup() {
     effect.cleanup?.call();
+    effect.cleanup = null;
+
     callback();
   }
 
@@ -119,6 +121,7 @@ class _OrefEffect extends alien.PresetEffect implements Disposable {
   @override
   void dispose() {
     onDispose?.call();
+    onDispose = null;
     if (subs?.sub case final Disposable disposable) {
       disposable.dispose();
     }

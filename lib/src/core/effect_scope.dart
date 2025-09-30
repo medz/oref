@@ -97,6 +97,7 @@ class _OrefEffectScope extends alien.PresetEffectScope implements Disposable {
   @override
   void dispose() {
     onDispose?.call();
+    onDispose = null;
     if (subs?.sub case final Disposable disposable) {
       disposable.dispose();
     }
