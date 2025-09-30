@@ -28,11 +28,11 @@ class _OrefComputed<T> extends alien.PresetComputed<T> {
   final BuildContext? context;
 
   @override
-  T get value {
+  T call() {
     if (alien.getActiveSub() != null || context == null) {
-      return super.value;
+      return super();
     }
 
-    return watch(context as BuildContext, () => super.value);
+    return watch(context as BuildContext, () => super());
   }
 }

@@ -5,6 +5,9 @@ import "package:flutter/widgets.dart";
 import "memoized.dart";
 import "watch.dart";
 
+export 'package:alien_signals/alien_signals.dart'
+    show SignalDotValueGetter, WritableSignalDotValueGetterSetter;
+
 typedef Signal<T> = alien.Signal<T>;
 typedef WritableSignal<T> = alien.WritableSignal<T>;
 
@@ -40,11 +43,11 @@ class _OrefSignal<T> extends alien.PresetWritableSignal<T> {
   final BuildContext? context;
 
   @override
-  T get value {
+  T call([T? newValue, nulls = false]) {
     if (alien.getActiveSub() != null || context == null) {
-      return super.value;
+      return super(newValue, nulls);
     }
 
-    return watch(context as BuildContext, () => super.value);
+    return watch(context as BuildContext, () => super(newValue, nulls));
   }
 }
