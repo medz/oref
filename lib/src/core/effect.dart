@@ -122,8 +122,10 @@ class _OrefEffect extends alien.PresetEffect implements Disposable {
   void dispose() {
     onDispose?.call();
     onDispose = null;
-    if (subs?.sub case final Disposable disposable) {
-      disposable.dispose();
+    for (alien.Link? link = deps; link != null; link = link.nextDep) {
+      if (link.dep case final Disposable disposable) {
+        disposable.dispose();
+      }
     }
 
     super.dispose();
