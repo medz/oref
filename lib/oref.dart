@@ -16,3 +16,6 @@ export 'src/collections/map.dart';
 export 'src/collections/set.dart';
 
 export 'src/async/async_data.dart';
+
+export 'src/legacy/effect_func_call.dart';
+export 'src/legacy/signals_func_call.dart';
