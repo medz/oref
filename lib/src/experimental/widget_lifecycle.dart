@@ -2,10 +2,9 @@ import 'package:alien_signals/alien_signals.dart' as alien;
 import 'package:alien_signals/system.dart' as alien;
 import 'package:alien_signals/preset_developer.dart' as alien;
 import 'package:flutter/widgets.dart';
+import 'package:oref/oref.dart';
 
-import '_disposable.dart';
-import 'effect.dart';
-import 'widget_effect.dart';
+import '../core/_disposable.dart';
 
 void onMounted(BuildContext context, void Function() callback) {
   final lifecycle = _Lifecycle(context), prevSub = alien.setActiveSub(null);
