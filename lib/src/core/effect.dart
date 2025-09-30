@@ -80,18 +80,22 @@ void onEffectCleanup(void Function() callback, {bool failSilently = false}) {
 }
 
 _OrefEffect _createEffect({
+  BuildContext? context,
   required void Function() callback,
   required bool detach,
 }) {
   late final _OrefEffect effect;
   void withCleanup() {
-    callback();
     effect.cleanup?.call();
+    callback();
   }
 
   effect = _OrefEffect(callback: withCleanup);
-  final prevSub = alien.setActiveSub(effect);
+  if (context != null) {
+    _OrefEffect.finalizer.attach(context, effect, detach: effect);
+  }
 
+  final prevSub = alien.setActiveSub(effect);
   if (prevSub != null && !detach) {
     alien.system.link(effect, prevSub, 0);
   }
@@ -105,6 +109,8 @@ _OrefEffect _createEffect({
 }
 
 class _OrefEffect extends alien.PresetEffect implements Disposable {
+  static final finalizer = Finalizer<_OrefEffect>((effect) => effect.dispose());
+
   _OrefEffect({required super.callback}) : super(flags: 2 /* Watching */);
 
   void Function()? onDispose;
@@ -113,12 +119,11 @@ class _OrefEffect extends alien.PresetEffect implements Disposable {
   @override
   void dispose() {
     onDispose?.call();
-    for (alien.Link? link = subs; link != null; link = link.nextSub) {
-      if (link.sub case final Disposable disposable) {
-        disposable.dispose();
-      }
+    if (subs?.sub case final Disposable disposable) {
+      disposable.dispose();
     }
 
     super.dispose();
+    finalizer.detach(this);
   }
 }
