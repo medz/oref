@@ -1,3 +1,7 @@
+## 2.4.1
+
+- Revert signal interface to use `call()` syntax
+
 ## 2.4.0
 
 - **Migrated to alien_signals 1.0.0**
@@ -27,15 +31,6 @@ import 'package:oref/oref.dart';
 -import 'package:oref/async.dart';
 -import 'package:oref/collections.dart';
 
-final count = signal(context, 0);
--count();
--count(1);
-+count.value;
-+count.value = 1;
-
-final derived = computed(context, (_) => ...);
--derived();
-+derived.value;
 
 final e = effect(context, () {
 - onEffectStop({
@@ -50,8 +45,6 @@ final scope = effectScope();
 -scope();
 +scope.dispose();
 ```
-
-> `.value`/`.dispose()` is optional for migration, you can still use function call, but there will be a Deprecated warning
 
 ## 2.3.1
 
