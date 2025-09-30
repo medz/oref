@@ -8,7 +8,7 @@ void main() {
 
     final src = signal(null, 0);
     final Effect(:dispose) = effect(null, () {
-      src.value;
+      src();
       tick++;
 
       onEffectDispose(() {
@@ -19,7 +19,7 @@ void main() {
     expect(clean, equals(false));
     expect(tick, equals(1));
 
-    src.value = 1;
+    src(1);
     expect(clean, equals(false));
     expect(tick, equals(2));
 
@@ -28,7 +28,7 @@ void main() {
     expect(tick, equals(2));
 
     clean = false;
-    src.value = 2;
+    src(2);
     expect(clean, equals(false));
     expect(tick, equals(2));
   });

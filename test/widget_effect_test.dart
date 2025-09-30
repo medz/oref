@@ -11,10 +11,10 @@ void main() {
             final count = signal(context, 0);
             return Column(
               children: [
-                Text("${count.value}"),
+                Text("${count()}"),
                 TextButton(
                   child: const Text("increment"),
-                  onPressed: () => count.value++,
+                  onPressed: () => count(count() + 1),
                 ),
               ],
             );
