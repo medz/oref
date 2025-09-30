@@ -1,13 +1,9 @@
 import 'dart:async';
 
 import 'package:alien_signals/alien_signals.dart' as alien;
+import 'package:alien_signals/system.dart' as alien;
 import 'package:flutter/widgets.dart';
-
-import '../core/batch.dart';
-import '../core/effect.dart';
-import '../core/signal.dart';
-import '../core/untrack.dart';
-import '../core/watch.dart';
+import 'package:oref/oref.dart' as oref;
 
 enum AsyncStatus { idle, pending, success, error }
 
@@ -16,13 +12,13 @@ abstract interface class AsyncData<T> {
   abstract AsyncError? error;
   abstract T? data;
 
-  void stop();
+  void dispose();
   Future<T?> refresh();
 
   R when<R>({
     BuildContext? context,
     required R Function(T?) idle,
-    required R Function() pending,
+    required R Function(T?) pending,
     required R Function(T? data) success,
     required R Function(AsyncError? error) error,
   });
@@ -34,9 +30,12 @@ AsyncData<T> useAsyncData<T>(
   ValueGetter<T?>? defaults,
 }) {
   final executor = _AsyncDataExecutor<T>(
-    data: signal<T?>(context, defaults != null ? untrack(defaults) : null),
-    error: signal<AsyncError?>(context, null),
-    status: signal(context, AsyncStatus.idle),
+    data: oref.signal<T?>(
+      context,
+      defaults != null ? oref.untrack(defaults) : null,
+    ),
+    error: oref.signal<AsyncError?>(context, null),
+    status: oref.signal(context, AsyncStatus.idle),
     handler: handler,
   );
 
@@ -45,11 +44,7 @@ AsyncData<T> useAsyncData<T>(
   return _AsyncDataImpl(executor, context);
 }
 
-typedef _Signal<T> = T Function([T?, bool]);
-
 class _AsyncDataExecutor<T> {
-  static final store = Expando<alien.ReactiveNode>('oref:async_data');
-
   _AsyncDataExecutor({
     required this.data,
     required this.error,
@@ -57,59 +52,51 @@ class _AsyncDataExecutor<T> {
     required this.handler,
   });
 
-  final _Signal<T?> data;
-  final _Signal<AsyncError?> error;
-  final _Signal<AsyncStatus> status;
+  final oref.WritableSignal<T?> data;
+  final oref.WritableSignal<AsyncError?> error;
+  final oref.WritableSignal<AsyncStatus> status;
   final ValueGetter<FutureOr<T>> handler;
 
-  late final VoidCallback stop;
   late final alien.ReactiveNode node;
 
   bool isInitialized = false;
   late Completer<T?> completer = Completer.sync()..complete(null);
 
   void ensureInitialized(BuildContext? context) {
-    stop = effect(context, () {
+    final effect = oref.effect(context, () {
       if (!isInitialized) {
         isInitialized = true;
-        if (context != null) {
-          store[context] = alien.getCurrentSub()!;
-        } else {
-          node = alien.getCurrentSub()!;
-        }
       }
 
       Future.microtask(schedule);
     });
 
     if (context != null) {
-      node = store[context]!;
+      node = effect as alien.ReactiveNode;
     }
   }
 
   void schedule() async {
-    if (untrack(status) == AsyncStatus.pending) {
+    if (oref.untrack(() => status.value) == AsyncStatus.pending) {
       return;
     } else if (completer.isCompleted) {
       completer = Completer();
     }
 
-    status(AsyncStatus.pending);
+    status.value = AsyncStatus.pending;
 
     try {
       final result = await scoped(handler);
-      batch(() {
-        this
-          ..data(result)
-          ..status(AsyncStatus.success);
+      oref.batch(() {
+        data.value = result;
+        status.value = AsyncStatus.success;
       });
 
       completer.complete(result);
     } catch (error, stackTrace) {
-      batch(() {
-        this
-          ..error(AsyncError(error, stackTrace))
-          ..status(AsyncStatus.error);
+      oref.batch(() {
+        this.error.value = AsyncError(error, stackTrace);
+        status.value = AsyncStatus.error;
       });
 
       completer.completeError(error, stackTrace);
@@ -117,11 +104,11 @@ class _AsyncDataExecutor<T> {
   }
 
   Future<R> scoped<R>(FutureOr<R> Function() run) async {
-    final prevSub = alien.setCurrentSub(node);
+    final prevSub = alien.setActiveSub(node);
     try {
       return await run();
     } finally {
-      alien.setCurrentSub(prevSub);
+      alien.setActiveSub(prevSub);
     }
   }
 }
@@ -133,22 +120,28 @@ class _AsyncDataImpl<T> implements AsyncData<T> {
   final BuildContext? context;
 
   @override
-  T? get data => executor.data();
+  T? get data => executor.data.value;
 
   @override
-  set data(T? value) => executor.data(value, true);
+  set data(T? value) {
+    executor.data.value = value;
+  }
 
   @override
-  AsyncError? get error => executor.error();
+  AsyncError? get error => executor.error.value;
 
   @override
-  set error(AsyncError? value) => executor.error(value, true);
+  set error(AsyncError? value) {
+    executor.error.value = value;
+  }
 
   @override
-  AsyncStatus get status => executor.status();
+  AsyncStatus get status => executor.status.value;
 
   @override
-  set status(AsyncStatus value) => executor.status(value);
+  set status(AsyncStatus value) {
+    executor.status.value = value;
+  }
 
   @override
   Future<T?> refresh() async {
@@ -160,25 +153,27 @@ class _AsyncDataImpl<T> implements AsyncData<T> {
   }
 
   @override
-  void stop() => executor.stop();
+  void dispose() {
+    (executor.node as oref.Effect).dispose();
+  }
 
   @override
   R when<R>({
     BuildContext? context,
     required R Function(T?) idle,
-    required R Function() pending,
+    required R Function(T?) pending,
     required R Function(T? data) success,
     required R Function(AsyncError? error) error,
   }) {
     context ??= this.context;
     R builder() => switch (status) {
       AsyncStatus.idle => idle(data),
-      AsyncStatus.pending => pending(),
+      AsyncStatus.pending => pending(data),
       AsyncStatus.success => success(data),
       AsyncStatus.error => error(this.error),
     };
     if (context != null) {
-      return watch(context, builder);
+      return oref.watch(context, builder);
     }
 
     return builder();

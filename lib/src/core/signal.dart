@@ -1,13 +1,12 @@
 import "package:alien_signals/alien_signals.dart" as alien;
+import "package:alien_signals/preset_developer.dart" as alien;
 import "package:flutter/widgets.dart";
 
 import "memoized.dart";
-import "widget_effect.dart";
+import "watch.dart";
 
-class _Mask<T> {
-  const _Mask(this.signal);
-  final T Function([T?, bool]) signal;
-}
+typedef Signal<T> = alien.Signal<T>;
+typedef WritableSignal<T> = alien.WritableSignal<T>;
 
 /// Creates a reactive signal with an initial value.
 ///
@@ -23,25 +22,29 @@ class _Mask<T> {
 /// count(); // get value
 /// count(1); // set value
 /// ```
-T Function([T? value, bool nulls]) signal<T>(
-  BuildContext? context,
-  T initialValue,
-) {
+alien.WritableSignal<T> signal<T>(BuildContext? context, T initialValue) {
   if (context == null) {
-    return alien.signal(initialValue);
+    return _OrefSignal(initialValue: initialValue);
   }
 
-  final effect = useWidgetEffect(context);
-  final mask = useMemoized(context, () {
-    final signal = alien.signal<T>(initialValue);
-    return _Mask<T>(([value, nulls = false]) {
-      if (alien.getCurrentSub() == null && (context as Element).dirty) {
-        return effect.using(() => signal(value, nulls));
-      }
+  return useMemoized(
+    context,
+    () => _OrefSignal(initialValue: initialValue, context: context),
+  );
+}
 
-      return signal(value, nulls);
-    });
-  });
+class _OrefSignal<T> extends alien.PresetWritableSignal<T> {
+  _OrefSignal({required super.initialValue, this.context})
+    : super(flags: 1 /* Mutable */);
 
-  return mask.signal;
+  final BuildContext? context;
+
+  @override
+  T get value {
+    if (alien.getActiveSub() != null || context == null) {
+      return super.value;
+    }
+
+    return watch(context as BuildContext, () => super.value);
+  }
 }

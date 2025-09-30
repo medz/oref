@@ -1,15 +1,14 @@
 import 'package:alien_signals/alien_signals.dart' as alien;
+import 'package:alien_signals/system.dart' as alien;
+import 'package:alien_signals/preset_developer.dart' as alien;
 import 'package:flutter/widgets.dart';
 
-import '_utils.dart';
-import 'lifecycle.dart';
+import '_disposable.dart';
+import '_warn.dart';
 import 'memoized.dart';
 import 'widget_scope.dart';
 
-final class _Mask {
-  const _Mask(this.stop);
-  final void Function() stop;
-}
+typedef Effect = alien.Effect;
 
 /// Creates a reactive effect that automatically tracks its dependencies and re-runs when they change.
 ///
@@ -34,65 +33,102 @@ final class _Mask {
 /// stop();
 /// count(2); // No output
 /// ```
-void Function() effect(
+alien.Effect effect(
   BuildContext? context,
-  void Function() run, {
+  void Function() callback, {
   bool detach = false,
 }) {
-  if (context == null && !detach) {
-    final (stop, sub) = createEffect(run);
-    return () {
-      stop();
-      triggerEffectStopCallback(sub);
-    };
-  } else if (context == null) {
-    final prevScope = alien.setCurrentScope(null);
-    final prevSub = alien.setCurrentSub(null);
-    try {
-      final (stop, sub) = createEffect(run);
-      return () {
-        stop();
-        triggerEffectStopCallback(sub);
-      };
-    } finally {
-      alien.setCurrentScope(prevScope);
-      alien.setCurrentSub(prevSub);
-    }
+  if (context == null) {
+    return _createEffect(callback: callback, detach: detach);
   }
 
-  final mask = useMemoized(context, () {
-    if (detach) {
-      final prevScope = alien.setCurrentScope(null);
-      final prevSub = alien.setCurrentSub(null);
-      try {
-        final (stop, sub) = createEffect(run);
-        return _Mask(() {
-          stop();
-          triggerEffectStopCallback(sub);
-        });
-      } finally {
-        alien.setCurrentScope(prevScope);
-        alien.setCurrentSub(prevSub);
-      }
-    }
-
-    if (alien.getCurrentScope() != null) {
-      final (stop, sub) = createEffect(run);
-      return _Mask(() {
-        triggerEffectStopCallback(sub);
-        stop();
-      });
+  return useMemoized(context, () {
+    if (detach || alien.getActiveSub() != null) {
+      return _createEffect(callback: callback, detach: detach);
     }
 
     final scope = useWidgetScope(context);
-    return scope.using(() {
-      final (stop, sub) = createEffect(run);
-      return _Mask(() {
-        triggerEffectStopCallback(sub);
-        stop();
-      });
-    });
+    final prevSub = alien.setActiveSub(scope as alien.ReactiveNode);
+    try {
+      return _createEffect(callback: callback, detach: false);
+    } finally {
+      alien.setActiveSub(prevSub);
+    }
   });
+}
 
-  return mask.stop;
+void onEffectDispose(void Function() callback, {bool failSilently = false}) {
+  final sub = alien.getActiveSub();
+  if (sub is _OrefEffect) {
+    sub.onDispose = callback;
+  } else if (!failSilently) {
+    warn(
+      '`onEffectDispose()` was called when there was no active effect to assign the callback to.',
+    );
+  }
+}
+
+void onEffectCleanup(void Function() callback, {bool failSilently = false}) {
+  final sub = alien.getActiveSub();
+  if (sub is _OrefEffect) {
+    sub.cleanup = callback;
+  } else if (!failSilently) {
+    warn(
+      '`onEffectCleanup()` was called when there was no active effect to assign the callback to.',
+    );
+  }
+}
+
+_OrefEffect _createEffect({
+  BuildContext? context,
+  required void Function() callback,
+  required bool detach,
+}) {
+  late final _OrefEffect effect;
+  void withCleanup() {
+    effect.cleanup?.call();
+    effect.cleanup = null;
+
+    callback();
+  }
+
+  effect = _OrefEffect(callback: withCleanup);
+  if (context != null) {
+    _OrefEffect.finalizer.attach(context, effect, detach: effect);
+  }
+
+  final prevSub = alien.setActiveSub(effect);
+  if (prevSub != null && !detach) {
+    alien.system.link(effect, prevSub, 0);
+  }
+
+  try {
+    callback();
+    return effect;
+  } finally {
+    alien.setActiveSub(prevSub);
+  }
+}
+
+class _OrefEffect extends alien.PresetEffect implements Disposable {
+  static final finalizer = Finalizer<_OrefEffect>((effect) => effect.dispose());
+
+  _OrefEffect({required super.callback}) : super(flags: 2 /* Watching */);
+
+  void Function()? onDispose;
+  void Function()? cleanup;
+
+  @override
+  void dispose() {
+    onDispose?.call();
+    onDispose = null;
+    for (alien.Link? link = deps; link != null; link = link.nextDep) {
+      if (link.dep case final Disposable disposable) {
+        disposable.dispose();
+      }
+    }
+
+    super.dispose();
+    finalizer.detach(this);
+  }
 }

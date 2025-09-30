@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:oref/oref.dart';
-import 'package:oref/collections.dart';
 
 class Todo {
   final String title;
@@ -56,7 +55,7 @@ class TodoListView extends StatelessWidget {
     final count = computed(context, (_) => store.length);
 
     return ListView.builder(
-      itemCount: count(),
+      itemCount: count.value,
       itemBuilder: (context, index) {
         final todo = store[index];
         return ListTile(
@@ -87,11 +86,11 @@ class AddTodoDialog extends StatelessWidget {
         children: [
           TextField(
             decoration: const InputDecoration(labelText: 'Title'),
-            onChanged: title,
+            onChanged: (value) => title.value = value,
           ),
           TextField(
             decoration: const InputDecoration(labelText: 'Description'),
-            onChanged: description,
+            onChanged: (value) => description.value = value,
           ),
         ],
       ),
@@ -102,10 +101,10 @@ class AddTodoDialog extends StatelessWidget {
         ),
         SignalBuilder(
           builder: (context) {
-            final value = title().trim();
+            final value = title.value.trim();
 
             void onInsertTodo() {
-              store.insertTodo(value, description());
+              store.insertTodo(value, description.value);
               Navigator.pop(context);
             }
 

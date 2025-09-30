@@ -30,7 +30,5 @@ class SignalBuilder extends StatelessWidget {
   final WidgetBuilder builder;
 
   @override
-  Widget build(BuildContext context) {
-    return watch(context, () => builder(context));
-  }
+  Widget build(BuildContext context) => watch(context, () => builder(context));
 }
