@@ -19,20 +19,16 @@ void onMounted(BuildContext context, void Function() callback) {
 }
 
 void onUnmounted(BuildContext context, void Function() callback) {
-  final lifecycle = _Lifecycle(context), effect = useWidgetEffect(context);
-
-  alien.system.link(lifecycle, effect as alien.ReactiveNode, 0);
+  final lifecycle = _Lifecycle(context);
   lifecycle.unmountedCallbacks.add(callback);
 }
 
 void onUpdated(BuildContext context, void Function() callback) {
   final lifecycle = _Lifecycle(context),
-      effect = useWidgetEffect(context),
-      prevSub = alien.setActiveSub(effect as alien.ReactiveNode);
+      effect = useWidgetEffect(context) as alien.ReactiveNode,
+      prevSub = alien.setActiveSub(effect);
 
   lifecycle.updatedCallbacks.add(callback);
-  alien.system.link(lifecycle, effect as alien.ReactiveNode, 0);
-
   try {
     onEffectCleanup(lifecycle.update);
   } finally {
@@ -46,7 +42,15 @@ class _Lifecycle extends alien.ReactiveNode implements Disposable {
   _Lifecycle._({required this.context}) : super(flags: 0);
 
   factory _Lifecycle(BuildContext context) {
-    return store[context] ??= _Lifecycle._(context: context);
+    final cached = store[context];
+    if (cached != null) return cached;
+
+    final lifecycle = _Lifecycle._(context: context),
+        effect = useWidgetEffect(context);
+    alien.system.link(lifecycle, effect as alien.ReactiveNode, 0);
+
+    store[context] = lifecycle;
+    return lifecycle;
   }
 
   final BuildContext context;
