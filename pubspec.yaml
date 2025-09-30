@@ -23,7 +23,7 @@ workspace:
 dependencies:
   flutter:
     sdk: flutter
-  alien_signals: 1.0.0-beta.3
+  alien_signals: ^1.0.0-beta.4
   meta: any
 
 dev_dependencies:

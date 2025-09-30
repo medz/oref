@@ -10,7 +10,7 @@ import 'widget_effect.dart';
 void onMounted(BuildContext context, void Function() callback) {
   final lifecycle = _Lifecycle(context), prevSub = alien.setActiveSub(null);
   try {
-    if (lifecycle.shouldRunMountedCallback) {
+    if (lifecycle.shouldRunMountedCallback && context.mounted) {
       callback();
     }
   } finally {
@@ -18,6 +18,7 @@ void onMounted(BuildContext context, void Function() callback) {
   }
 }
 
+@Deprecated("We haven't found a better way to do it yet.")
 void onUnmounted(BuildContext context, void Function() callback) {
   final lifecycle = _Lifecycle(context);
   lifecycle.unmountedCallbacks.add(callback);
