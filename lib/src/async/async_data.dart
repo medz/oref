@@ -77,26 +77,26 @@ class _AsyncDataExecutor<T> {
   }
 
   void schedule() async {
-    if (oref.untrack(() => status.value) == AsyncStatus.pending) {
+    if (oref.untrack(status.call) == AsyncStatus.pending) {
       return;
     } else if (completer.isCompleted) {
       completer = Completer();
     }
 
-    status.value = AsyncStatus.pending;
+    status(AsyncStatus.pending);
 
     try {
       final result = await scoped(handler);
       oref.batch(() {
-        data.value = result;
-        status.value = AsyncStatus.success;
+        data(result);
+        status(AsyncStatus.success);
       });
 
       completer.complete(result);
     } catch (error, stackTrace) {
       oref.batch(() {
-        this.error.value = AsyncError(error, stackTrace);
-        status.value = AsyncStatus.error;
+        this.error(AsyncError(error, stackTrace));
+        status(AsyncStatus.error);
       });
 
       completer.completeError(error, stackTrace);
@@ -120,28 +120,22 @@ class _AsyncDataImpl<T> implements AsyncData<T> {
   final BuildContext? context;
 
   @override
-  T? get data => executor.data.value;
+  T? get data => executor.data();
 
   @override
-  set data(T? value) {
-    executor.data.value = value;
-  }
+  set data(T? value) => executor.data(value, true);
 
   @override
-  AsyncError? get error => executor.error.value;
+  AsyncError? get error => executor.error();
 
   @override
-  set error(AsyncError? value) {
-    executor.error.value = value;
-  }
+  set error(AsyncError? value) => executor.error(value, true);
 
   @override
-  AsyncStatus get status => executor.status.value;
+  AsyncStatus get status => executor.status();
 
   @override
-  set status(AsyncStatus value) {
-    executor.status.value = value;
-  }
+  set status(AsyncStatus value) => executor.status(value, true);
 
   @override
   Future<T?> refresh() async {
