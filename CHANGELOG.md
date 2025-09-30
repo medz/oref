@@ -1,3 +1,58 @@
+## 2.4.0
+
+- **Migrated to alien_signals 1.0.0**
+
+### Widgets Lifecycle
+
+We've added experimental widget lifecycle features in this release:
+
+```dart
+import 'package:oref/experimental/lifecycle.dart';
+
+onMounted(() {
+  print('Mounted');
+});
+
+onUpdated(() {
+  print('Updated');
+});
+```
+
+### Migration Guide
+
+All signal values ​​can be read using `.value`:
+
+```diff
+import 'package:oref/oref.dart';
+-import 'package:oref/async.dart';
+-import 'package:oref/collections.dart';
+
+final count = signal(context, 0);
+-count();
+-count(1);
++count.value;
++count.value = 1;
+
+final derived = computed(context, (_) => ...);
+-derived();
++derived.value;
+
+final e = effect(context, () {
+- onEffectStop({
++ onEffectDispose(() {
+    print('Effect disposed');
+  });
+});
+-e();
++e.dispose();
+
+final scope = effectScope();
+-scope();
++scope.dispose();
+```
+
+> `.value`/`.dispose()` is optional for migration, you can still use function call, but there will be a Deprecated warning
+
 ## 2.3.1
 
 Status: Released (2025-09-27)
