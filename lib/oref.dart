@@ -4,6 +4,7 @@ export 'src/core/effect_scope.dart';
 export 'src/core/memoized.dart';
 export 'src/core/signal.dart';
 export 'src/core/widget_effect.dart';
+export 'src/core/widget_lifecycle.dart';
 export 'src/core/widget_scope.dart';
 export 'src/core/batch.dart';
 export 'src/core/watch.dart';
