@@ -1,3 +1,7 @@
+## 2.4.2
+
+- Fix context check in async data initialization
+
 ## 2.4.1
 
 - Revert signal interface to use `call()` syntax
