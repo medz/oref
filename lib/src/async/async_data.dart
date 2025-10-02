@@ -63,6 +63,7 @@ class _AsyncDataExecutor<T> {
   late Completer<T?> completer = Completer.sync()..complete(null);
 
   void ensureInitialized(BuildContext? context) {
+    final prevIsInitialized = isInitialized;
     final effect = oref.effect(context, () {
       if (!isInitialized) {
         isInitialized = true;
@@ -71,7 +72,7 @@ class _AsyncDataExecutor<T> {
       Future.microtask(schedule);
     });
 
-    if (context != null) {
+    if (!prevIsInitialized) {
       node = effect as alien.ReactiveNode;
     }
   }
