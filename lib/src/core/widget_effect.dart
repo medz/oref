@@ -1,57 +1,12 @@
-import 'package:alien_signals/alien_signals.dart';
+import 'package:alien_signals/alien_signals.dart' as alien;
+import 'package:alien_signals/system.dart' as alien;
 import 'package:flutter/widgets.dart';
 
-import '_utils.dart';
-import 'lifecycle.dart';
+import 'effect.dart';
 import 'memoized.dart';
 import 'widget_scope.dart';
 
-/// {@template oref.core.widget_effect}
-/// Widget effect is a reactive effect that runs in the context of a widget.
-///
-/// Each Widget has a unique WidgetEffect, which will automatically signal and computed.
-/// {@endtemplate}
-class WidgetEffect {
-  /// {@macro oref.core.widget_effect}
-  const WidgetEffect({required void Function() stop, required this.node})
-    : _stop = stop;
-
-  /// The stop function that will be called when the widget is disposed.
-  final void Function() _stop;
-
-  /// The reactive node that the effect is associated with.
-  final ReactiveNode node;
-
-  /// Using a function to run within the context of the widget effect.
-  ///
-  /// Example:
-  /// {@template oref.core.widget_effect.using}
-  /// ```dart
-  /// final effect = useWidgetEffect(context);
-  /// effect.using(() {
-  ///   count(); // Track the count of the widget effect.
-  /// });
-  /// ```
-  /// {@endtemplate}
-  T using<T>(T Function() run) {
-    final prevSub = setCurrentSub(node);
-    try {
-      return run();
-    } finally {
-      setCurrentSub(prevSub);
-    }
-  }
-
-  /// The stop function that will be called when the widget is disposed.
-  void stop() {
-    triggerEffectStopCallback(node);
-    _stop();
-    _finalizer.detach(node);
-  }
-}
-
-final _store = Expando<WidgetEffect>("oref:widget effect");
-final _finalizer = Finalizer<WidgetEffect>((effect) => effect.stop());
+final _store = Expando<Effect>("oref:widget effect");
 
 /// Use a [ReactiveEffect] to create a widget effect for a given [BuildContext].
 ///
@@ -63,34 +18,27 @@ final _finalizer = Finalizer<WidgetEffect>((effect) => effect.stop());
 /// effect.stop();
 /// ```
 /// > After stopping, the Widget will stop collecting signals and responding.
-WidgetEffect useWidgetEffect(BuildContext context) {
+Effect useWidgetEffect(BuildContext context) {
   final cached = _store[context];
   if (cached != null) return cached;
 
   assert(context is Element, 'oref: The `context` must be an Element');
-  final element = context as Element;
-  final scope = useWidgetScope(element);
+  final element = context as Element,
+      scope = useWidgetScope(element),
+      prevSub = alien.setActiveSub(scope as alien.ReactiveNode);
+  try {
+    final e = effect(null, () {
+      resetMemoizedFor(element);
+      if (!element.mounted) {
+        scope.dispose();
+      } else if (!element.dirty) {
+        element.markNeedsBuild();
+      }
+    }, detach: false);
+    _store[element] = e;
 
-  return scope.using(() {
-    final prevSub = setCurrentSub(null);
-
-    try {
-      final (stop, sub) = createEffect(() {
-        resetMemoizedFor(element);
-        if (!element.mounted) {
-          return scope.stop();
-        } else if (!element.dirty) {
-          element.markNeedsBuild();
-        }
-      });
-
-      final effect = WidgetEffect(stop: stop, node: sub);
-      _store[element] = effect;
-      _finalizer.attach(element, effect, detach: element);
-
-      return effect;
-    } finally {
-      setCurrentSub(prevSub);
-    }
-  });
+    return e;
+  } finally {
+    alien.setActiveSub(prevSub);
+  }
 }

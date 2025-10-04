@@ -1,12 +1,14 @@
 name: oref
 description: A reactive state management library for Flutter that adds magic to any Widget with signals, computed values, and effects powered by alien_signals.
-version: 2.3.0
+
+version: 2.4.2
 repository: https://github.com/medz/oref
 
 topics:
-  - signal
+  - signals
   - reactive
-  - state
+  - state-management
+  - alien-signals
 
 funding:
   - https://github.com/sponsors/medz
@@ -22,7 +24,7 @@ workspace:
 dependencies:
   flutter:
     sdk: flutter
-  alien_signals: ^0.5.4
+  alien_signals: ^1.0.1
 
 dev_dependencies:
   flutter_test:

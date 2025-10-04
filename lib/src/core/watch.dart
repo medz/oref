@@ -1,3 +1,5 @@
+import 'package:alien_signals/alien_signals.dart' show setActiveSub;
+import 'package:alien_signals/system.dart' show ReactiveNode;
 import 'package:flutter/widgets.dart';
 
 import 'widget_effect.dart';
@@ -10,6 +12,11 @@ import 'widget_effect.dart';
 /// final value = watch(context, count);
 /// ```
 T watch<T>(BuildContext context, T Function() getter) {
-  final effect = useWidgetEffect(context);
-  return effect.using(getter);
+  final effect = useWidgetEffect(context),
+      prevSub = setActiveSub(effect as ReactiveNode);
+  try {
+    return getter();
+  } finally {
+    setActiveSub(prevSub);
+  }
 }

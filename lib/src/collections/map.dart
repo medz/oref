@@ -1,9 +1,7 @@
 import 'dart:collection';
 
 import 'package:flutter/widgets.dart';
-
-import '../core/memoized.dart';
-import '../core/reactive.dart';
+import 'package:oref/oref.dart';
 
 /// A reactive map that tracks changes to its source map.
 class ReactiveMap<K, V> extends MapBase<K, V>

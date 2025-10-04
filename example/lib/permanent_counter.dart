@@ -40,7 +40,7 @@ final usePermanentCounter = infer((BuildContext context, String name) {
     unawaited(prefs.setInt(name, value));
   });
 
-  return (value: count, increment: increment, decrement: decrement);
+  return (count: count, increment: increment, decrement: decrement);
 });
 
 class PermanentCounter extends StatelessWidget {
@@ -57,7 +57,7 @@ class PermanentCounter extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           spacing: 24,
           children: [
-            SignalBuilder(builder: (_) => Text('Count: ${counter.value()}')),
+            SignalBuilder(builder: (_) => Text('Count: ${counter.count()}')),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               spacing: 16,

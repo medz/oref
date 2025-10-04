@@ -1,56 +1,38 @@
 import "package:alien_signals/alien_signals.dart" as alien;
+import "package:alien_signals/preset_developer.dart" as alien;
 import "package:flutter/widgets.dart";
 
 import "memoized.dart";
-import "widget_effect.dart";
+import "watch.dart";
 
-final class _Mask<T> {
-  const _Mask(this.computed);
-  final T Function() computed;
-}
+typedef Computed<T> = alien.Computed<T>;
 
-/// Creates a reactive computed value that automatically tracks its dependencies.
-///
-/// Example:
-/// ```dart
-/// class DoubleCounter extends StatelessWidget {
-///     Widget build() {
-///         final count = signal(context, 0);
-///         final doubleCount = computed(context, () => count() * 2);
-///
-///         void increment() => count(count() + 1);
-///
-///         return Column(
-///             children: [
-///                 Text("${doubleCount()}"),
-///                 TextButton(
-///                     onPressed: increment,
-///                     child: const Text("Increment"),
-///                 ),
-///             ],
-///         );
-///     }
-/// }
-/// ```
-T Function() computed<T>(
+Computed<T> computed<T>(
   BuildContext? context,
   T Function(T? previousValue) getter,
 ) {
   if (context == null) {
-    return alien.computed(getter);
+    return _OrefComputed<T>(getter: getter);
   }
 
-  final effect = useWidgetEffect(context);
-  final mask = useMemoized(context, () {
-    final computed = alien.computed(getter);
-    return _Mask<T>(() {
-      if (alien.getCurrentSub() == null && (context as Element).dirty) {
-        return effect.using(computed);
-      }
+  return useMemoized(
+    context,
+    () => _OrefComputed<T>(getter: getter, context: context),
+  );
+}
 
-      return computed();
-    });
-  });
+class _OrefComputed<T> extends alien.PresetComputed<T> {
+  _OrefComputed({required super.getter, this.context})
+    : super(flags: 0 /* None */);
 
-  return mask.computed;
+  final BuildContext? context;
+
+  @override
+  T call() {
+    if (alien.getActiveSub() != null || context == null) {
+      return super();
+    }
+
+    return watch(context as BuildContext, () => super());
+  }
 }

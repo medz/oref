@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:oref/oref.dart';
-import 'package:oref/collections.dart';
 
 class Todo {
   final String title;
@@ -87,11 +86,11 @@ class AddTodoDialog extends StatelessWidget {
         children: [
           TextField(
             decoration: const InputDecoration(labelText: 'Title'),
-            onChanged: title,
+            onChanged: title.call,
           ),
           TextField(
             decoration: const InputDecoration(labelText: 'Description'),
-            onChanged: description,
+            onChanged: description.call,
           ),
         ],
       ),

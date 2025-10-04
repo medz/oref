@@ -7,11 +7,11 @@ void main() {
     int tick = 0;
 
     final src = signal(null, 0);
-    final stop = effect(null, () {
+    final Effect(:dispose) = effect(null, () {
       src();
       tick++;
 
-      onEffectStop(() {
+      onEffectDispose(() {
         clean = true;
       });
     });
@@ -23,7 +23,7 @@ void main() {
     expect(clean, equals(false));
     expect(tick, equals(2));
 
-    stop();
+    dispose();
     expect(clean, equals(true));
     expect(tick, equals(2));
 

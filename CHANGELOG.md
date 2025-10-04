@@ -1,3 +1,63 @@
+## 2.4.2
+
+- Fix context check in async data initialization
+
+## 2.4.1
+
+- Revert signal interface to use `call()` syntax
+
+## 2.4.0
+
+- **Migrated to alien_signals 1.0.0**
+
+### Widgets Lifecycle
+
+We've added experimental widget lifecycle features in this release:
+
+```dart
+import 'package:oref/experimental/lifecycle.dart';
+
+onMounted(() {
+  print('Mounted');
+});
+
+onUpdated(() {
+  print('Updated');
+});
+```
+
+### Migration Guide
+
+All signal values ​​can be read using `.value`:
+
+```diff
+import 'package:oref/oref.dart';
+-import 'package:oref/async.dart';
+-import 'package:oref/collections.dart';
+
+
+final e = effect(context, () {
+- onEffectStop({
++ onEffectDispose(() {
+    print('Effect disposed');
+  });
+});
+-e();
++e.dispose();
+
+final scope = effectScope();
+-scope();
++scope.dispose();
+```
+
+## 2.3.1
+
+Status: Released (2025-09-27)
+
+### 🐛 BUG FIXES
+
+- fix(async): Field 'node' has not been initialized.
+
 ## 2.3.0
 
 Status: Released (2025-09-25)

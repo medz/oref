@@ -59,7 +59,4 @@ abstract mixin class Reactive<T extends Reactive<T>> {
 
   /// Triggers a change in the reactive state.
   void trigger() => _signal(_Wrap(this as T));
-
-  /// Returns reactive itself.
-  T call() => _signal().value;
 }
