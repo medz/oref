@@ -11,14 +11,7 @@ class Simple extends StatelessWidget {
 
     return Column(
       children: [
-        // First way
-        SignalBuilder(builder: (_) => Text('Count: ${count()}')),
-
-        // Second way
-        Builder(
-          builder: (context) => Text('Count: ${watch(context, () => count())}'),
-        ),
-
+        Text('Count: ${count()}'),
         TextButton(onPressed: increment, child: const Text('Increment')),
       ],
     );
