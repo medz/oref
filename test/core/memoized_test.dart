@@ -217,7 +217,7 @@ void main() {
       expect(find.text('count2: 100'), findsOneWidget);
     });
 
-    testWidgets('resetMemoizedFor clears memoized values', (tester) async {
+    testWidgets('resetMemoizedFor resets traversal pointer', (tester) async {
       int createCount = 0;
       late BuildContext savedContext;
 
@@ -256,7 +256,7 @@ void main() {
         ),
       );
 
-      expect(createCount, equals(2)); // Should recreate after reset
+      expect(createCount, equals(1)); // Should reuse existing memoized value
     });
 
     testWidgets('memoizes reactive collections', (tester) async {
