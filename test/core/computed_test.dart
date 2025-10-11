@@ -294,7 +294,7 @@ void main() {
               final accumulated = computed<int>(context, (prev) {
                 return (prev ?? 0) + count();
               });
-              print('accumulated value: ${accumulated()}');
+              debugPrint('accumulated value: ${accumulated()}');
               return Column(
                 children: [
                   Text('${accumulated()}'),
