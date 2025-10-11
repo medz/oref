@@ -69,7 +69,10 @@ class _AsyncDataExecutor<T> {
         isInitialized = true;
       }
 
-      Future.microtask(schedule);
+      Future.microtask(schedule).catchError((_) {
+        // Errors are already handled in schedule() by setting error state
+        // This catchError prevents unhandled errors from propagating
+      });
     });
 
     if (!prevIsInitialized) {
