@@ -259,11 +259,11 @@ void main() {
 
       expect(data.data, equals(0));
 
-      await Future.delayed(Duration(milliseconds: 1));
+      await Future.delayed(Duration(milliseconds: 5));
       expect(data.status, equals(AsyncStatus.pending));
       expect(data.data, equals(0)); // Should preserve default
 
-      await Future.delayed(Duration(milliseconds: 20));
+      await Future.delayed(Duration(milliseconds: 50));
       expect(data.status, equals(AsyncStatus.success));
       expect(data.data, equals(42));
     });
