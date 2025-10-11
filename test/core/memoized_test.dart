@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:oref/oref.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('Memoized', () {
     testWidgets('memoizes value in widget', (tester) async {
       int createCount = 0;
