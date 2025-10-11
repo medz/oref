@@ -2,10 +2,6 @@ name: Test
 
 on: [push, pull_request]
 
-concurrency:
-  group: test-${{ github.sha }}
-  cancel-in-progress: true
-
 jobs:
   test:
     runs-on: ubuntu-latest
