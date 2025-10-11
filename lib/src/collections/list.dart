@@ -51,4 +51,36 @@ class ReactiveList<T> extends ListBase<T>
     _source.add(element);
     trigger();
   }
+
+  @override
+  void addAll(Iterable<T> iterable) {
+    _source.addAll(iterable);
+    trigger();
+  }
+
+  @override
+  void insert(int index, T element) {
+    _source.insert(index, element);
+    trigger();
+  }
+
+  @override
+  bool remove(Object? value) {
+    final result = _source.remove(value);
+    trigger();
+    return result;
+  }
+
+  @override
+  T removeAt(int index) {
+    final result = _source.removeAt(index);
+    trigger();
+    return result;
+  }
+
+  @override
+  void clear() {
+    _source.clear();
+    trigger();
+  }
 }

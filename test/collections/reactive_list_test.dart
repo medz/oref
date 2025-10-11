@@ -274,10 +274,10 @@ void main() {
 
       list.add(4);
       expect(effect1Count, equals(2));
-      expect(effect2Count, equals(2));
+      expect(effect2Count, equals(2)); // coarse-grained: any mutation triggers all effects
 
       list[0] = 10;
-      expect(effect1Count, equals(3));
+      expect(effect1Count, equals(3)); // coarse-grained: any mutation triggers all effects
       expect(effect2Count, equals(3));
     });
 

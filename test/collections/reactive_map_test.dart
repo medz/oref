@@ -222,10 +222,10 @@ void main() {
 
       map['c'] = 3;
       expect(effect1Count, equals(2));
-      expect(effect2Count, equals(2));
+      expect(effect2Count, equals(2)); // coarse-grained: any mutation triggers all effects
 
       map['a'] = 10;
-      expect(effect1Count, equals(3));
+      expect(effect1Count, equals(3)); // coarse-grained: any mutation triggers all effects
       expect(effect2Count, equals(3));
     });
 
@@ -301,7 +301,7 @@ void main() {
       expect(effectCount, equals(2));
 
       map.putIfAbsent('a', () => 10); // Should not add
-      expect(effectCount, equals(3)); // Still triggers
+      expect(effectCount, equals(3)); // Still triggers because it reads the map (calls track)
       expect(map['a'], equals(1)); // Value unchanged
     });
   });
