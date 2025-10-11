@@ -300,8 +300,8 @@ void main() {
       map.putIfAbsent('b', () => 2);
       expect(effectCount, equals(2));
 
-      map.putIfAbsent('a', () => 10); // Should not add
-      expect(effectCount, equals(3)); // Still triggers because it reads the map (calls track)
+      map.putIfAbsent('a', () => 10); // Should not add or trigger
+      expect(effectCount, equals(2)); // Should not trigger since no modification
       expect(map['a'], equals(1)); // Value unchanged
     });
   });

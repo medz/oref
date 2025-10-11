@@ -82,8 +82,6 @@ class _AsyncDataExecutor<T> {
       return;
     } else if (completer.isCompleted) {
       completer = Completer();
-      // Prevent unhandled errors by adding a no-op error handler
-      completer.future.catchError((_) {});
     }
 
     status(AsyncStatus.pending);
