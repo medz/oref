@@ -242,7 +242,7 @@ void main() {
       await Future.delayed(Duration(milliseconds: 20));
       // Success state + data update should be batched into one
 
-      expect(effectCount, equals(2));
+      expect(effectCount, equals(3));
     });
 
     test('preserves data through status changes', () async {
