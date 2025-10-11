@@ -1,3 +1,7 @@
+## 2.4.3
+
+- Remove experimental widget lifecycle
+
 ## 2.4.2
 
 - Fix context check in async data initialization
