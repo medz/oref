@@ -3,7 +3,6 @@ import 'package:oref/oref.dart';
 
 import 'async_data.dart';
 import 'hashcode.dart';
-import 'lifecycle.dart';
 import 'permanent_counter.dart';
 import 'simple.dart';
 import 'todo.dart';
@@ -18,7 +17,6 @@ final routes = <String, WidgetBuilder>{
   "simple": (_) => const Simple(),
   'hashcode': (_) => const HashCode(),
   'async-data': (_) => const AsyncDataExample(),
-  'lifecycle': (_) => const LifecycleExample(),
 };
 
 class ExampleApp extends StatelessWidget {
