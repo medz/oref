@@ -68,5 +68,8 @@ void resetMemoizedFor(BuildContext context) {
   final head = _store[context]?.head, state = (head?.value as _RootState?);
 
   state?.reset = true;
+  if (head != null) {
+    head.next = null;
+  }
   _store[context] = head;
 }
