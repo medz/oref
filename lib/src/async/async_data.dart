@@ -82,9 +82,11 @@ class _AsyncDataExecutor<T> {
       return;
     } else if (completer.isCompleted) {
       completer = Completer();
-      completer.future.catchError((_) {
+      // Attach error handler to prevent unhandled exceptions
+      // Using unawaited to indicate we intentionally don't await this
+      unawaited(completer.future.catchError((_) {
         return null;
-      });
+      }));
     }
 
     status(AsyncStatus.pending);
