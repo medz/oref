@@ -1,7 +1,10 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:oref/oref.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('Computed', () {
     test('computes value from signals', () {
       final count = signal(null, 5);
@@ -143,6 +146,257 @@ void main() {
       count(10);
       expect(doubled(), equals(20));
       expect(tripled(), equals(30));
+    });
+  });
+
+  group('Computed with Flutter Widget Context', () {
+    testWidgets('computes value from signal in widget', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) {
+              final count = signal(context, 5);
+              final doubled = computed(context, (_) => count() * 2);
+              return Column(
+                children: [
+                  Text('${doubled()}'),
+                  TextButton(
+                    onPressed: () => count(count() + 1),
+                    child: const Text('increment'),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      );
+
+      expect(find.text('10'), findsOneWidget);
+
+      await tester.tap(find.text('increment'));
+      await tester.pump();
+
+      expect(find.text('12'), findsOneWidget);
+    });
+
+    testWidgets('computed updates when dependency changes in widget',
+        (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) {
+              final a = signal(context, 2);
+              final b = signal(context, 3);
+              final sum = computed(context, (_) => a() + b());
+              return Column(
+                children: [
+                  Text('Sum: ${sum()}'),
+                  TextButton(
+                    onPressed: () => a(a() + 1),
+                    child: const Text('inc a'),
+                  ),
+                  TextButton(
+                    onPressed: () => b(b() + 1),
+                    child: const Text('inc b'),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      );
+
+      expect(find.text('Sum: 5'), findsOneWidget);
+
+      await tester.tap(find.text('inc a'));
+      await tester.pump();
+      expect(find.text('Sum: 6'), findsOneWidget);
+
+      await tester.tap(find.text('inc b'));
+      await tester.pump();
+      expect(find.text('Sum: 7'), findsOneWidget);
+    });
+
+    testWidgets('chained computed values in widget', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) {
+              final count = signal(context, 2);
+              final doubled = computed(context, (_) => count() * 2);
+              final quadrupled = computed(context, (_) => doubled() * 2);
+              return Column(
+                children: [
+                  Text('${quadrupled()}'),
+                  TextButton(
+                    onPressed: () => count(count() + 1),
+                    child: const Text('increment'),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      );
+
+      expect(find.text('8'), findsOneWidget);
+
+      await tester.tap(find.text('increment'));
+      await tester.pump();
+
+      expect(find.text('12'), findsOneWidget);
+    });
+
+    testWidgets('computed is lazy in widget', (tester) async {
+      int computeCount = 0;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) {
+              final count = signal(context, 5);
+              final doubled = computed(context, (_) {
+                computeCount++;
+                return count() * 2;
+              });
+              return Column(
+                children: [
+                  Text('${doubled()}'),
+                  TextButton(
+                    onPressed: () => count(count() + 1),
+                    child: const Text('increment'),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      );
+
+      // First build should compute once
+      expect(computeCount, greaterThan(0));
+      final initialCount = computeCount;
+
+      await tester.tap(find.text('increment'));
+      await tester.pump();
+
+      // Should compute again after signal changes
+      expect(computeCount, greaterThan(initialCount));
+    });
+
+    testWidgets('computed with previous value in widget', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) {
+              final count = signal(context, 1);
+              final accumulated = computed<int>(context, (prev) {
+                return (prev ?? 0) + count();
+              });
+              return Column(
+                children: [
+                  Text('${accumulated()}'),
+                  TextButton(
+                    onPressed: () => count(count() + 1),
+                    child: const Text('increment'),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      );
+
+      expect(find.text('1'), findsOneWidget);
+
+      await tester.tap(find.text('increment'));
+      await tester.pump();
+      expect(find.text('3'), findsOneWidget); // 1 + 2
+
+      await tester.tap(find.text('increment'));
+      await tester.pump();
+      expect(find.text('6'), findsOneWidget); // 3 + 3
+    });
+
+    testWidgets('computed with conditional dependencies in widget',
+        (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) {
+              final condition = signal(context, true);
+              final a = signal(context, 1);
+              final b = signal(context, 2);
+              final result = computed(context, (_) {
+                return condition() ? a() : b();
+              });
+              return Column(
+                children: [
+                  Text('${result()}'),
+                  TextButton(
+                    onPressed: () => condition(!condition()),
+                    child: const Text('toggle'),
+                  ),
+                  TextButton(
+                    onPressed: () => a(a() + 10),
+                    child: const Text('inc a'),
+                  ),
+                  TextButton(
+                    onPressed: () => b(b() + 10),
+                    child: const Text('inc b'),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      );
+
+      expect(find.text('1'), findsOneWidget);
+
+      await tester.tap(find.text('inc a'));
+      await tester.pump();
+      expect(find.text('11'), findsOneWidget);
+
+      await tester.tap(find.text('toggle'));
+      await tester.pump();
+      expect(find.text('2'), findsOneWidget);
+
+      await tester.tap(find.text('inc b'));
+      await tester.pump();
+      expect(find.text('12'), findsOneWidget);
+    });
+
+    testWidgets('computed triggers widget rebuild', (tester) async {
+      int buildCount = 0;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) {
+              buildCount++;
+              final count = signal(context, 5);
+              final doubled = computed(context, (_) => count() * 2);
+              return Column(
+                children: [
+                  Text('${doubled()}'),
+                  TextButton(
+                    onPressed: () => count(count() + 1),
+                    child: const Text('increment'),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      );
+
+      expect(buildCount, equals(1));
+
+      await tester.tap(find.text('increment'));
+      await tester.pump();
+
+      expect(buildCount, equals(2));
     });
   });
 }
