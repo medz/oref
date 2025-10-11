@@ -124,7 +124,8 @@ void main() {
         throw Exception('Test error');
       });
 
-      await Future.delayed(Duration(milliseconds: 20));
+      // Wait for the error to be caught and status updated
+      await Future.delayed(Duration(milliseconds: 50));
 
       final result = data.when(
         idle: (d) => 'idle',
