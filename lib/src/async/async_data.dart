@@ -82,6 +82,9 @@ class _AsyncDataExecutor<T> {
       return;
     } else if (completer.isCompleted) {
       completer = Completer();
+      completer.future.catchError((_) {
+        return null;
+      });
     }
 
     status(AsyncStatus.pending);
@@ -94,13 +97,6 @@ class _AsyncDataExecutor<T> {
       });
 
       completer.complete(result);
-    } on Exception catch (exception, stackTrace) {
-      oref.batch(() {
-        error(AsyncError(exception, stackTrace));
-        status(AsyncStatus.error);
-      });
-
-      completer.completeError(exception);
     } catch (error, stackTrace) {
       oref.batch(() {
         this.error(AsyncError(error, stackTrace));
