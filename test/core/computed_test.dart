@@ -179,8 +179,9 @@ void main() {
       expect(find.text('12'), findsOneWidget);
     });
 
-    testWidgets('computed updates when dependency changes in widget',
-        (tester) async {
+    testWidgets('computed updates when dependency changes in widget', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Builder(
@@ -293,6 +294,7 @@ void main() {
               final accumulated = computed<int>(context, (prev) {
                 return (prev ?? 0) + count();
               });
+              print('accumulated value: ${accumulated()}');
               return Column(
                 children: [
                   Text('${accumulated()}'),
@@ -318,8 +320,9 @@ void main() {
       expect(find.text('6'), findsOneWidget); // 3 + 3
     });
 
-    testWidgets('computed with conditional dependencies in widget',
-        (tester) async {
+    testWidgets('computed with conditional dependencies in widget', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Builder(
