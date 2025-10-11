@@ -287,8 +287,22 @@ void main() {
     testWidgets('computed with previous value in widget', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: _ComputedWithPrevWidget(),
+          home: Builder(
+            builder: (context) {
+              final count = signal(context, 1);
+              final accumulated = computed<int>(context, (prev) {
+                return (prev ?? 0) + count();
+              });
+              return Column(
+                children: [
+                  Text('${accumulated()}'),
+                  TextButton(
+                    onPressed: () => count(count() + 1),
+                    child: const Text('increment'),
+                  ),
+                ],
+              );
+            },
           ),
         ),
       );
@@ -385,37 +399,4 @@ void main() {
       expect(buildCount, equals(2));
     });
   });
-}
-
-class _ComputedWithPrevWidget extends StatefulWidget {
-  @override
-  State<_ComputedWithPrevWidget> createState() =>
-      _ComputedWithPrevWidgetState();
-}
-
-class _ComputedWithPrevWidgetState extends State<_ComputedWithPrevWidget> {
-  late final Signal<int> count;
-  late final Computed<int> accumulated;
-
-  @override
-  void initState() {
-    super.initState();
-    count = signal(null, 1);
-    accumulated = computed<int>(null, (prev) {
-      return (prev ?? 0) + count();
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text('${accumulated()}'),
-        TextButton(
-          onPressed: () => count(count() + 1),
-          child: const Text('increment'),
-        ),
-      ],
-    );
-  }
 }
