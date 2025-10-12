@@ -69,11 +69,17 @@ T useMemoized<T>(BuildContext context, T Function() factory) {
   return memoized.value;
 }
 
-/// Resets the memoized value for the given context.
+/// {@template oref.resetMemoizedCursor}
+/// Reset memoized cursor.
 ///
 /// This will cause the next call to [useMemoized] to recompute the value.
-void resetMemoizedFor(BuildContext context) {
+/// {@endtemplate}
+void resetMemoizedCursor(BuildContext context) {
   final root = _store[context]?.head as _RootMemoized?;
   root?.reset = true;
   _store[context] = root;
 }
+
+/// {@macro oref.resetMemoizedCursor}
+@Deprecated("Use resetMemoizedCursor instead, Remore in 3.0.0")
+const resetMemoizedFor = resetMemoizedCursor;

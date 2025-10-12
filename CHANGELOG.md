@@ -6,6 +6,7 @@
 - fix(collections): correct ReactiveMap putIfAbsent tracking behavior
 - fix(collections): optimize putIfAbsent to only trigger on change
 - Refactor memoized state management with dedicated root class
+- Rename resetMemoizedFor to resetMemoizedCursor
 
 ## 2.4.3
 

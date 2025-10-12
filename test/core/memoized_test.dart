@@ -54,12 +54,7 @@ void main() {
               final intValue = useMemoized<int>(context, () => 42);
               final stringValue = useMemoized<String>(context, () => 'hello');
 
-              return Column(
-                children: [
-                  Text('$intValue'),
-                  Text(stringValue),
-                ],
-              );
+              return Column(children: [Text('$intValue'), Text(stringValue)]);
             },
           ),
         ),
@@ -241,7 +236,7 @@ void main() {
 
       expect(createCount, equals(1));
 
-      resetMemoizedFor(savedContext);
+      resetMemoizedCursor(savedContext);
 
       await tester.pumpWidget(
         MaterialApp(
@@ -373,7 +368,9 @@ void main() {
       expect(find.text('2'), findsOneWidget);
     });
 
-    testWidgets('different contexts have separate memoized values', (tester) async {
+    testWidgets('different contexts have separate memoized values', (
+      tester,
+    ) async {
       int globalCount = 0;
 
       await tester.pumpWidget(

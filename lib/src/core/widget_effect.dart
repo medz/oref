@@ -28,7 +28,7 @@ Effect useWidgetEffect(BuildContext context) {
       prevSub = alien.setActiveSub(scope as alien.ReactiveNode);
   try {
     final e = effect(null, () {
-      resetMemoizedFor(element);
+      resetMemoizedCursor(element);
       if (!element.mounted) {
         scope.dispose();
       } else if (!element.dirty) {
