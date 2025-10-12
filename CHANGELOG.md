@@ -1,3 +1,7 @@
+## 2.4.5
+
+- fix: `ReactiveMap.putIfAbsent` incorrectly tracks state and simplifies triggering logic.
+
 ## 2.4.4
 
 - Add tests
