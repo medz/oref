@@ -20,8 +20,13 @@ class _Memoized<T> {
   toString() => "oref.Memoized(${value.toString()})";
 }
 
-class _RootState {
-  bool reset = true;
+class _RootMemoized extends _Memoized<BuildContext> {
+  _RootMemoized(BuildContext context) : super(value: context);
+
+  late bool reset = true;
+
+  @override
+  toString() => "oref.RootMemoized($value)";
 }
 
 final _store = Expando<_Memoized>("oref:memoized");
@@ -40,16 +45,15 @@ final _store = Expando<_Memoized>("oref:memoized");
 T useMemoized<T>(BuildContext context, T Function() factory) {
   setActiveContext(context);
 
-  final prev = _store[context] ??= _Memoized(value: _RootState()),
+  final prev = _store[context] ??= _RootMemoized(context),
       current = prev.next,
-      head = prev.head,
-      state = head.value as _RootState;
+      root = prev.head as _RootMemoized;
 
-  if (state.reset) {
-    state.reset = false;
+  if (root.reset) {
+    root.reset = false;
     WidgetsFlutterBinding.ensureInitialized().addPostFrameCallback((_) {
-      _store[context] = head;
-      state.reset = true;
+      _store[context] = root;
+      root.reset = true;
     });
   }
 
@@ -69,8 +73,7 @@ T useMemoized<T>(BuildContext context, T Function() factory) {
 ///
 /// This will cause the next call to [useMemoized] to recompute the value.
 void resetMemoizedFor(BuildContext context) {
-  final head = _store[context]?.head, state = (head?.value as _RootState?);
-
-  state?.reset = true;
-  _store[context] = head;
+  final root = _store[context]?.head as _RootMemoized?;
+  root?.reset = true;
+  _store[context] = root;
 }
