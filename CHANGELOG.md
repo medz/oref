@@ -1,4 +1,4 @@
-## 2.4.4 (Unreleased)
+## 2.4.4
 
 - Add tests
 - fix(async): prevent unhandled errors in AsyncData completer
