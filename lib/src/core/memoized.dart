@@ -1,5 +1,7 @@
 import 'package:flutter/widgets.dart';
 
+import 'context.dart';
+
 class _Memoized<T> {
   _Memoized({required this.value, this.next, this.prev, _Memoized? head}) {
     this.head = head ?? this;
@@ -36,6 +38,8 @@ final _store = Expando<_Memoized>("oref:memoized");
 /// final value = useMemoized(context, () => expensiveComputation());
 /// ```
 T useMemoized<T>(BuildContext context, T Function() factory) {
+  setActiveContext(context);
+
   final prev = _store[context] ??= _Memoized(value: _RootState()),
       current = prev.next,
       head = prev.head,

@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:oref/oref.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   testWidgets("track in widget", (tester) async {
     await tester.pumpWidget(
       MaterialApp(

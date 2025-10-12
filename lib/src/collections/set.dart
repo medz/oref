@@ -64,4 +64,26 @@ class ReactiveSet<T> extends SetBase<T>
     track();
     return _source.toSet();
   }
+
+  @override
+  void addAll(Iterable<T> elements) {
+    for (final element in elements) {
+      _source.add(element);
+    }
+    trigger();
+  }
+
+  @override
+  void removeAll(Iterable<Object?> elements) {
+    for (final element in elements) {
+      _source.remove(element);
+    }
+    trigger();
+  }
+
+  @override
+  void clear() {
+    _source.clear();
+    trigger();
+  }
 }

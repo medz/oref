@@ -1,3 +1,11 @@
+## 2.4.4
+
+- Add tests
+- fix(async): prevent unhandled errors in AsyncData completer
+- fix(async): prevent unhandled errors in AsyncData microtask
+- fix(collections): correct ReactiveMap putIfAbsent tracking behavior
+- fix(collections): optimize putIfAbsent to only trigger on change
+
 ## 2.4.3
 
 - Remove experimental widget lifecycle

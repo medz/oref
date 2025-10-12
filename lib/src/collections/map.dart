@@ -47,4 +47,16 @@ class ReactiveMap<K, V> extends MapBase<K, V>
     trigger();
     return result;
   }
+
+  @override
+  V putIfAbsent(K key, V Function() ifAbsent) {
+    if (!_source.containsKey(key)) {
+      final value = ifAbsent();
+      _source[key] = value;
+      trigger();
+      return value;
+    }
+    track();
+    return _source[key] as V;
+  }
 }

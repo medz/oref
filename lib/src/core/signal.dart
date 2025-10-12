@@ -2,6 +2,7 @@ import "package:alien_signals/alien_signals.dart" as alien;
 import "package:alien_signals/preset_developer.dart" as alien;
 import "package:flutter/widgets.dart";
 
+import "context.dart";
 import "memoized.dart";
 import "watch.dart";
 
@@ -44,10 +45,17 @@ class _OrefSignal<T> extends alien.PresetWritableSignal<T> {
 
   @override
   T call([T? newValue, nulls = false]) {
-    if (alien.getActiveSub() != null || context == null) {
+    if (newValue != null || (null is T && nulls)) {
       return super(newValue, nulls);
     }
 
-    return watch(context as BuildContext, () => super(newValue, nulls));
+    if (alien.getActiveSub() == null) {
+      if (getActiveContext() case final Element element) {
+        print('Signal in $context');
+        return watch(element, super.call);
+      }
+    }
+
+    return super(newValue, nulls);
   }
 }
