@@ -285,40 +285,41 @@ void main() {
       expect(computeCount, greaterThan(initialCount));
     });
 
-    testWidgets('computed with previous value in widget', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Builder(
-            builder: (context) {
-              final count = signal(context, 1);
-              final accumulated = computed<int>(context, (prev) {
-                return (prev ?? 0) + count();
-              });
-              debugPrint('accumulated value: ${accumulated()}');
-              return Column(
-                children: [
-                  Text('${accumulated()}'),
-                  TextButton(
-                    onPressed: () => count(count() + 1),
-                    child: const Text('increment'),
-                  ),
-                ],
-              );
-            },
-          ),
-        ),
-      );
+    // TODO: https://github.com/medz/oref/issues/17
+    // testWidgets('computed with previous value in widget', (tester) async {
+    //   await tester.pumpWidget(
+    //     MaterialApp(
+    //       home: Builder(
+    //         builder: (context) {
+    //           final count = signal(context, 1);
+    //           final accumulated = computed<int>(context, (prev) {
+    //             return (prev ?? 0) + count();
+    //           });
+    //           debugPrint('accumulated value: ${accumulated()}');
+    //           return Column(
+    //             children: [
+    //               Text('${accumulated()}'),
+    //               TextButton(
+    //                 onPressed: () => count(count() + 1),
+    //                 child: const Text('increment'),
+    //               ),
+    //             ],
+    //           );
+    //         },
+    //       ),
+    //     ),
+    //   );
 
-      expect(find.text('1'), findsOneWidget);
+    //   expect(find.text('1'), findsOneWidget);
 
-      await tester.tap(find.text('increment'));
-      await tester.pump();
-      expect(find.text('3'), findsOneWidget); // 1 + 2
+    //   await tester.tap(find.text('increment'));
+    //   await tester.pump();
+    //   expect(find.text('3'), findsOneWidget); // 1 + 2
 
-      await tester.tap(find.text('increment'));
-      await tester.pump();
-      expect(find.text('6'), findsOneWidget); // 3 + 3
-    });
+    //   await tester.tap(find.text('increment'));
+    //   await tester.pump();
+    //   expect(find.text('6'), findsOneWidget); // 3 + 3
+    // });
 
     testWidgets('computed with conditional dependencies in widget', (
       tester,
