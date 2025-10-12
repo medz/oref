@@ -1,5 +1,4 @@
 import "package:alien_signals/alien_signals.dart" as alien;
-import "package:alien_signals/system.dart" as alien;
 import "package:alien_signals/preset_developer.dart" as alien;
 import "package:flutter/widgets.dart";
 
@@ -28,13 +27,17 @@ class _OrefComputed<T> extends alien.PresetComputed<T> {
 
   @override
   T call() {
-    // If we're in a widget context and haven't subscribed yet, subscribe once
-    if (context != null && !_subscribed && alien.getActiveSub() == null) {
-      _subscribed = true;
+    // If we're in a widget context and not already in an effect, wrap in widget effect
+    if (context != null && alien.getActiveSub() == null) {
       final effect = useWidgetEffect(context!);
-      alien.system.link(this, effect as alien.ReactiveNode, 0);
+      final prevSub = alien.setActiveSub(effect as alien.ReactiveNode);
+      try {
+        return super.call();
+      } finally {
+        alien.setActiveSub(prevSub);
+      }
     }
 
-    return super();
+    return super.call();
   }
 }
