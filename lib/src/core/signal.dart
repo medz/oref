@@ -51,7 +51,6 @@ class _OrefSignal<T> extends alien.PresetWritableSignal<T> {
 
     if (alien.getActiveSub() == null) {
       if (getActiveContext() case final Element element) {
-        print('Signal in $context');
         return watch(element, super.call);
       }
     }
