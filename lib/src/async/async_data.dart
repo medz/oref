@@ -84,9 +84,7 @@ class _AsyncDataExecutor<T> {
       completer = Completer();
       // Attach error handler to prevent unhandled exceptions
       // Using unawaited to indicate we intentionally don't await this
-      unawaited(completer.future.catchError((_) {
-        return null;
-      }));
+      unawaited(completer.future.catchError((_) => null));
     }
 
     status(AsyncStatus.pending);
