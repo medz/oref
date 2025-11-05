@@ -33,3 +33,63 @@ class _OrefComputed<T> extends alien.PresetComputed<T> {
     return super();
   }
 }
+
+//------------------------- Writable Computed ---------------------------//
+
+/// {@template oref.core.writable-computed}
+/// Factory method for creating a writable computed signal.
+///
+/// Example:
+/// ```dart
+/// import 'dart:math' as math;
+///
+/// final count = signal<double>(null, 0);
+/// final squared = writableComputed<double>(null,
+///   get: (_) => count() * count(),
+///   set: (value) => count(math.sqrt(value)),
+/// );
+///
+/// count(2);
+/// print(count()); // Print 2.0
+/// print(squared()); // Print 4.0
+///
+/// squared(16);
+/// print(count()); // Print 4.0
+/// print(squared()); // Print 16.0
+/// ```
+/// {@endtemplate}
+abstract interface class WritableComputed<T>
+    implements Computed<T>, alien.WritableSignal<T> {}
+
+/// {@macro oref.core.writable-computed}
+WritableComputed<T> writableComputed<T>(
+  BuildContext? context, {
+  required T Function(T? cached) get,
+  required void Function(T value) set,
+}) {
+  if (context == null) {
+    return _OrefWritableComputed(getter: get, setter: set);
+  }
+
+  return useMemoized(
+    context,
+    () => _OrefWritableComputed(getter: get, setter: set),
+  );
+}
+
+class _OrefWritableComputed<T> extends _OrefComputed<T>
+    implements WritableComputed<T> {
+  _OrefWritableComputed({required super.getter, required this.setter});
+
+  final void Function(T value) setter;
+
+  @override
+  T call([T? value, bool nulls = false]) {
+    if (value != null || (null is T && nulls)) {
+      setter(value as T);
+      return value;
+    }
+
+    return super.call();
+  }
+}
