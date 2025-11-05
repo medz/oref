@@ -1,3 +1,25 @@
+## 2.5.0
+
+### Features
+
+- **Add `writableComputed` API**: Introduce writable computed signals that support both reading computed values and writing back to source signals through custom setter functions ([#19](https://github.com/medz/oref/issues/19)) - Thanks @definev!
+  - Supports bidirectional data flow with custom transformation logic
+  - Full integration with effects and widget rebuilds
+  - Works with complex types, null values, and input validation
+  - Can be chained with other computed signals
+
+### Improvements
+
+- Simplify async error handler syntax in `AsyncData`
+- Remove debug print statement from signal implementation
+
+### Tests
+
+- Add comprehensive test suite for `writableComputed` (21 new tests)
+  - Core functionality tests for reading, writing, and chaining
+  - Flutter widget integration tests
+  - Null handling, validation, and complex type scenarios
+
 ## 2.4.5
 
 - fix: `ReactiveMap.putIfAbsent` incorrectly tracks state and simplifies triggering logic.
