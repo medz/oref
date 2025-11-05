@@ -403,4 +403,496 @@ void main() {
       expect(buildCount, equals(2));
     });
   });
+
+  group('WritableComputed', () {
+    test('computes value from signals', () {
+      final count = signal<double>(null, 2);
+      final squared = writableComputed<double>(
+        null,
+        get: (_) => count() * count(),
+        set: (value) => count(value / 2),
+      );
+
+      expect(squared(), equals(4.0));
+    });
+
+    test('can be written to', () {
+      final count = signal<double>(null, 2);
+      final squared = writableComputed<double>(
+        null,
+        get: (_) => count() * count(),
+        set: (value) => count(value / 2),
+      );
+
+      expect(count(), equals(2.0));
+      expect(squared(), equals(4.0));
+
+      squared(16.0);
+      expect(count(), equals(8.0));
+      expect(squared(), equals(64.0));
+    });
+
+    test('setter can use custom logic', () {
+      final count = signal<double>(null, 0);
+      final squared = writableComputed<double>(
+        null,
+        get: (_) => count() * count(),
+        set: (value) {
+          // Use sqrt to reverse the squared operation
+          final root = value < 0
+              ? -1.0
+              : value.sign * (value.abs()).clamp(0.0, double.infinity);
+          count(root == -1.0 ? 0.0 : root);
+        },
+      );
+
+      squared(9.0);
+      expect(count(), equals(9.0));
+      expect(squared(), equals(81.0));
+
+      squared(0.0);
+      expect(count(), equals(0.0));
+      expect(squared(), equals(0.0));
+    });
+
+    test('updates multiple dependent signals', () {
+      final a = signal<int>(null, 2);
+      final b = signal<int>(null, 3);
+      final sum = writableComputed<int>(
+        null,
+        get: (_) => a() + b(),
+        set: (value) {
+          // Split the value between a and b
+          a(value ~/ 2);
+          b(value - (value ~/ 2));
+        },
+      );
+
+      expect(sum(), equals(5));
+
+      sum(10);
+      expect(a(), equals(5));
+      expect(b(), equals(5));
+      expect(sum(), equals(10));
+    });
+
+    test('triggers effects on write', () {
+      int effectCount = 0;
+      final count = signal<double>(null, 2);
+      final squared = writableComputed<double>(
+        null,
+        get: (_) => count() * count(),
+        set: (value) => count(value / 2),
+      );
+
+      effect(null, () {
+        squared();
+        effectCount++;
+      });
+
+      expect(effectCount, equals(1));
+
+      squared(16.0);
+      expect(effectCount, equals(2));
+    });
+
+    test('can be chained with other computed', () {
+      final count = signal<double>(null, 2);
+      final squared = writableComputed<double>(
+        null,
+        get: (_) => count() * count(),
+        set: (value) => count(value / 2),
+      );
+      final doubled = computed<double>(null, (_) => squared() * 2);
+
+      expect(squared(), equals(4.0));
+      expect(doubled(), equals(8.0));
+
+      squared(16.0);
+      expect(squared(), equals(64.0));
+      expect(doubled(), equals(128.0));
+    });
+
+    test('can be used as dependency for other writableComputed', () {
+      final base = signal<double>(null, 2);
+      final squared = writableComputed<double>(
+        null,
+        get: (_) => base() * base(),
+        set: (value) => base(value / 2),
+      );
+      final doubled = writableComputed<double>(
+        null,
+        get: (_) => squared() * 2,
+        set: (value) => squared(value / 2),
+      );
+
+      expect(base(), equals(2.0));
+      expect(squared(), equals(4.0));
+      expect(doubled(), equals(8.0));
+
+      doubled(32.0);
+      expect(base(), equals(8.0));
+      expect(squared(), equals(64.0));
+      expect(doubled(), equals(128.0));
+    });
+
+    test('handles null values correctly', () {
+      final value = signal<double?>(null, null);
+      final computed = writableComputed<double?>(
+        null,
+        get: (_) => value() != null ? value()! * 2 : null,
+        set: (v) => value(v != null ? v / 2 : null, true),
+      );
+
+      expect(computed(), isNull);
+
+      computed(10.0);
+      expect(value(), equals(5.0));
+      expect(computed(), equals(10.0));
+
+      computed(null, true);
+      expect(value(), isNull);
+      expect(computed(), isNull);
+    });
+
+    test('setter receives exact value written', () {
+      double? capturedValue;
+      final base = signal<double>(null, 0);
+      final computed = writableComputed<double>(
+        null,
+        get: (_) => base(),
+        set: (value) {
+          capturedValue = value;
+          base(value);
+        },
+      );
+
+      computed(42.5);
+      expect(capturedValue, equals(42.5));
+      expect(base(), equals(42.5));
+    });
+
+    test('multiple writes in sequence', () {
+      final count = signal<int>(null, 0);
+      final computed = writableComputed<int>(
+        null,
+        get: (_) => count() * 10,
+        set: (value) => count(value ~/ 10),
+      );
+
+      computed(10);
+      expect(count(), equals(1));
+      expect(computed(), equals(10));
+
+      computed(20);
+      expect(count(), equals(2));
+      expect(computed(), equals(20));
+
+      computed(30);
+      expect(count(), equals(3));
+      expect(computed(), equals(30));
+    });
+
+    test('getter uses previous value', () {
+      final count = signal<int>(null, 1);
+      final accumulated = writableComputed<int>(
+        null,
+        get: (prev) => (prev ?? 0) + count(),
+        set: (_) => {}, // No-op setter
+      );
+
+      expect(accumulated(), equals(1));
+
+      count(2);
+      expect(accumulated(), equals(3)); // 1 + 2
+
+      count(3);
+      expect(accumulated(), equals(6)); // 3 + 3
+    });
+
+    test('works with complex types', () {
+      final list = signal<List<int>>(null, [1, 2, 3]);
+      final computed = writableComputed<int>(
+        null,
+        get: (_) => list().reduce((a, b) => a + b),
+        set: (value) => list([value]),
+      );
+
+      expect(computed(), equals(6));
+
+      computed(10);
+      expect(list(), equals([10]));
+      expect(computed(), equals(10));
+    });
+
+    test('setter can validate input', () {
+      final count = signal<int>(null, 5);
+      final bounded = writableComputed<int>(
+        null,
+        get: (_) => count(),
+        set: (value) {
+          // Clamp value between 0 and 10
+          count(value.clamp(0, 10));
+        },
+      );
+
+      bounded(15);
+      expect(count(), equals(10));
+      expect(bounded(), equals(10));
+
+      bounded(-5);
+      expect(count(), equals(0));
+      expect(bounded(), equals(0));
+
+      bounded(5);
+      expect(count(), equals(5));
+      expect(bounded(), equals(5));
+    });
+
+    test('returns written value', () {
+      final count = signal<double>(null, 0);
+      final computed = writableComputed<double>(
+        null,
+        get: (_) => count(),
+        set: (value) => count(value),
+      );
+
+      final result = computed(42.0);
+      expect(result, equals(42.0));
+    });
+  });
+
+  group('WritableComputed with Flutter Widget Context', () {
+    testWidgets('computes and writes value in widget', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) {
+              final count = signal<double>(context, 2);
+              final squared = writableComputed<double>(
+                context,
+                get: (_) => count() * count(),
+                set: (value) => count(value / 2),
+              );
+              return Column(
+                children: [
+                  Text('Count: ${count()}'),
+                  Text('Squared: ${squared()}'),
+                  TextButton(
+                    onPressed: () => squared(16.0),
+                    child: const Text('set to 16'),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      );
+
+      expect(find.text('Count: 2.0'), findsOneWidget);
+      expect(find.text('Squared: 4.0'), findsOneWidget);
+
+      await tester.tap(find.text('set to 16'));
+      await tester.pump();
+
+      expect(find.text('Count: 8.0'), findsOneWidget);
+      expect(find.text('Squared: 64.0'), findsOneWidget);
+    });
+
+    testWidgets('triggers widget rebuild on write', (tester) async {
+      int buildCount = 0;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) {
+              buildCount++;
+              final count = signal<double>(context, 2);
+              final squared = writableComputed<double>(
+                context,
+                get: (_) => count() * count(),
+                set: (value) => count(value / 2),
+              );
+              return Column(
+                children: [
+                  Text('${squared()}'),
+                  TextButton(
+                    onPressed: () => squared(16.0),
+                    child: const Text('write'),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      );
+
+      expect(buildCount, equals(1));
+
+      await tester.tap(find.text('write'));
+      await tester.pump();
+
+      expect(buildCount, equals(2));
+    });
+
+    testWidgets('updates multiple dependent signals in widget', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) {
+              final a = signal<int>(context, 2);
+              final b = signal<int>(context, 3);
+              final sum = writableComputed<int>(
+                context,
+                get: (_) => a() + b(),
+                set: (value) {
+                  a(value ~/ 2);
+                  b(value - (value ~/ 2));
+                },
+              );
+              return Column(
+                children: [
+                  Text('A: ${a()}'),
+                  Text('B: ${b()}'),
+                  Text('Sum: ${sum()}'),
+                  TextButton(
+                    onPressed: () => sum(10),
+                    child: const Text('set sum to 10'),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      );
+
+      expect(find.text('A: 2'), findsOneWidget);
+      expect(find.text('B: 3'), findsOneWidget);
+      expect(find.text('Sum: 5'), findsOneWidget);
+
+      await tester.tap(find.text('set sum to 10'));
+      await tester.pump();
+
+      expect(find.text('A: 5'), findsOneWidget);
+      expect(find.text('B: 5'), findsOneWidget);
+      expect(find.text('Sum: 10'), findsOneWidget);
+    });
+
+    testWidgets('chained with computed in widget', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) {
+              final count = signal<double>(context, 2);
+              final squared = writableComputed<double>(
+                context,
+                get: (_) => count() * count(),
+                set: (value) => count(value / 2),
+              );
+              final doubled = computed<double>(context, (_) => squared() * 2);
+              return Column(
+                children: [
+                  Text('Squared: ${squared()}'),
+                  Text('Doubled: ${doubled()}'),
+                  TextButton(
+                    onPressed: () => squared(16.0),
+                    child: const Text('write'),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      );
+
+      expect(find.text('Squared: 4.0'), findsOneWidget);
+      expect(find.text('Doubled: 8.0'), findsOneWidget);
+
+      await tester.tap(find.text('write'));
+      await tester.pump();
+
+      expect(find.text('Squared: 64.0'), findsOneWidget);
+      expect(find.text('Doubled: 128.0'), findsOneWidget);
+    });
+
+    testWidgets('handles null values in widget', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) {
+              final value = signal<double?>(context, null);
+              final computed = writableComputed<double?>(
+                context,
+                get: (_) => value() != null ? value()! * 2 : null,
+                set: (v) => value(v != null ? v / 2 : null, true),
+              );
+              return Column(
+                children: [
+                  Text('Value: ${computed()}'),
+                  TextButton(
+                    onPressed: () => computed(10.0),
+                    child: const Text('set to 10'),
+                  ),
+                  TextButton(
+                    onPressed: () => computed(null, true),
+                    child: const Text('set to null'),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      );
+
+      expect(find.text('Value: null'), findsOneWidget);
+
+      await tester.tap(find.text('set to 10'));
+      await tester.pump();
+      expect(find.text('Value: 10.0'), findsOneWidget);
+
+      await tester.tap(find.text('set to null'));
+      await tester.pump();
+      expect(find.text('Value: null'), findsOneWidget);
+    });
+
+    testWidgets('setter with validation in widget', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) {
+              final count = signal<int>(context, 5);
+              final bounded = writableComputed<int>(
+                context,
+                get: (_) => count(),
+                set: (value) => count(value.clamp(0, 10)),
+              );
+              return Column(
+                children: [
+                  Text('Value: ${bounded()}'),
+                  TextButton(
+                    onPressed: () => bounded(15),
+                    child: const Text('set to 15'),
+                  ),
+                  TextButton(
+                    onPressed: () => bounded(-5),
+                    child: const Text('set to -5'),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      );
+
+      expect(find.text('Value: 5'), findsOneWidget);
+
+      await tester.tap(find.text('set to 15'));
+      await tester.pump();
+      expect(find.text('Value: 10'), findsOneWidget);
+
+      await tester.tap(find.text('set to -5'));
+      await tester.pump();
+      expect(find.text('Value: 0'), findsOneWidget);
+    });
+  });
 }
