@@ -42,7 +42,7 @@ alien.Effect effect(
     return _createEffect(callback: callback, detach: detach);
   }
 
-  return useMemoized(context, () {
+  final e = useMemoized(context, () {
     if (detach || alien.getActiveSub() != null) {
       return _createEffect(callback: callback, detach: detach);
     }
@@ -55,6 +55,13 @@ alien.Effect effect(
       alien.setActiveSub(prevSub);
     }
   });
+
+  e.fn = () {
+    e.cleanup?.call();
+    e.cleanup = null;
+  };
+
+  return e;
 }
 
 void onEffectDispose(void Function() callback, {bool failSilently = false}) {
@@ -92,7 +99,7 @@ _OrefEffect _createEffect({
     callback();
   }
 
-  effect = _OrefEffect(callback: withCleanup);
+  effect = _OrefEffect(withCleanup);
   if (context != null) {
     _OrefEffect.finalizer.attach(context, effect, detach: effect);
   }
@@ -113,7 +120,12 @@ _OrefEffect _createEffect({
 class _OrefEffect extends alien.PresetEffect implements Disposable {
   static final finalizer = Finalizer<_OrefEffect>((effect) => effect.dispose());
 
-  _OrefEffect({required super.callback}) : super(flags: 2 /* Watching */);
+  _OrefEffect(this.fn) : super(flags: 2 /* Watching */, callback: fn);
+
+  VoidCallback fn;
+
+  @override
+  VoidCallback get callback => fn;
 
   void Function()? onDispose;
   void Function()? cleanup;
