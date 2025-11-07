@@ -59,6 +59,7 @@ alien.Effect effect(
   e.fn = () {
     e.cleanup?.call();
     e.cleanup = null;
+    callback();
   };
 
   return e;
