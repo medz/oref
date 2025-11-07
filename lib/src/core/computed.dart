@@ -13,14 +13,22 @@ Computed<T> computed<T>(
   T Function(T? previousValue) getter,
 ) {
   if (context == null) {
-    return _OrefComputed<T>(getter: getter);
+    return _OrefComputed<T>(getter);
   }
 
-  return useMemoized(context, () => _OrefComputed<T>(getter: getter));
+  final c = useMemoized(context, () => _OrefComputed<T>(getter));
+  if (!identical(c.callback, getter)) c.callback = getter;
+
+  return c;
 }
 
 class _OrefComputed<T> extends alien.PresetComputed<T> {
-  _OrefComputed({required super.getter}) : super(flags: 0 /* None */);
+  _OrefComputed(this.callback) : super(flags: 0 /* None */, getter: callback);
+
+  T Function(T?) callback;
+
+  @override
+  get getter => callback;
 
   @override
   T call() {
@@ -67,21 +75,20 @@ WritableComputed<T> writableComputed<T>(
   required T Function(T? cached) get,
   required void Function(T value) set,
 }) {
-  if (context == null) {
-    return _OrefWritableComputed(getter: get, setter: set);
-  }
+  if (context == null) return _OrefWritableComputed(get, set);
 
-  return useMemoized(
-    context,
-    () => _OrefWritableComputed(getter: get, setter: set),
-  );
+  final c = useMemoized(context, () => _OrefWritableComputed(get, set));
+  if (!identical(c.callback, get)) c.callback = get;
+  if (!identical(c.setter, set)) c.setter = set;
+
+  return c;
 }
 
 class _OrefWritableComputed<T> extends _OrefComputed<T>
     implements WritableComputed<T> {
-  _OrefWritableComputed({required super.getter, required this.setter});
+  _OrefWritableComputed(super.getter, this.setter);
 
-  final void Function(T value) setter;
+  void Function(T value) setter;
 
   @override
   T call([T? value, bool nulls = false]) {
