@@ -32,7 +32,6 @@ Effect useWidgetEffect(BuildContext context) {
       if (!element.mounted) {
         scope.dispose();
       } else if (!element.dirty) {
-        print('Trigger widget rebuild');
         element.markNeedsBuild();
       }
     }, detach: false);

@@ -1,7 +1,7 @@
 name: oref
 description: A high-performance Flutter state management tool, Oref is one of the fastest Flutter signals and state management solutions.
 
-version: 2.5.0
+version: 2.5.1
 repository: https://github.com/medz/oref
 
 topics:

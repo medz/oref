@@ -1,3 +1,13 @@
+## 2.5.1
+
+### Bug Fixes
+
+- **Fix callback caching issue with hot reload** ([#20](https://github.com/medz/oref/issues/20)): Computed and effect callbacks now properly update when modified during hot reload
+  - Update `computed` and `writableComputed` callback references when getter functions change
+  - Fix `effect` cleanup function assignment to ensure proper disposal
+  - Rename internal `callback` field to `fn` for clarity and consistency
+  - Ensure widget rebuilds trigger correctly without debug output
+
 ## 2.5.0
 
 ### Features
