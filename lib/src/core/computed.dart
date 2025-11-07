@@ -17,18 +17,18 @@ Computed<T> computed<T>(
   }
 
   final c = useMemoized(context, () => _OrefComputed<T>(getter));
-  if (!identical(c.callback, getter)) c.callback = getter;
+  if (!identical(c.fn, getter)) c.fn = getter;
 
   return c;
 }
 
 class _OrefComputed<T> extends alien.PresetComputed<T> {
-  _OrefComputed(this.callback) : super(flags: 0 /* None */, getter: callback);
+  _OrefComputed(this.fn) : super(flags: 0 /* None */, getter: fn);
 
-  T Function(T?) callback;
+  T Function(T?) fn;
 
   @override
-  get getter => callback;
+  get getter => fn;
 
   @override
   T call() {
@@ -78,7 +78,7 @@ WritableComputed<T> writableComputed<T>(
   if (context == null) return _OrefWritableComputed(get, set);
 
   final c = useMemoized(context, () => _OrefWritableComputed(get, set));
-  if (!identical(c.callback, get)) c.callback = get;
+  if (!identical(c.fn, get)) c.fn = get;
   if (!identical(c.setter, set)) c.setter = set;
 
   return c;
@@ -86,7 +86,7 @@ WritableComputed<T> writableComputed<T>(
 
 class _OrefWritableComputed<T> extends _OrefComputed<T>
     implements WritableComputed<T> {
-  _OrefWritableComputed(super.getter, this.setter);
+  _OrefWritableComputed(super.fn, this.setter);
 
   void Function(T value) setter;
 
