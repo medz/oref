@@ -1,16 +1,11 @@
 import "package:alien_signals/alien_signals.dart" as alien;
-import "package:alien_signals/preset_developer.dart" as alien;
+import "package:alien_signals/preset.dart" as alien;
+import "package:alien_signals/system.dart" as alien;
 import "package:flutter/widgets.dart";
 
 import "context.dart";
 import "memoized.dart";
 import "watch.dart";
-
-export 'package:alien_signals/alien_signals.dart'
-    show SignalDotValueGetter, WritableSignalDotValueGetterSetter;
-
-typedef Signal<T> = alien.Signal<T>;
-typedef WritableSignal<T> = alien.WritableSignal<T>;
 
 /// Creates a reactive signal with an initial value.
 ///
@@ -28,33 +23,29 @@ typedef WritableSignal<T> = alien.WritableSignal<T>;
 /// ```
 alien.WritableSignal<T> signal<T>(BuildContext? context, T initialValue) {
   if (context == null) {
-    return _OrefSignal(initialValue: initialValue);
+    return _SignalImpl(initialValue);
   }
 
-  return useMemoized(
-    context,
-    () => _OrefSignal(initialValue: initialValue, context: context),
-  );
+  return useMemoized(context, () => _SignalImpl(initialValue));
 }
 
-class _OrefSignal<T> extends alien.PresetWritableSignal<T> {
-  _OrefSignal({required super.initialValue, this.context})
-    : super(flags: 1 /* Mutable */);
-
-  final BuildContext? context;
+class _SignalImpl<T> extends alien.SignalNode<T>
+    implements alien.WritableSignal<T> {
+  _SignalImpl(T initialValue)
+    : super(
+        flags: alien.ReactiveFlags.mutable,
+        pendingValue: initialValue,
+        currentValue: initialValue,
+      );
 
   @override
-  T call([T? newValue, nulls = false]) {
-    if (newValue != null || (null is T && nulls)) {
-      return super(newValue, nulls);
-    }
-
+  T call() {
     if (alien.getActiveSub() == null) {
       if (getActiveContext() case final Element element) {
-        return watch(element, super.call);
+        return watch(element, get);
       }
     }
 
-    return super(newValue, nulls);
+    return get();
   }
 }
