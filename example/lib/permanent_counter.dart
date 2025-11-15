@@ -12,7 +12,7 @@ final usePrefs = inferReturnType(() {
 
   unawaited(
     Future.microtask(() async {
-      prefs(await SharedPreferences.getInstance());
+      prefs.set(await SharedPreferences.getInstance());
     }),
   );
 
@@ -22,8 +22,8 @@ final usePrefs = inferReturnType(() {
 final usePermanentCounter = infer((BuildContext context, String name) {
   final count = signal(context, 0);
 
-  void increment() => count(count() + 1);
-  void decrement() => count(count() - 1);
+  void increment() => count.set(count() + 1);
+  void decrement() => count.set(count() - 1);
 
   bool firstRun = false;
   effect(context, () {
@@ -32,7 +32,7 @@ final usePermanentCounter = infer((BuildContext context, String name) {
 
     final value = count();
     if (!firstRun) {
-      count(prefs.getInt(name) ?? 0);
+      count.set(prefs.getInt(name) ?? 0);
       firstRun = true;
       return;
     }

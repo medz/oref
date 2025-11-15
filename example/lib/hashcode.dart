@@ -20,7 +20,7 @@ class HashCode extends StatelessWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => count(count() + 1),
+        onPressed: () => count.set(count() + 1),
         child: const Icon(Icons.add),
       ),
     );

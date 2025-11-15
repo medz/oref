@@ -86,11 +86,11 @@ class AddTodoDialog extends StatelessWidget {
         children: [
           TextField(
             decoration: const InputDecoration(labelText: 'Title'),
-            onChanged: title.call,
+            onChanged: title.set,
           ),
           TextField(
             decoration: const InputDecoration(labelText: 'Description'),
-            onChanged: description.call,
+            onChanged: description.set,
           ),
         ],
       ),

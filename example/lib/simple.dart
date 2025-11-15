@@ -7,7 +7,7 @@ class Simple extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final count = signal(context, 0);
-    void increment() => count(count() + 1);
+    void increment() => count.set(count() + 1);
 
     return Column(
       children: [

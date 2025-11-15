@@ -41,7 +41,7 @@ class Counter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final count = signal(context, 0);
-    void increment() => count(count() + 1);
+    void increment() => count.set(count() + 1);
 
     debugPrint("Counter build"); // Only print once.
 
