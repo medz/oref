@@ -25,10 +25,10 @@ import 'widget_scope.dart';
 ///   print(count());
 /// }); // Print 0
 ///
-/// count(1); // Print 1
+/// count.set(1); // Print 1
 ///
 /// stop();
-/// count(2); // No output
+/// count.set(2); // No output
 /// ```
 alien.Effect effect(
   BuildContext? context,

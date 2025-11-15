@@ -17,8 +17,8 @@ void main() {
       expect(effectCount, equals(1));
 
       batch(() {
-        a(10);
-        b(20);
+        a.set(10);
+        b.set(20);
       });
 
       expect(effectCount, equals(2)); // Should run only once after batch
