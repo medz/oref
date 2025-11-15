@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:alien_signals/alien_signals.dart' as alien;
 import 'package:alien_signals/system.dart' as alien;
+import 'package:alien_signals/preset.dart' as alien;
 import 'package:flutter/widgets.dart';
 import 'package:oref/oref.dart' as oref;
 
@@ -87,20 +87,20 @@ class _AsyncDataExecutor<T> {
       unawaited(completer.future.catchError((_) => null));
     }
 
-    status(AsyncStatus.pending);
+    status.set(.pending);
 
     try {
       final result = await scoped(handler);
       oref.batch(() {
-        data(result);
-        status(AsyncStatus.success);
+        data.set(result);
+        status.set(.success);
       });
 
       completer.complete(result);
     } catch (error, stackTrace) {
       oref.batch(() {
-        this.error(AsyncError(error, stackTrace));
-        status(AsyncStatus.error);
+        this.error.set(.new(error, stackTrace));
+        status.set(.error);
       });
 
       completer.completeError(error, stackTrace);
@@ -127,19 +127,19 @@ class _AsyncDataImpl<T> implements AsyncData<T> {
   T? get data => executor.data();
 
   @override
-  set data(T? value) => executor.data(value, true);
+  set data(T? value) => executor.data.set(value);
 
   @override
   AsyncError? get error => executor.error();
 
   @override
-  set error(AsyncError? value) => executor.error(value, true);
+  set error(AsyncError? value) => executor.error.set(value);
 
   @override
   AsyncStatus get status => executor.status();
 
   @override
-  set status(AsyncStatus value) => executor.status(value, true);
+  set status(AsyncStatus value) => executor.status.set(value);
 
   @override
   Future<T?> refresh() async {
@@ -152,7 +152,7 @@ class _AsyncDataImpl<T> implements AsyncData<T> {
 
   @override
   void dispose() {
-    (executor.node as oref.Effect).dispose();
+    alien.stop(executor.node);
   }
 
   @override
@@ -165,10 +165,10 @@ class _AsyncDataImpl<T> implements AsyncData<T> {
   }) {
     context ??= this.context;
     R builder() => switch (status) {
-      AsyncStatus.idle => idle(data),
-      AsyncStatus.pending => pending(data),
-      AsyncStatus.success => success(data),
-      AsyncStatus.error => error(this.error),
+      .idle => idle(data),
+      .pending => pending(data),
+      .success => success(data),
+      .error => error(this.error),
     };
     if (context != null) {
       return oref.watch(context, builder);
