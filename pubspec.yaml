@@ -15,7 +15,7 @@ funding:
   - https://opencollective.com/openodroe
 
 environment:
-  sdk: ^3.8.1
+  sdk: ^3.10.0
   flutter: ">=1.17.0"
 
 workspace:
@@ -24,7 +24,7 @@ workspace:
 dependencies:
   flutter:
     sdk: flutter
-  alien_signals: ^1.0.3
+  alien_signals: ^2.0.0-rc.4
 
 dev_dependencies:
   flutter_test:
