@@ -1,4 +1,4 @@
-import 'package:alien_signals/alien_signals.dart' show setActiveSub;
+import 'package:alien_signals/preset.dart' show setActiveSub;
 import 'package:alien_signals/system.dart' show ReactiveNode;
 import 'package:flutter/widgets.dart';
 
