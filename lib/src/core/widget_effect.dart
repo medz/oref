@@ -1,4 +1,4 @@
-import 'package:alien_signals/alien_signals.dart' as alien;
+import 'package:alien_signals/preset.dart' as alien;
 import 'package:alien_signals/system.dart' as alien;
 import 'package:flutter/widgets.dart';
 
@@ -30,7 +30,7 @@ Effect useWidgetEffect(BuildContext context) {
     final e = effect(null, () {
       resetMemoizedCursor(element);
       if (!element.mounted) {
-        scope.dispose();
+        scope();
       } else if (!element.dirty) {
         element.markNeedsBuild();
       }
