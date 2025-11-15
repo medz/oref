@@ -2,6 +2,7 @@ import 'package:alien_signals/preset.dart' as alien;
 import 'package:alien_signals/system.dart' as alien;
 import 'package:flutter/widgets.dart';
 
+import 'alien_signals.dart' show Effect;
 import 'effect.dart';
 import 'memoized.dart';
 import 'widget_scope.dart';

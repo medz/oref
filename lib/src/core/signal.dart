@@ -1,6 +1,5 @@
 import "package:alien_signals/alien_signals.dart" as alien;
 import "package:alien_signals/preset.dart" as alien;
-import "package:alien_signals/system.dart" as alien;
 import "package:flutter/widgets.dart";
 
 import "context.dart";
@@ -33,7 +32,7 @@ class _SignalImpl<T> extends alien.SignalNode<T>
     implements alien.WritableSignal<T> {
   _SignalImpl(T initialValue)
     : super(
-        flags: alien.ReactiveFlags.mutable,
+        flags: .mutable,
         pendingValue: initialValue,
         currentValue: initialValue,
       );

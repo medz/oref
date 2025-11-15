@@ -1,13 +1,12 @@
 import "package:alien_signals/alien_signals.dart" as alien;
-import "package:alien_signals/preset_developer.dart" as alien;
+import "package:alien_signals/preset.dart" as alien;
 import "package:flutter/widgets.dart";
 
-import "alien_signals.dart";
 import "context.dart";
 import "memoized.dart";
 import "watch.dart";
 
-Computed<T> computed<T>(
+alien.Computed<T> computed<T>(
   BuildContext? context,
   T Function(T? previousValue) getter,
 ) {
@@ -25,8 +24,9 @@ Computed<T> computed<T>(
   return c;
 }
 
-class _OrefComputed<T> extends alien.PresetComputed<T> {
-  _OrefComputed(this.fn) : super(flags: 0 /* None */, getter: fn);
+class _OrefComputed<T> extends alien.ComputedNode<T>
+    implements alien.Computed<T> {
+  _OrefComputed(this.fn) : super(flags: .none, getter: fn);
 
   T Function(T?) fn;
 
@@ -37,11 +37,11 @@ class _OrefComputed<T> extends alien.PresetComputed<T> {
   T call() {
     if (alien.getActiveSub() == null) {
       if (getActiveContext() case final Element element) {
-        return watch(element, super.call);
+        return watch(element, get);
       }
     }
 
-    return super();
+    return get();
   }
 }
 
@@ -70,7 +70,7 @@ class _OrefComputed<T> extends alien.PresetComputed<T> {
 /// ```
 /// {@endtemplate}
 abstract interface class WritableComputed<T>
-    implements Computed<T>, alien.WritableSignal<T> {}
+    implements alien.Computed<T>, alien.WritableSignal<T> {}
 
 /// {@macro oref.core.writable-computed}
 WritableComputed<T> writableComputed<T>(
@@ -98,12 +98,5 @@ class _OrefWritableComputed<T> extends _OrefComputed<T>
   void Function(T value) setter;
 
   @override
-  T call([T? value, bool nulls = false]) {
-    if (value != null || (null is T && nulls)) {
-      setter(value as T);
-      return value;
-    }
-
-    return super.call();
-  }
+  void set(T value) => setter(value);
 }

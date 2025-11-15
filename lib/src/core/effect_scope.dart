@@ -87,7 +87,7 @@ _OrefEffectScope _createEffectScope({
 class _OrefEffectScope extends alien.ReactiveNode implements alien.EffectScope {
   static final finalizer = Finalizer<_OrefEffectScope>((scope) => scope());
 
-  _OrefEffectScope() : super(flags: alien.ReactiveFlags.none);
+  _OrefEffectScope() : super(flags: .none);
 
   void Function()? onDispose;
 

@@ -7,8 +7,6 @@ import '_warn.dart';
 import 'memoized.dart';
 import 'widget_scope.dart';
 
-typedef Effect = alien.Effect;
-
 /// Creates a reactive effect that automatically tracks its dependencies and re-runs when they change.
 ///
 /// An effect is a reactive computation that automatically tracks any reactive values (signals or computed values)
