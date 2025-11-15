@@ -1,3 +1,4 @@
+export 'src/core/alien_signals.dart';
 export 'src/core/computed.dart';
 export 'src/core/effect.dart';
 export 'src/core/effect_scope.dart';
@@ -16,6 +17,3 @@ export 'src/collections/map.dart';
 export 'src/collections/set.dart';
 
 export 'src/async/async_data.dart';
-
-export 'src/legacy/effect_func_call.dart';
-export 'src/legacy/on_effect_stop.dart';

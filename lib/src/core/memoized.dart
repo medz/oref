@@ -36,7 +36,7 @@ final _store = Expando<_Memoized>("oref:memoized");
 /// The factory function is called only once per context, and the result is
 /// cached for future use.
 ///
-/// The memoized value can be reset by calling [resetMemoizedFor].
+/// The memoized value can be reset by calling [resetMemoizedCursor].
 ///
 /// Example:
 /// ```dart
@@ -79,7 +79,3 @@ void resetMemoizedCursor(BuildContext context) {
   root?.reset = true;
   _store[context] = root;
 }
-
-/// {@macro oref.resetMemoizedCursor}
-@Deprecated("Use resetMemoizedCursor instead, Remore in 3.0.0")
-const resetMemoizedFor = resetMemoizedCursor;

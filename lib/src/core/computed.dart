@@ -2,11 +2,10 @@ import "package:alien_signals/alien_signals.dart" as alien;
 import "package:alien_signals/preset_developer.dart" as alien;
 import "package:flutter/widgets.dart";
 
+import "alien_signals.dart";
 import "context.dart";
 import "memoized.dart";
 import "watch.dart";
-
-typedef Computed<T> = alien.Computed<T>;
 
 Computed<T> computed<T>(
   BuildContext? context,
