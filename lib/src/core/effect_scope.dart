@@ -7,8 +7,6 @@ import '_warn.dart';
 import 'memoized.dart';
 import 'widget_scope.dart';
 
-typedef EffectScope = alien.EffectScope;
-
 /// Creates a new effect scope that can be used to group and manage multiple effects.
 ///
 /// An effect scope provides a way to collectively manage the lifecycle of effects.
@@ -20,7 +18,7 @@ typedef EffectScope = alien.EffectScope;
 ///
 /// Returns a cleanup function that can be called to dispose of the scope and all
 /// effects created within it.
-EffectScope effectScope(
+alien.EffectScope effectScope(
   BuildContext? context,
   void Function() callback, {
   bool detach = false,
