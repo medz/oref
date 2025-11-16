@@ -12,8 +12,6 @@ dependencies:
   flutter:
     sdk: flutter
   oref: any
-  oxy: ^0.0.4
-  shared_preferences: ^2.5.3
 
 flutter:
   uses-material-design: true
