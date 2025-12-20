@@ -13,3 +13,7 @@ jobs:
       - run: flutter --version
       - run: flutter pub get
       - run: flutter test
+      - run: flutter pub get
+        working-directory: example
+      - run: flutter test
+        working-directory: example

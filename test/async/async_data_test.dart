@@ -192,13 +192,13 @@ void main() {
       await Future.delayed(Duration(milliseconds: 20));
       expect(callCount, equals(1));
 
-      trigger(1);
+      trigger.set(1);
       await Future.delayed(Duration(milliseconds: 20));
       expect(callCount, equals(2));
 
       data.dispose();
 
-      trigger(2);
+      trigger.set(2);
       await Future.delayed(Duration(milliseconds: 20));
       expect(callCount, equals(2)); // Should not call again
     });
@@ -217,7 +217,7 @@ void main() {
       expect(data.data, equals(2));
       expect(callCount, equals(1));
 
-      count(5);
+      count.set(5);
       await Future.delayed(Duration(milliseconds: 20));
       expect(data.data, equals(10));
       expect(callCount, equals(2));

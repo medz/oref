@@ -13,30 +13,29 @@ void main() {
 
     test('updates signal value', () {
       final count = signal(null, 0);
-      count(5);
+      count.set(5);
       expect(count(), equals(5));
     });
 
     test('returns updated value', () {
       final count = signal(null, 0);
-      final result = count(10);
-      expect(result, equals(10));
+      count.set(10);
       expect(count(), equals(10));
     });
 
     test('works with different types', () {
       final text = signal(null, 'hello');
       expect(text(), equals('hello'));
-      text('world');
+      text.set('world');
       expect(text(), equals('world'));
     });
 
     test('works with nullable types', () {
       final value = signal<String?>(null, null);
       expect(value(), isNull);
-      value('test');
+      value.set('test');
       expect(value(), equals('test'));
-      value(null, true);
+      value.set(null);
       expect(value(), isNull);
     });
 
@@ -51,10 +50,10 @@ void main() {
 
       expect(effectCount, equals(1));
 
-      count(1);
+      count.set(1);
       expect(effectCount, equals(2));
 
-      count(2);
+      count.set(2);
       expect(effectCount, equals(3));
     });
 
@@ -71,10 +70,10 @@ void main() {
 
       expect(effectCount, equals(1));
 
-      count1(1);
+      count1.set(1);
       expect(effectCount, equals(2));
 
-      count2(1);
+      count2.set(1);
       expect(effectCount, equals(3));
     });
 
@@ -82,7 +81,7 @@ void main() {
       final obj = signal<Map<String, int>>(null, {'a': 1});
       expect(obj()['a'], equals(1));
 
-      obj({'b': 2});
+      obj.set({'b': 2});
       expect(obj()['b'], equals(2));
       expect(obj()['a'], isNull);
     });
@@ -98,7 +97,7 @@ void main() {
 
       expect(effectCount, equals(1));
 
-      count(0);
+      count.set(0);
       expect(effectCount, equals(1)); // Should not trigger
     });
   });
@@ -133,7 +132,7 @@ void main() {
                 children: [
                   Text('${count()}'),
                   TextButton(
-                    onPressed: () => count(count() + 1),
+                    onPressed: () => count.set(count() + 1),
                     child: const Text('increment'),
                   ),
                 ],
@@ -164,7 +163,7 @@ void main() {
                 children: [
                   Text('${count()}'),
                   TextButton(
-                    onPressed: () => count(count() + 1),
+                    onPressed: () => count.set(count() + 1),
                     child: const Text('tap'),
                   ),
                 ],
@@ -193,11 +192,11 @@ void main() {
                 children: [
                   Text('Sum: ${count1() + count2()}'),
                   TextButton(
-                    onPressed: () => count1(count1() + 1),
+                    onPressed: () => count1.set(count1() + 1),
                     child: const Text('increment1'),
                   ),
                   TextButton(
-                    onPressed: () => count2(count2() + 1),
+                    onPressed: () => count2.set(count2() + 1),
                     child: const Text('increment2'),
                   ),
                 ],
@@ -228,7 +227,7 @@ void main() {
                 children: [
                   Text(text()),
                   TextButton(
-                    onPressed: () => text('world'),
+                    onPressed: () => text.set('world'),
                     child: const Text('change'),
                   ),
                 ],
@@ -256,11 +255,11 @@ void main() {
                 children: [
                   Text(value() ?? 'null'),
                   TextButton(
-                    onPressed: () => value('test'),
+                    onPressed: () => value.set('test'),
                     child: const Text('set'),
                   ),
                   TextButton(
-                    onPressed: () => value(null, true),
+                    onPressed: () => value.set(null),
                     child: const Text('clear'),
                   ),
                 ],
@@ -294,7 +293,7 @@ void main() {
                 children: [
                   Text('${count()}'),
                   TextButton(
-                    onPressed: () => count(0),
+                    onPressed: () => count.set(0),
                     child: const Text('same'),
                   ),
                 ],

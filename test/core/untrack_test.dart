@@ -16,10 +16,10 @@ void main() {
 
       expect(effectCount, equals(1));
 
-      a(10);
+      a.set(10);
       expect(effectCount, equals(2));
 
-      b(20); // Should not trigger effect
+      b.set(20); // Should not trigger effect
       expect(effectCount, equals(2));
     });
 
@@ -46,15 +46,15 @@ void main() {
       expect(result(), equals(3));
       expect(computeCount, equals(1));
 
-      a(10);
+      a.set(10);
       expect(result(), equals(12));
       expect(computeCount, equals(2));
 
-      b(20); // Should not trigger recomputation
+      b.set(20); // Should not trigger recomputation
       expect(result(), equals(12)); // Still uses old b value in cache
       expect(computeCount, equals(2));
 
-      a(15); // This will recompute and get new b value
+      a.set(15); // This will recompute and get new b value
       expect(result(), equals(35));
       expect(computeCount, equals(3));
     });
@@ -76,13 +76,13 @@ void main() {
 
       expect(effectCount, equals(1));
 
-      a(10);
+      a.set(10);
       expect(effectCount, equals(2));
 
-      b(20);
+      b.set(20);
       expect(effectCount, equals(2));
 
-      c(30);
+      c.set(30);
       expect(effectCount, equals(2));
     });
 
@@ -103,11 +103,11 @@ void main() {
 
       expect(effectCount, equals(1));
 
-      a(10);
+      a.set(10);
       expect(effectCount, equals(2));
 
-      b(20);
-      c(30);
+      b.set(20);
+      c.set(30);
       expect(effectCount, equals(2));
     });
 
@@ -126,13 +126,13 @@ void main() {
 
       expect(effectCount, equals(1));
 
-      a(10);
+      a.set(10);
       expect(effectCount, equals(2));
 
-      b(20); // Untracked, should not trigger
+      b.set(20); // Untracked, should not trigger
       expect(effectCount, equals(2));
 
-      c(30);
+      c.set(30);
       expect(effectCount, equals(3));
     });
 
@@ -149,10 +149,10 @@ void main() {
 
       expect(effectCount, equals(1));
 
-      a(10);
+      a.set(10);
       expect(effectCount, equals(1)); // Should not trigger
 
-      b(20);
+      b.set(20);
       expect(effectCount, equals(1)); // Should not trigger
     });
 
@@ -174,7 +174,7 @@ void main() {
       expect(effect1Count, equals(1));
       expect(effect2Count, equals(1));
 
-      count(10);
+      count.set(10);
       expect(effect1Count, equals(1)); // First effect doesn't track
       expect(effect2Count, equals(2)); // Second effect tracks normally
     });
@@ -195,11 +195,11 @@ void main() {
       expect(tracked, equals([1]));
       expect(untracked, equals([2]));
 
-      a(10);
+      a.set(10);
       expect(tracked, equals([1, 10]));
       expect(untracked, equals([2, 2])); // b() is read again but not tracked
 
-      b(20);
+      b.set(20);
       expect(tracked, equals([1, 10])); // Effect doesn't run
       expect(untracked, equals([2, 2])); // No new entry
     });
@@ -229,19 +229,19 @@ void main() {
 
       expect(effectCount, equals(1));
 
-      a(10);
+      a.set(10);
       expect(effectCount, equals(2));
 
-      condition(false);
+      condition.set(false);
       expect(effectCount, equals(3));
 
-      b(20); // Now untracked
+      b.set(20); // Now untracked
       expect(effectCount, equals(3));
 
-      condition(true);
+      condition.set(true);
       expect(effectCount, equals(4));
 
-      a(30);
+      a.set(30);
       expect(effectCount, equals(5));
     });
   });

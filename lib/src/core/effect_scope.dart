@@ -1,14 +1,11 @@
 import 'package:alien_signals/alien_signals.dart' as alien;
 import 'package:alien_signals/system.dart' as alien;
-import 'package:alien_signals/preset_developer.dart' as alien;
+import 'package:alien_signals/preset.dart' as alien;
 import 'package:flutter/widgets.dart';
 
-import '_disposable.dart';
 import '_warn.dart';
 import 'memoized.dart';
 import 'widget_scope.dart';
-
-typedef EffectScope = alien.EffectScope;
 
 /// Creates a new effect scope that can be used to group and manage multiple effects.
 ///
@@ -21,7 +18,7 @@ typedef EffectScope = alien.EffectScope;
 ///
 /// Returns a cleanup function that can be called to dispose of the scope and all
 /// effects created within it.
-EffectScope effectScope(
+alien.EffectScope effectScope(
   BuildContext? context,
   void Function() callback, {
   bool detach = false,
@@ -74,7 +71,7 @@ _OrefEffectScope _createEffectScope({
   }
 
   if (prevSub != null && !detach) {
-    alien.system.link(scope, prevSub, 0);
+    alien.link(scope, prevSub, 0);
   }
 
   try {
@@ -85,26 +82,32 @@ _OrefEffectScope _createEffectScope({
   }
 }
 
-class _OrefEffectScope extends alien.PresetEffectScope implements Disposable {
-  static final finalizer = Finalizer<_OrefEffectScope>(
-    (scope) => scope.dispose(),
-  );
+class _OrefEffectScope extends alien.ReactiveNode implements alien.EffectScope {
+  static final finalizer = Finalizer<_OrefEffectScope>((scope) => scope());
 
-  _OrefEffectScope() : super(flags: 0 /* None */);
+  _OrefEffectScope() : super(flags: .none);
 
   void Function()? onDispose;
 
   @override
-  void dispose() {
+  void call() {
     onDispose?.call();
     onDispose = null;
     for (alien.Link? link = deps; link != null; link = link.nextDep) {
-      if (link.dep case final Disposable disposable) {
-        disposable.dispose();
+      switch (link.dep) {
+        case alien.EffectScope scope:
+          scope();
+          break;
+        case alien.Effect effect:
+          effect();
+          break;
+        case alien.EffectNode node:
+          alien.stop(node);
+          break;
       }
     }
 
-    super.dispose();
+    alien.stop(this);
     finalizer.detach(this);
   }
 }

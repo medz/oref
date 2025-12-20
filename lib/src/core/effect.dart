@@ -1,14 +1,11 @@
 import 'package:alien_signals/alien_signals.dart' as alien;
 import 'package:alien_signals/system.dart' as alien;
-import 'package:alien_signals/preset_developer.dart' as alien;
+import 'package:alien_signals/preset.dart' as alien;
 import 'package:flutter/widgets.dart';
 
-import '_disposable.dart';
 import '_warn.dart';
 import 'memoized.dart';
 import 'widget_scope.dart';
-
-typedef Effect = alien.Effect;
 
 /// Creates a reactive effect that automatically tracks its dependencies and re-runs when they change.
 ///
@@ -28,10 +25,10 @@ typedef Effect = alien.Effect;
 ///   print(count());
 /// }); // Print 0
 ///
-/// count(1); // Print 1
+/// count.set(1); // Print 1
 ///
 /// stop();
-/// count(2); // No output
+/// count.set(2); // No output
 /// ```
 alien.Effect effect(
   BuildContext? context,
@@ -57,7 +54,7 @@ alien.Effect effect(
   });
 
   assert(() {
-    e.fn = () {
+    e.callback = () {
       e.cleanup?.call();
       e.cleanup = null;
       callback();
@@ -96,21 +93,18 @@ _OrefEffect _createEffect({
   required bool detach,
 }) {
   late final _OrefEffect effect;
-  void withCleanup() {
+  effect = _OrefEffect(() {
     effect.cleanup?.call();
     effect.cleanup = null;
-
     callback();
-  }
-
-  effect = _OrefEffect(withCleanup);
+  });
   if (context != null) {
     _OrefEffect.finalizer.attach(context, effect, detach: effect);
   }
 
   final prevSub = alien.setActiveSub(effect);
   if (prevSub != null && !detach) {
-    alien.system.link(effect, prevSub, 0);
+    alien.link(effect, prevSub, 0);
   }
 
   try {
@@ -118,33 +112,45 @@ _OrefEffect _createEffect({
     return effect;
   } finally {
     alien.setActiveSub(prevSub);
+    effect.flags &= -5 /*~ReactiveFlags.recursedCheck*/;
   }
 }
 
-class _OrefEffect extends alien.PresetEffect implements Disposable {
-  static final finalizer = Finalizer<_OrefEffect>((effect) => effect.dispose());
+class _OrefEffect extends alien.EffectNode implements alien.Effect {
+  static final finalizer = Finalizer<_OrefEffect>((stop) => stop());
 
-  _OrefEffect(this.fn) : super(flags: 2 /* Watching */, callback: fn);
+  _OrefEffect(this.callback)
+    : super(
+        flags: alien.ReactiveFlags.watching | alien.ReactiveFlags.recursedCheck,
+        fn: callback,
+      );
 
-  VoidCallback fn;
-
-  @override
-  VoidCallback get callback => fn;
-
+  VoidCallback callback;
   void Function()? onDispose;
   void Function()? cleanup;
 
   @override
-  void dispose() {
+  VoidCallback get fn => callback;
+
+  @override
+  void call() {
     onDispose?.call();
     onDispose = null;
     for (alien.Link? link = deps; link != null; link = link.nextDep) {
-      if (link.dep case final Disposable disposable) {
-        disposable.dispose();
+      switch (link.dep) {
+        case alien.EffectScope scope:
+          scope();
+          break;
+        case alien.Effect effect:
+          effect();
+          break;
+        case alien.EffectNode node:
+          alien.stop(node);
+          break;
       }
     }
 
-    super.dispose();
+    alien.stop(this);
     finalizer.detach(this);
   }
 }

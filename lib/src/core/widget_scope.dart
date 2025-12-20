@@ -6,7 +6,7 @@ import 'effect_scope.dart';
 
 final _store = Expando<alien.EffectScope>("oref:widget effect scope");
 
-EffectScope useWidgetScope(BuildContext context) {
+alien.EffectScope useWidgetScope(BuildContext context) {
   setActiveContext(context);
   final cached = _store[context];
   if (cached != null) return cached;

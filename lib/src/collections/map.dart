@@ -55,7 +55,9 @@ class ReactiveMap<K, V> extends MapBase<K, V>
       shouldTrigger = true;
       return ifAbsent();
     });
+
     if (shouldTrigger) trigger();
+    track();
     return result;
   }
 }

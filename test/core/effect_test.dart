@@ -26,10 +26,10 @@ void main() {
 
       expect(runCount, equals(1));
 
-      count(1);
+      count.set(1);
       expect(runCount, equals(2));
 
-      count(2);
+      count.set(2);
       expect(runCount, equals(3));
     });
 
@@ -37,19 +37,19 @@ void main() {
       int runCount = 0;
       final count = signal(null, 0);
 
-      final Effect(:dispose) = effect(null, () {
+      final dispose = effect(null, () {
         count();
         runCount++;
       });
 
       expect(runCount, equals(1));
 
-      count(1);
+      count.set(1);
       expect(runCount, equals(2));
 
       dispose();
 
-      count(2);
+      count.set(2);
       expect(runCount, equals(2)); // Should not run after dispose
     });
 
@@ -66,10 +66,10 @@ void main() {
 
       expect(runCount, equals(1));
 
-      a(1);
+      a.set(1);
       expect(runCount, equals(2));
 
-      b(1);
+      b.set(1);
       expect(runCount, equals(3));
     });
 
@@ -85,7 +85,7 @@ void main() {
 
       expect(runCount, equals(1));
 
-      count(10);
+      count.set(10);
       expect(runCount, equals(2));
     });
 
@@ -93,7 +93,7 @@ void main() {
       bool disposed = false;
       final count = signal(null, 0);
 
-      final Effect(:dispose) = effect(null, () {
+      final dispose = effect(null, () {
         count();
         onEffectDispose(() {
           disposed = true;
@@ -119,10 +119,10 @@ void main() {
 
       expect(cleanupCount, equals(0));
 
-      count(1);
+      count.set(1);
       expect(cleanupCount, equals(1));
 
-      count(2);
+      count.set(2);
       expect(cleanupCount, equals(2));
     });
 
@@ -131,7 +131,7 @@ void main() {
       bool disposed = false;
       final count = signal(null, 0);
 
-      final Effect(:dispose) = effect(null, () {
+      final dispose = effect(null, () {
         count();
         onEffectCleanup(() {
           cleanupCount++;
@@ -144,7 +144,7 @@ void main() {
       expect(cleanupCount, equals(0));
       expect(disposed, isFalse);
 
-      count(1);
+      count.set(1);
       expect(cleanupCount, equals(1));
       expect(disposed, isFalse);
 
@@ -166,19 +166,19 @@ void main() {
 
       expect(runCount, equals(1));
 
-      a(10);
+      a.set(10);
       expect(runCount, equals(2));
 
-      b(20); // Should not trigger
+      b.set(20); // Should not trigger
       expect(runCount, equals(2));
 
-      condition(false);
+      condition.set(false);
       expect(runCount, equals(3));
 
-      a(30); // Should not trigger now
+      a.set(30); // Should not trigger now
       expect(runCount, equals(3));
 
-      b(40);
+      b.set(40);
       expect(runCount, equals(4));
     });
 
@@ -201,11 +201,11 @@ void main() {
       expect(outerRuns, equals(1));
       expect(innerRuns, equals(1));
 
-      inner(1);
+      inner.set(1);
       expect(outerRuns, equals(1));
       expect(innerRuns, equals(2));
 
-      outer(1);
+      outer.set(1);
       expect(outerRuns, equals(2));
       expect(innerRuns, equals(3)); // New inner effect created
     });
@@ -229,10 +229,10 @@ void main() {
       expect(parentRuns, equals(1));
       expect(childRuns, equals(1));
 
-      child(1);
+      child.set(1);
       expect(childRuns, equals(2));
 
-      parent(1);
+      parent.set(1);
       expect(parentRuns, equals(2));
       expect(childRuns, equals(3)); // New detached effect created
     });
@@ -255,7 +255,7 @@ void main() {
       expect(effect1Count, equals(1));
       expect(effect2Count, equals(1));
 
-      count(1);
+      count.set(1);
       expect(effect1Count, equals(2));
       expect(effect2Count, equals(2));
     });
@@ -270,10 +270,10 @@ void main() {
 
       expect(values, equals([0]));
 
-      count(1);
+      count.set(1);
       expect(values, equals([0, 1]));
 
-      count(2);
+      count.set(2);
       expect(values, equals([0, 1, 2]));
     });
   });
@@ -294,7 +294,7 @@ void main() {
                 children: [
                   Text('${count()}'),
                   TextButton(
-                    onPressed: () => count(count() + 1),
+                    onPressed: () => count.set(count() + 1),
                     child: const Text('increment'),
                   ),
                 ],
@@ -325,18 +325,18 @@ void main() {
               final sum = signal(context, 0);
 
               effect(context, () {
-                sum(a() + b());
+                sum.set(a() + b());
               });
 
               return Column(
                 children: [
                   Text('Sum: ${sum()}'),
                   TextButton(
-                    onPressed: () => a(a() + 1),
+                    onPressed: () => a.set(a() + 1),
                     child: const Text('inc a'),
                   ),
                   TextButton(
-                    onPressed: () => b(b() + 1),
+                    onPressed: () => b.set(b() + 1),
                     child: const Text('inc b'),
                   ),
                 ],
@@ -367,14 +367,14 @@ void main() {
               final result = signal(context, 0);
 
               effect(context, () {
-                result(doubled());
+                result.set(doubled());
               });
 
               return Column(
                 children: [
                   Text('Result: ${result()}'),
                   TextButton(
-                    onPressed: () => count(count() + 1),
+                    onPressed: () => count.set(count() + 1),
                     child: const Text('increment'),
                   ),
                 ],
@@ -404,14 +404,14 @@ void main() {
               final output = signal(context, 0);
 
               effect(context, () {
-                output(count());
+                output.set(count());
               });
 
               return Column(
                 children: [
                   Text('${output()}'),
                   TextButton(
-                    onPressed: () => count(count() + 1),
+                    onPressed: () => count.set(count() + 1),
                     child: const Text('increment'),
                   ),
                 ],
@@ -441,22 +441,22 @@ void main() {
               final result = signal(context, 0);
 
               effect(context, () {
-                result(condition() ? a() : b());
+                result.set(condition() ? a() : b());
               });
 
               return Column(
                 children: [
                   Text('Result: ${result()}'),
                   TextButton(
-                    onPressed: () => condition(!condition()),
+                    onPressed: () => condition.set(!condition()),
                     child: const Text('toggle'),
                   ),
                   TextButton(
-                    onPressed: () => a(a() + 10),
+                    onPressed: () => a.set(a() + 10),
                     child: const Text('inc a'),
                   ),
                   TextButton(
-                    onPressed: () => b(b() + 10),
+                    onPressed: () => b.set(b() + 10),
                     child: const Text('inc b'),
                   ),
                 ],
@@ -498,7 +498,7 @@ void main() {
                 children: [
                   Text('${count()}'),
                   TextButton(
-                    onPressed: () => count(count() + 1),
+                    onPressed: () => count.set(count() + 1),
                     child: const Text('increment'),
                   ),
                 ],
@@ -530,11 +530,11 @@ void main() {
               final output2 = signal(context, 0);
 
               effect(context, () {
-                output1(count() * 2);
+                output1.set(count() * 2);
               });
 
               effect(context, () {
-                output2(count() * 3);
+                output2.set(count() * 3);
               });
 
               return Column(
@@ -542,7 +542,7 @@ void main() {
                   Text('Output1: ${output1()}'),
                   Text('Output2: ${output2()}'),
                   TextButton(
-                    onPressed: () => count(count() + 1),
+                    onPressed: () => count.set(count() + 1),
                     child: const Text('increment'),
                   ),
                 ],

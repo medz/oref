@@ -1,3 +1,11 @@
+## Unreleased
+
+### Compatibility
+
+- Upgrade `alien_signals` to 2.1.0.
+- Align write APIs to use `.set(...)` and update docs/tests accordingly.
+- Fix effect initialization flags to match 2.1.0 reactive behavior.
+
 ## 2.5.1
 
 ### Bug Fixes

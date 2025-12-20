@@ -7,7 +7,7 @@ void main() {
     int tick = 0;
 
     final src = signal(null, 0);
-    final Effect(:dispose) = effect(null, () {
+    final dispose = effect(null, () {
       src();
       tick++;
 
@@ -19,7 +19,7 @@ void main() {
     expect(clean, equals(false));
     expect(tick, equals(1));
 
-    src(1);
+    src.set(1);
     expect(clean, equals(false));
     expect(tick, equals(2));
 
@@ -28,7 +28,7 @@ void main() {
     expect(tick, equals(2));
 
     clean = false;
-    src(2);
+    src.set(2);
     expect(clean, equals(false));
     expect(tick, equals(2));
   });
