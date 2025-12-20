@@ -19,7 +19,7 @@ void main() {
 
       expect(doubled(), equals(10));
 
-      count(10);
+      count.set(10);
       expect(doubled(), equals(20));
     });
 
@@ -30,10 +30,10 @@ void main() {
 
       expect(sum(), equals(5));
 
-      a(5);
+      a.set(5);
       expect(sum(), equals(8));
 
-      b(10);
+      b.set(10);
       expect(sum(), equals(15));
     });
 
@@ -44,7 +44,7 @@ void main() {
 
       expect(quadrupled(), equals(8));
 
-      count(5);
+      count.set(5);
       expect(quadrupled(), equals(20));
     });
 
@@ -60,7 +60,7 @@ void main() {
 
       expect(effectCount, equals(1));
 
-      count(10);
+      count.set(10);
       expect(effectCount, equals(2));
     });
 
@@ -89,10 +89,10 @@ void main() {
 
       expect(accumulated(), equals(1));
 
-      count(2);
+      count.set(2);
       expect(accumulated(), equals(3)); // 1 + 2
 
-      count(3);
+      count.set(3);
       expect(accumulated(), equals(6)); // 3 + 3
     });
 
@@ -107,19 +107,19 @@ void main() {
 
       expect(result(), equals(1));
 
-      a(10);
+      a.set(10);
       expect(result(), equals(10));
 
-      b(20); // Should not trigger recompute
+      b.set(20); // Should not trigger recompute
       expect(result(), equals(10));
 
-      condition(false);
+      condition.set(false);
       expect(result(), equals(20));
 
-      a(30); // Should not trigger recompute now
+      a.set(30); // Should not trigger recompute now
       expect(result(), equals(20));
 
-      b(40);
+      b.set(40);
       expect(result(), equals(40));
     });
 
@@ -131,7 +131,7 @@ void main() {
 
       expect(sum(), equals(6));
 
-      items([1, 2, 3, 4]);
+      items.set([1, 2, 3, 4]);
       expect(sum(), equals(10));
     });
 
@@ -143,7 +143,7 @@ void main() {
       expect(doubled(), equals(10));
       expect(tripled(), equals(15));
 
-      count(10);
+      count.set(10);
       expect(doubled(), equals(20));
       expect(tripled(), equals(30));
     });
@@ -161,7 +161,7 @@ void main() {
                 children: [
                   Text('${doubled()}'),
                   TextButton(
-                    onPressed: () => count(count() + 1),
+                    onPressed: () => count.set(count() + 1),
                     child: const Text('increment'),
                   ),
                 ],
@@ -193,11 +193,11 @@ void main() {
                 children: [
                   Text('Sum: ${sum()}'),
                   TextButton(
-                    onPressed: () => a(a() + 1),
+                    onPressed: () => a.set(a() + 1),
                     child: const Text('inc a'),
                   ),
                   TextButton(
-                    onPressed: () => b(b() + 1),
+                    onPressed: () => b.set(b() + 1),
                     child: const Text('inc b'),
                   ),
                 ],
@@ -230,7 +230,7 @@ void main() {
                 children: [
                   Text('${quadrupled()}'),
                   TextButton(
-                    onPressed: () => count(count() + 1),
+                    onPressed: () => count.set(count() + 1),
                     child: const Text('increment'),
                   ),
                 ],
@@ -264,7 +264,7 @@ void main() {
                 children: [
                   Text('${doubled()}'),
                   TextButton(
-                    onPressed: () => count(count() + 1),
+                    onPressed: () => count.set(count() + 1),
                     child: const Text('increment'),
                   ),
                 ],
@@ -338,15 +338,15 @@ void main() {
                 children: [
                   Text('${result()}'),
                   TextButton(
-                    onPressed: () => condition(!condition()),
+                    onPressed: () => condition.set(!condition()),
                     child: const Text('toggle'),
                   ),
                   TextButton(
-                    onPressed: () => a(a() + 10),
+                    onPressed: () => a.set(a() + 10),
                     child: const Text('inc a'),
                   ),
                   TextButton(
-                    onPressed: () => b(b() + 10),
+                    onPressed: () => b.set(b() + 10),
                     child: const Text('inc b'),
                   ),
                 ],
@@ -385,7 +385,7 @@ void main() {
                 children: [
                   Text('${doubled()}'),
                   TextButton(
-                    onPressed: () => count(count() + 1),
+                    onPressed: () => count.set(count() + 1),
                     child: const Text('increment'),
                   ),
                 ],
@@ -410,7 +410,7 @@ void main() {
       final squared = writableComputed<double>(
         null,
         get: (_) => count() * count(),
-        set: (value) => count(value / 2),
+        set: (value) => count.set(value / 2),
       );
 
       expect(squared(), equals(4.0));
@@ -421,13 +421,13 @@ void main() {
       final squared = writableComputed<double>(
         null,
         get: (_) => count() * count(),
-        set: (value) => count(value / 2),
+        set: (value) => count.set(value / 2),
       );
 
       expect(count(), equals(2.0));
       expect(squared(), equals(4.0));
 
-      squared(16.0);
+      squared.set(16.0);
       expect(count(), equals(8.0));
       expect(squared(), equals(64.0));
     });
@@ -442,15 +442,15 @@ void main() {
           final root = value < 0
               ? -1.0
               : value.sign * (value.abs()).clamp(0.0, double.infinity);
-          count(root == -1.0 ? 0.0 : root);
+          count.set(root == -1.0 ? 0.0 : root);
         },
       );
 
-      squared(9.0);
+      squared.set(9.0);
       expect(count(), equals(9.0));
       expect(squared(), equals(81.0));
 
-      squared(0.0);
+      squared.set(0.0);
       expect(count(), equals(0.0));
       expect(squared(), equals(0.0));
     });
@@ -463,14 +463,14 @@ void main() {
         get: (_) => a() + b(),
         set: (value) {
           // Split the value between a and b
-          a(value ~/ 2);
-          b(value - (value ~/ 2));
+          a.set(value ~/ 2);
+          b.set(value - (value ~/ 2));
         },
       );
 
       expect(sum(), equals(5));
 
-      sum(10);
+      sum.set(10);
       expect(a(), equals(5));
       expect(b(), equals(5));
       expect(sum(), equals(10));
@@ -482,7 +482,7 @@ void main() {
       final squared = writableComputed<double>(
         null,
         get: (_) => count() * count(),
-        set: (value) => count(value / 2),
+        set: (value) => count.set(value / 2),
       );
 
       effect(null, () {
@@ -492,7 +492,7 @@ void main() {
 
       expect(effectCount, equals(1));
 
-      squared(16.0);
+      squared.set(16.0);
       expect(effectCount, equals(2));
     });
 
@@ -501,14 +501,14 @@ void main() {
       final squared = writableComputed<double>(
         null,
         get: (_) => count() * count(),
-        set: (value) => count(value / 2),
+        set: (value) => count.set(value / 2),
       );
       final doubled = computed<double>(null, (_) => squared() * 2);
 
       expect(squared(), equals(4.0));
       expect(doubled(), equals(8.0));
 
-      squared(16.0);
+      squared.set(16.0);
       expect(squared(), equals(64.0));
       expect(doubled(), equals(128.0));
     });
@@ -518,19 +518,19 @@ void main() {
       final squared = writableComputed<double>(
         null,
         get: (_) => base() * base(),
-        set: (value) => base(value / 2),
+        set: (value) => base.set(value / 2),
       );
       final doubled = writableComputed<double>(
         null,
         get: (_) => squared() * 2,
-        set: (value) => squared(value / 2),
+        set: (value) => squared.set(value / 2),
       );
 
       expect(base(), equals(2.0));
       expect(squared(), equals(4.0));
       expect(doubled(), equals(8.0));
 
-      doubled(32.0);
+      doubled.set(32.0);
       expect(base(), equals(8.0));
       expect(squared(), equals(64.0));
       expect(doubled(), equals(128.0));
@@ -541,16 +541,16 @@ void main() {
       final computed = writableComputed<double?>(
         null,
         get: (_) => value() != null ? value()! * 2 : null,
-        set: (v) => value(v != null ? v / 2 : null, true),
+        set: (v) => value.set(v != null ? v / 2 : null),
       );
 
       expect(computed(), isNull);
 
-      computed(10.0);
+      computed.set(10.0);
       expect(value(), equals(5.0));
       expect(computed(), equals(10.0));
 
-      computed(null, true);
+      computed.set(null);
       expect(value(), isNull);
       expect(computed(), isNull);
     });
@@ -563,11 +563,11 @@ void main() {
         get: (_) => base(),
         set: (value) {
           capturedValue = value;
-          base(value);
+          base.set(value);
         },
       );
 
-      computed(42.5);
+      computed.set(42.5);
       expect(capturedValue, equals(42.5));
       expect(base(), equals(42.5));
     });
@@ -577,18 +577,18 @@ void main() {
       final computed = writableComputed<int>(
         null,
         get: (_) => count() * 10,
-        set: (value) => count(value ~/ 10),
+        set: (value) => count.set(value ~/ 10),
       );
 
-      computed(10);
+      computed.set(10);
       expect(count(), equals(1));
       expect(computed(), equals(10));
 
-      computed(20);
+      computed.set(20);
       expect(count(), equals(2));
       expect(computed(), equals(20));
 
-      computed(30);
+      computed.set(30);
       expect(count(), equals(3));
       expect(computed(), equals(30));
     });
@@ -603,10 +603,10 @@ void main() {
 
       expect(accumulated(), equals(1));
 
-      count(2);
+      count.set(2);
       expect(accumulated(), equals(3)); // 1 + 2
 
-      count(3);
+      count.set(3);
       expect(accumulated(), equals(6)); // 3 + 3
     });
 
@@ -615,12 +615,12 @@ void main() {
       final computed = writableComputed<int>(
         null,
         get: (_) => list().reduce((a, b) => a + b),
-        set: (value) => list([value]),
+        set: (value) => list.set([value]),
       );
 
       expect(computed(), equals(6));
 
-      computed(10);
+      computed.set(10);
       expect(list(), equals([10]));
       expect(computed(), equals(10));
     });
@@ -632,19 +632,19 @@ void main() {
         get: (_) => count(),
         set: (value) {
           // Clamp value between 0 and 10
-          count(value.clamp(0, 10));
+          count.set(value.clamp(0, 10));
         },
       );
 
-      bounded(15);
+      bounded.set(15);
       expect(count(), equals(10));
       expect(bounded(), equals(10));
 
-      bounded(-5);
+      bounded.set(-5);
       expect(count(), equals(0));
       expect(bounded(), equals(0));
 
-      bounded(5);
+      bounded.set(5);
       expect(count(), equals(5));
       expect(bounded(), equals(5));
     });
@@ -654,11 +654,12 @@ void main() {
       final computed = writableComputed<double>(
         null,
         get: (_) => count(),
-        set: (value) => count(value),
+        set: (value) => count.set(value),
       );
 
-      final result = computed(42.0);
-      expect(result, equals(42.0));
+      computed.set(42.0);
+      expect(count(), equals(42.0));
+      expect(computed(), equals(42.0));
     });
   });
 
@@ -672,14 +673,14 @@ void main() {
               final squared = writableComputed<double>(
                 context,
                 get: (_) => count() * count(),
-                set: (value) => count(value / 2),
+                set: (value) => count.set(value / 2),
               );
               return Column(
                 children: [
                   Text('Count: ${count()}'),
                   Text('Squared: ${squared()}'),
                   TextButton(
-                    onPressed: () => squared(16.0),
+                    onPressed: () => squared.set(16.0),
                     child: const Text('set to 16'),
                   ),
                 ],
@@ -711,13 +712,13 @@ void main() {
               final squared = writableComputed<double>(
                 context,
                 get: (_) => count() * count(),
-                set: (value) => count(value / 2),
+                set: (value) => count.set(value / 2),
               );
               return Column(
                 children: [
                   Text('${squared()}'),
                   TextButton(
-                    onPressed: () => squared(16.0),
+                    onPressed: () => squared.set(16.0),
                     child: const Text('write'),
                   ),
                 ],
@@ -746,8 +747,8 @@ void main() {
                 context,
                 get: (_) => a() + b(),
                 set: (value) {
-                  a(value ~/ 2);
-                  b(value - (value ~/ 2));
+                  a.set(value ~/ 2);
+                  b.set(value - (value ~/ 2));
                 },
               );
               return Column(
@@ -756,7 +757,7 @@ void main() {
                   Text('B: ${b()}'),
                   Text('Sum: ${sum()}'),
                   TextButton(
-                    onPressed: () => sum(10),
+                    onPressed: () => sum.set(10),
                     child: const Text('set sum to 10'),
                   ),
                 ],
@@ -787,7 +788,7 @@ void main() {
               final squared = writableComputed<double>(
                 context,
                 get: (_) => count() * count(),
-                set: (value) => count(value / 2),
+                set: (value) => count.set(value / 2),
               );
               final doubled = computed<double>(context, (_) => squared() * 2);
               return Column(
@@ -795,7 +796,7 @@ void main() {
                   Text('Squared: ${squared()}'),
                   Text('Doubled: ${doubled()}'),
                   TextButton(
-                    onPressed: () => squared(16.0),
+                    onPressed: () => squared.set(16.0),
                     child: const Text('write'),
                   ),
                 ],
@@ -824,17 +825,17 @@ void main() {
               final computed = writableComputed<double?>(
                 context,
                 get: (_) => value() != null ? value()! * 2 : null,
-                set: (v) => value(v != null ? v / 2 : null, true),
+                set: (v) => value.set(v != null ? v / 2 : null),
               );
               return Column(
                 children: [
                   Text('Value: ${computed()}'),
                   TextButton(
-                    onPressed: () => computed(10.0),
+                    onPressed: () => computed.set(10.0),
                     child: const Text('set to 10'),
                   ),
                   TextButton(
-                    onPressed: () => computed(null, true),
+                    onPressed: () => computed.set(null),
                     child: const Text('set to null'),
                   ),
                 ],
@@ -864,17 +865,17 @@ void main() {
               final bounded = writableComputed<int>(
                 context,
                 get: (_) => count(),
-                set: (value) => count(value.clamp(0, 10)),
+                set: (value) => count.set(value.clamp(0, 10)),
               );
               return Column(
                 children: [
                   Text('Value: ${bounded()}'),
                   TextButton(
-                    onPressed: () => bounded(15),
+                    onPressed: () => bounded.set(15),
                     child: const Text('set to 15'),
                   ),
                   TextButton(
-                    onPressed: () => bounded(-5),
+                    onPressed: () => bounded.set(-5),
                     child: const Text('set to -5'),
                   ),
                 ],

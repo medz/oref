@@ -81,7 +81,7 @@ void main() {
                   Text('${watch(context, count)}'),
                   TextButton(
                     child: const Text('increment'),
-                    onPressed: () => count(count() + 1),
+                    onPressed: () => count.set(count() + 1),
                   ),
                 ],
               );
@@ -346,7 +346,7 @@ void main() {
                   Text('${count()}'),
                   TextButton(
                     child: const Text('increment'),
-                    onPressed: () => count(count() + 1),
+                    onPressed: () => count.set(count() + 1),
                   ),
                 ],
               );

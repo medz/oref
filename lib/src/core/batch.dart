@@ -7,8 +7,8 @@ import 'package:alien_signals/alien_signals.dart';
 /// Example:
 /// ```dart
 /// batch(() {
-///   signal1("value1");
-///   signal2("value2");
+///   signal1.set("value1");
+///   signal2.set("value2");
 /// });
 /// ```
 T batch<T>(T Function() getter) {

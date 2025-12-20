@@ -57,14 +57,14 @@ class _OrefComputed<T> extends alien.ComputedNode<T>
 /// final count = signal<double>(null, 0);
 /// final squared = writableComputed<double>(null,
 ///   get: (_) => count() * count(),
-///   set: (value) => count(math.sqrt(value)),
+///   set: (value) => count.set(math.sqrt(value)),
 /// );
 ///
-/// count(2);
+/// count.set(2);
 /// print(count()); // Print 2.0
 /// print(squared()); // Print 4.0
 ///
-/// squared(16);
+/// squared.set(16);
 /// print(count()); // Print 4.0
 /// print(squared()); // Print 16.0
 /// ```

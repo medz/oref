@@ -9,16 +9,15 @@ import "watch.dart";
 /// Creates a reactive signal with an initial value.
 ///
 /// A signal is a reactive value container that notifies dependents when its
-/// value changes. The returned function can be used to:
-/// - Get the current value when called with no arguments
-/// - Set a new value when called with a value argument
-/// - Control whether null values should be treated as updates when [nulls] is true
+/// value changes. The returned signal can be used to:
+/// - Get the current value by calling it with no arguments
+/// - Set a new value via the `.set(value)` method
 ///
 /// Example:
 /// ```dart
 /// final count = signal(context, 0);
 /// count(); // get value
-/// count(1); // set value
+/// count.set(1); // set value
 /// ```
 alien.WritableSignal<T> signal<T>(BuildContext? context, T initialValue) {
   if (context == null) {

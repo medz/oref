@@ -236,7 +236,7 @@ void main() {
       counter2.increment(); // Not tracked
       expect(effectCount, equals(2));
 
-      condition(false);
+      condition.set(false);
       expect(effectCount, equals(3));
 
       counter1.increment(); // Not tracked anymore
@@ -250,7 +250,7 @@ void main() {
       int effectCount = 0;
       final counter = Counter();
 
-      final Effect(:dispose) = effect(null, () {
+      final dispose = effect(null, () {
         counter.value;
         effectCount++;
       });
@@ -312,7 +312,7 @@ void main() {
             builder: (context) {
               final count = signal(context, counter.value);
               effect(context, () {
-                count(counter.value);
+                count.set(counter.value);
               });
               return Column(
                 children: [
@@ -347,7 +347,7 @@ void main() {
               buildCount++;
               final value = signal(context, counter.value);
               effect(context, () {
-                value(counter.value);
+                value.set(counter.value);
               });
               return Column(
                 children: [
@@ -381,8 +381,8 @@ void main() {
               final x = signal(context, point.x);
               final y = signal(context, point.y);
               effect(context, () {
-                x(point.x);
-                y(point.y);
+                x.set(point.x);
+                y.set(point.y);
               });
               return Column(
                 children: [
@@ -422,7 +422,7 @@ void main() {
             builder: (context) {
               final value = signal(context, counter.value);
               effect(context, () {
-                value(counter.value);
+                value.set(counter.value);
               });
               final doubled = computed(context, (_) => value() * 2);
               return Column(
@@ -460,13 +460,13 @@ void main() {
               final condition = signal(context, true);
               final result = signal(context, 0);
               effect(context, () {
-                result(condition() ? counter1.value : counter2.value);
+                result.set(condition() ? counter1.value : counter2.value);
               });
               return Column(
                 children: [
                   Text('Result: ${result()}'),
                   TextButton(
-                    onPressed: () => condition(!condition()),
+                    onPressed: () => condition.set(!condition()),
                     child: const Text('toggle'),
                   ),
                   TextButton(
@@ -509,8 +509,8 @@ void main() {
               final x = signal(context, point.x);
               final y = signal(context, point.y);
               effect(context, () {
-                x(point.x);
-                y(point.y);
+                x.set(point.x);
+                y.set(point.y);
               });
               final distance = computed(context, (_) {
                 return (x() * x() + y() * y()).toDouble();

@@ -112,6 +112,7 @@ _OrefEffect _createEffect({
     return effect;
   } finally {
     alien.setActiveSub(prevSub);
+    effect.flags &= -5 /*~ReactiveFlags.recursedCheck*/;
   }
 }
 

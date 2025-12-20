@@ -47,8 +47,8 @@ void main() {
       expect(sum(), equals(3));
 
       batch(() {
-        a(10);
-        b(20);
+        a.set(10);
+        b.set(20);
       });
 
       expect(effectCount, equals(2)); // Should run only once
@@ -67,12 +67,12 @@ void main() {
       expect(effectCount, equals(1));
 
       batch(() {
-        count(1);
+        count.set(1);
         batch(() {
-          count(2);
-          count(3);
+          count.set(2);
+          count.set(3);
         });
-        count(4);
+        count.set(4);
       });
 
       expect(effectCount, equals(2)); // Should run only once after outer batch
@@ -92,7 +92,7 @@ void main() {
 
       expect(() {
         batch(() {
-          count(1);
+          count.set(1);
           throw Exception('test error');
         });
       }, throwsException);
@@ -121,8 +121,8 @@ void main() {
       expect(effect2Count, equals(1));
 
       batch(() {
-        a(10);
-        b(20);
+        a.set(10);
+        b.set(20);
       });
 
       expect(effect1Count, equals(2));
@@ -140,11 +140,11 @@ void main() {
       expect(values, equals([0]));
 
       batch(() {
-        count(1);
+        count.set(1);
         expect(values, equals([0])); // Should not have updated yet
-        count(2);
+        count.set(2);
         expect(values, equals([0])); // Should not have updated yet
-        count(3);
+        count.set(3);
         expect(values, equals([0])); // Should not have updated yet
       });
 
@@ -166,9 +166,9 @@ void main() {
       expect(c(), equals(4));
 
       batch(() {
-        a(2);
-        a(3);
-        a(4);
+        a.set(2);
+        a.set(3);
+        a.set(4);
       });
 
       expect(effectCount, equals(2));
@@ -189,18 +189,18 @@ void main() {
       expect(effectCount, equals(1));
 
       batch(() {
-        a(10);
-        b(20);
+        a.set(10);
+        b.set(20);
       });
 
       expect(effectCount, equals(2)); // Only 'a' is tracked
 
-      flag(false);
+      flag.set(false);
       expect(effectCount, equals(3));
 
       batch(() {
-        a(30);
-        b(40);
+        a.set(30);
+        b.set(40);
       });
 
       expect(effectCount, equals(4)); // Only 'b' is tracked now
