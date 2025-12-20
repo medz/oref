@@ -1,0 +1,775 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Source+Sans+3:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+
+:root {
+  --vp-font-family-base: 'Source Sans 3', 'Noto Sans', 'Segoe UI', sans-serif;
+  --vp-font-family-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo,
+    Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+
+  --glass-blur: 22px;
+  --glass-saturate: 155%;
+  --glass-brightness: 1.03;
+  --glass-bg: rgba(247, 244, 240, 0.35);
+  --glass-bg-strong: rgba(247, 244, 240, 0.55);
+  --glass-nav-bg: rgba(247, 244, 240, 0.36);
+  --glass-border: rgba(255, 255, 255, 0.5);
+  --glass-highlight: rgba(56, 189, 248, 0.28);
+  --glass-highlight-soft: rgba(251, 191, 36, 0.16);
+  --glass-shadow-tint: rgba(15, 23, 42, 0.08);
+  --glass-shadow-tint-strong: rgba(15, 23, 42, 0.14);
+  --glass-nav-highlight: rgba(56, 189, 248, 0.22);
+  --glass-nav-shadow-tint: rgba(15, 23, 42, 0.12);
+  --glass-selection-bg: rgba(255, 255, 255, 0.5);
+  --glass-selection-border: rgba(56, 189, 248, 0.25);
+  --glass-selection-highlight: rgba(56, 189, 248, 0.22);
+  --glass-selection-shadow: 0 10px 22px rgba(15, 23, 42, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  --glass-shadow: 0 18px 40px rgba(15, 23, 42, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    inset 0 -10px 24px rgba(255, 255, 255, 0.2);
+  --glass-shadow-soft: 0 12px 28px rgba(15, 23, 42, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65),
+    inset 0 -10px 18px rgba(255, 255, 255, 0.14);
+  --glass-light-x: 50%;
+  --glass-light-y: 18%;
+  --glass-light-x2: 50%;
+  --glass-light-y2: 82%;
+  --glass-scroll: 0;
+
+  --vp-c-brand-1: #0f766e;
+  --vp-c-brand-2: #0d9488;
+  --vp-c-brand-3: #14b8a6;
+  --vp-c-brand-soft: rgba(20, 184, 166, 0.16);
+
+  --vp-c-bg: #f7f5f2;
+  --vp-c-bg-alt: #efeae3;
+  --vp-c-bg-soft: #ffffff;
+  --vp-c-bg-elv: #ffffff;
+  --vp-c-bg-mute: #f4f1ec;
+
+  --vp-c-text-1: #0f172a;
+  --vp-c-text-2: #334155;
+  --vp-c-text-3: #64748b;
+
+  --vp-c-divider: rgba(15, 23, 42, 0.12);
+  --vp-c-gutter: rgba(15, 23, 42, 0.12);
+
+  --vp-layout-max-width: 1260px;
+
+  --vp-nav-bg-color: var(--glass-bg-strong);
+  --vp-nav-screen-bg-color: var(--glass-bg-strong);
+  --vp-local-nav-bg-color: var(--glass-nav-bg);
+  --vp-sidebar-bg-color: var(--glass-bg-strong);
+  --vp-input-bg-color: var(--glass-bg);
+}
+
+.dark {
+  --glass-bg: rgba(10, 16, 20, 0.66);
+  --glass-bg-strong: rgba(10, 16, 20, 0.82);
+  --glass-nav-bg: rgba(10, 16, 20, 0.64);
+  --glass-border: rgba(148, 163, 184, 0.2);
+  --glass-highlight: rgba(255, 255, 255, 0.1);
+  --glass-highlight-soft: rgba(255, 255, 255, 0.035);
+  --glass-shadow-tint: rgba(0, 0, 0, 0.4);
+  --glass-shadow-tint-strong: rgba(0, 0, 0, 0.55);
+  --glass-nav-highlight: rgba(255, 255, 255, 0.12);
+  --glass-nav-shadow-tint: rgba(0, 0, 0, 0.45);
+  --glass-selection-bg: rgba(12, 20, 26, 0.6);
+  --glass-selection-border: rgba(56, 189, 248, 0.35);
+  --glass-selection-highlight: rgba(56, 189, 248, 0.18);
+  --glass-selection-shadow: 0 10px 24px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 18px 40px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -10px 20px rgba(0, 0, 0, 0.5);
+  --glass-shadow-soft: 0 12px 28px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 -10px 18px rgba(0, 0, 0, 0.45);
+
+  --vp-c-bg: #0b1113;
+  --vp-c-bg-alt: #0f171a;
+  --vp-c-bg-soft: #111c20;
+  --vp-c-bg-elv: #0f1a1d;
+  --vp-c-bg-mute: #0d1619;
+
+  --vp-c-text-1: #e2e8f0;
+  --vp-c-text-2: #cbd5e1;
+  --vp-c-text-3: #94a3b8;
+
+  --vp-c-divider: rgba(148, 163, 184, 0.2);
+  --vp-c-gutter: rgba(148, 163, 184, 0.2);
+}
+
+body {
+  background:
+    radial-gradient(900px 500px at 10% -10%, rgba(20, 184, 166, 0.18), transparent 60%),
+    radial-gradient(700px 420px at 90% -5%, rgba(245, 158, 11, 0.18), transparent 60%),
+    var(--vp-c-bg);
+}
+
+.glass-surface,
+.VPLocalNav,
+.VPSidebar,
+.VPNavScreen,
+.VPDocAsideOutline,
+.VPFeature,
+.section-card,
+.callout,
+.VPHomeHero .image {
+  position: relative;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate))
+    brightness(var(--glass-brightness));
+  -webkit-backdrop-filter: blur(var(--glass-blur))
+    saturate(var(--glass-saturate)) brightness(var(--glass-brightness));
+  transition:
+    background-color 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease,
+    transform 0.25s ease;
+  overflow: hidden;
+}
+
+.glass-surface::before,
+.VPLocalNav::before,
+.VPSidebar::before,
+.VPNavScreen::before,
+.VPDocAsideOutline::before,
+.VPFeature::before,
+.section-card::before,
+.callout::before,
+.VPHomeHero .image::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    radial-gradient(
+      140% 120% at var(--glass-light-x) var(--glass-light-y),
+      var(--glass-highlight),
+      transparent 55%
+    ),
+    radial-gradient(
+      140% 120% at var(--glass-light-x2) var(--glass-light-y2),
+      var(--glass-highlight-soft),
+      transparent 60%
+    ),
+    radial-gradient(
+      140% 140% at calc(var(--glass-light-x) + 12%)
+        calc(var(--glass-light-y) + 18%),
+      var(--glass-shadow-tint),
+      transparent 65%
+    );
+  pointer-events: none;
+  opacity: calc(0.55 + var(--glass-scroll) * 0.25);
+}
+
+.glass-surface::after,
+.VPLocalNav::after,
+.VPSidebar::after,
+.VPNavScreen::after,
+.VPDocAsideOutline::after,
+.VPFeature::after,
+.section-card::after,
+.callout::after,
+.VPHomeHero .image::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.5),
+    transparent 45%,
+    var(--glass-shadow-tint-strong)
+  );
+  opacity: calc(0.25 + var(--glass-scroll) * 0.15);
+  pointer-events: none;
+}
+
+.VPDoc .custom-block {
+  box-shadow: var(--glass-shadow-soft);
+  backdrop-filter: blur(calc(var(--glass-blur) * 0.7))
+    saturate(calc(var(--glass-saturate) * 0.9));
+  -webkit-backdrop-filter: blur(calc(var(--glass-blur) * 0.7))
+    saturate(calc(var(--glass-saturate) * 0.9));
+}
+
+.vp-doc div[class*='language-'],
+.vp-block {
+  position: relative;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow-soft);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate))
+    brightness(var(--glass-brightness));
+  -webkit-backdrop-filter: blur(var(--glass-blur))
+    saturate(var(--glass-saturate)) brightness(var(--glass-brightness));
+  overflow: hidden;
+}
+
+.vp-doc div[class*='language-']::before,
+.vp-block::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    radial-gradient(
+      120% 120% at var(--glass-light-x) var(--glass-light-y),
+      var(--glass-highlight),
+      transparent 60%
+    ),
+    radial-gradient(
+      120% 120% at var(--glass-light-x2) var(--glass-light-y2),
+      var(--glass-highlight-soft),
+      transparent 65%
+    );
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.vp-doc div[class*='language-']::after,
+.vp-block::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.35),
+    transparent 50%,
+    var(--glass-shadow-tint-strong)
+  );
+  opacity: 0.3;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.vp-doc [class*='language-'] pre,
+.vp-doc [class*='language-'] code,
+.vp-block pre,
+.vp-block code {
+  position: relative;
+  z-index: 1;
+}
+
+.vp-code-group .tabs {
+  background: var(--glass-nav-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow-soft);
+  backdrop-filter: blur(calc(var(--glass-blur) * 0.9))
+    saturate(var(--glass-saturate)) brightness(var(--glass-brightness));
+  -webkit-backdrop-filter: blur(calc(var(--glass-blur) * 0.9))
+    saturate(var(--glass-saturate)) brightness(var(--glass-brightness));
+}
+
+.VPHomeHero {
+  position: relative;
+  overflow: hidden;
+  padding-bottom: 18px;
+}
+
+.VPHomeHero .container {
+  position: relative;
+  z-index: 2;
+}
+
+.hero-canvas {
+  position: absolute;
+  inset: -12% -10% -12%;
+  height: auto;
+  width: 120%;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.9;
+  transform: translateY(8%);
+}
+
+.hero-canvas canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.VPHomeHero .image {
+  width: min(320px, 70vw);
+  height: min(320px, 70vw);
+  overflow: visible;
+}
+
+.hero-mascot {
+  width: 100%;
+  height: 100%;
+  border-radius: 28px;
+  background: radial-gradient(
+      120px 120px at 30% 20%,
+      rgba(45, 212, 191, 0.25),
+      transparent 60%
+    ),
+    radial-gradient(
+      160px 160px at 80% 70%,
+      rgba(245, 158, 11, 0.18),
+      transparent 70%
+    );
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+.hero-mascot canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.dark .hero-mascot {
+  border-color: rgba(148, 163, 184, 0.2);
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.5),
+    inset 0 0 30px rgba(20, 184, 166, 0.12);
+}
+
+
+.VPHomeHero .name {
+  text-shadow: 0 10px 30px rgba(20, 184, 166, 0.2);
+}
+
+.dark body {
+  background:
+    radial-gradient(900px 500px at 10% -10%, rgba(20, 184, 166, 0.12), transparent 60%),
+    radial-gradient(700px 420px at 90% -5%, rgba(245, 158, 11, 0.12), transparent 60%),
+    var(--vp-c-bg);
+}
+
+.VPNavBar {
+  position: relative;
+  background: var(--glass-nav-bg);
+  border: 1px solid var(--glass-border);
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  box-shadow: var(--glass-shadow-soft);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate))
+    brightness(var(--glass-brightness));
+  -webkit-backdrop-filter: blur(var(--glass-blur))
+    saturate(var(--glass-saturate)) brightness(var(--glass-brightness));
+  overflow: visible;
+}
+
+.VPNavBar:not(.home) {
+  background-color: var(--glass-nav-bg) !important;
+}
+
+.VPNavBar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      140% 160% at var(--glass-light-x) var(--glass-light-y),
+      var(--glass-nav-highlight),
+      transparent 60%
+    ),
+    radial-gradient(
+      120% 120% at calc(var(--glass-light-x2) + 8%)
+        calc(var(--glass-light-y2) - 12%),
+      var(--glass-nav-shadow-tint),
+      transparent 60%
+    ),
+    linear-gradient(
+      120deg,
+      rgba(255, 255, 255, 0.12),
+      transparent 55%
+    );
+  opacity: calc(0.4 + var(--glass-scroll) * 0.2);
+  pointer-events: none;
+  z-index: 0;
+}
+
+
+.VPNavBar .divider,
+.VPNavBar .divider-line {
+  background: transparent !important;
+  display: none;
+}
+
+.VPNavBar .wrapper,
+.VPNavBar .container,
+.VPNavBar .title,
+.VPNavBar .content,
+.VPNavBar .content-body {
+  position: relative;
+  z-index: 1;
+}
+
+.VPSidebar {
+  background: var(--glass-bg-strong);
+  border-right: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow-soft);
+}
+
+.VPSidebar .curtain {
+  background: var(--glass-bg-strong);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.VPSidebarItem .item {
+  align-items: center;
+}
+
+.VPSidebarItem.is-link > .item > .link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-grow: 0;
+  align-self: flex-start;
+  padding: 6px 14px;
+  border-radius: 999px;
+  transition:
+    color 0.2s ease,
+    background-color 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease,
+    transform 0.25s ease;
+}
+
+.VPSidebarItem.is-link > .item > .link .text {
+  padding: 0;
+}
+
+.VPSidebarItem.is-link > .item > .link::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: var(--glass-selection-bg);
+  border: 1px solid var(--glass-selection-border);
+  box-shadow: var(--glass-selection-shadow);
+  backdrop-filter: blur(calc(var(--glass-blur) * 0.85))
+    saturate(var(--glass-saturate)) brightness(var(--glass-brightness));
+  -webkit-backdrop-filter: blur(calc(var(--glass-blur) * 0.85))
+    saturate(var(--glass-saturate)) brightness(var(--glass-brightness));
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  z-index: 0;
+}
+
+.VPSidebarItem.is-link > .item > .link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background:
+    radial-gradient(
+      120% 120% at var(--glass-light-x) var(--glass-light-y),
+      var(--glass-selection-highlight),
+      transparent 60%
+    ),
+    linear-gradient(
+      120deg,
+      rgba(255, 255, 255, 0.22),
+      transparent 55%
+    );
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 0;
+}
+
+.VPSidebarItem.is-link.is-active > .item > .link::before,
+.VPSidebarItem.is-link.is-active > .item > .link::after {
+  opacity: 1;
+}
+
+.VPSidebarItem.is-link > .item > .link .text,
+.VPSidebarItem.is-link > .item > .link .caret {
+  position: relative;
+  z-index: 1;
+}
+
+.VPSidebarItem.is-link.is-active > .item > .link .text {
+  color: var(--vp-c-text-1);
+  font-weight: 600;
+}
+
+.VPSidebarItem.is-active > .item > .indicator {
+  background-color: transparent;
+}
+
+.VPLocalNav,
+.VPNavScreen {
+  background: var(--glass-bg-strong);
+}
+
+.VPLocalNav {
+  background: var(--glass-nav-bg);
+}
+
+.VPDocAsideOutline {
+  border-radius: 16px;
+  padding: 14px 16px;
+}
+
+.VPNavBar .content-body {
+  gap: 12px;
+  background: transparent !important;
+}
+
+.VPNavBar .menu,
+.VPNavBar .translations,
+.VPNavBar .appearance,
+.VPNavBar .social-links,
+.VPNavBar .extra {
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.VPNavBarSearch .DocSearch-Button {
+  position: relative;
+  overflow: hidden;
+  border-radius: 999px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  box-shadow: var(--glass-shadow-soft);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate))
+    brightness(var(--glass-brightness));
+  -webkit-backdrop-filter: blur(var(--glass-blur))
+    saturate(var(--glass-saturate)) brightness(var(--glass-brightness));
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.VPNavBarSearch .DocSearch-Button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      140% 140% at var(--glass-light-x) var(--glass-light-y),
+      var(--glass-highlight),
+      transparent 60%
+    ),
+    linear-gradient(
+      120deg,
+      rgba(255, 255, 255, 0.18),
+      transparent 55%
+    );
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.VPNavBarSearch .DocSearch-Button:hover {
+  border-color: var(--vp-c-brand-2);
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.VPNavBarSearch .DocSearch-Button-Container,
+.VPNavBarSearch .DocSearch-Button-Keys {
+  position: relative;
+  z-index: 1;
+}
+
+.VPNavBarSearch .DocSearch-Button-Placeholder {
+  color: var(--vp-c-text-2);
+}
+
+.VPNavBarSearch .DocSearch-Button-Keys {
+  gap: 6px;
+}
+
+.VPNavBarSearch .DocSearch-Button-Key {
+  border-radius: 6px;
+  border: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.35);
+  color: var(--vp-c-text-2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+@media (min-width: 768px) {
+  .VPNavBarSearch .DocSearch-Button {
+    height: 40px;
+    padding: 0 14px;
+  }
+}
+
+.VPHomeHero .name {
+  font-family: 'Space Grotesk', var(--vp-font-family-base);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  background: linear-gradient(120deg, #0f766e, #14b8a6 45%, #f59e0b);
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.VPHomeHero .text {
+  font-family: 'Space Grotesk', var(--vp-font-family-base);
+  letter-spacing: -0.015em;
+}
+
+.VPHomeHero .tagline {
+  font-size: 1.1rem;
+  color: var(--vp-c-text-2);
+}
+
+.VPButton {
+  border-radius: 999px;
+  padding: 0 20px;
+}
+
+.VPButton.brand {
+  box-shadow: 0 12px 30px rgba(15, 118, 110, 0.18);
+}
+
+.VPHomeFeatures {
+  margin-top: 32px;
+}
+
+.VPFeature {
+  border-radius: 16px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  box-shadow: var(--glass-shadow-soft);
+}
+
+.VPFeature .title {
+  font-family: 'Space Grotesk', var(--vp-font-family-base);
+}
+
+.section-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  margin: 20px 0 32px;
+}
+
+.section-card {
+  padding: 16px 18px;
+  border-radius: 14px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  box-shadow: var(--glass-shadow-soft);
+}
+
+.section-card h3 {
+  font-family: 'Space Grotesk', var(--vp-font-family-base);
+  margin: 0 0 8px;
+}
+
+.section-kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-size: 0.72rem;
+  color: var(--vp-c-text-3);
+  font-weight: 600;
+}
+
+.callout {
+  border-radius: 16px;
+  padding: 18px 20px;
+  background: linear-gradient(
+    120deg,
+    rgba(20, 184, 166, 0.12),
+    rgba(245, 158, 11, 0.12)
+  );
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow-soft);
+}
+
+.VPFeature:hover,
+.section-card:hover,
+.callout:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .glass-surface,
+  .VPLocalNav,
+  .VPSidebar,
+  .VPNavScreen,
+  .VPDocAsideOutline,
+  .VPFeature,
+  .section-card,
+  .callout,
+  .VPHomeHero .image,
+  .VPNavBar,
+  .VPNavBar .menu,
+  .VPNavBar .translations,
+  .VPNavBar .appearance,
+  .VPNavBar .social-links,
+  .VPNavBar .extra,
+  .VPSidebarItem.is-link > .item > .link {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: var(--vp-c-bg);
+    border-color: var(--vp-c-divider);
+    box-shadow: none;
+  }
+
+  .glass-surface::before,
+  .glass-surface::after,
+  .VPLocalNav::before,
+  .VPLocalNav::after,
+  .VPSidebar::before,
+  .VPSidebar::after,
+  .VPNavScreen::before,
+  .VPNavScreen::after,
+  .VPDocAsideOutline::before,
+  .VPDocAsideOutline::after,
+  .VPFeature::before,
+  .VPFeature::after,
+  .section-card::before,
+  .section-card::after,
+  .callout::before,
+  .callout::after,
+  .VPHomeHero .image::before,
+  .VPHomeHero .image::after,
+  .VPNavBar::before,
+  .VPSidebarItem.is-link > .item > .link::before,
+  .VPSidebarItem.is-link > .item > .link::after {
+    display: none;
+  }
+
+  .VPNavBarSearch .DocSearch-Button {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: var(--vp-c-bg);
+    border-color: var(--vp-c-divider);
+    box-shadow: none;
+  }
+
+  .VPNavBarSearch .DocSearch-Button::before {
+    display: none;
+  }
+}
+
+.callout strong {
+  font-family: 'Space Grotesk', var(--vp-font-family-base);
+}
+
+.VPDoc h1,
+.VPDoc h2,
+.VPDoc h3,
+.VPDoc h4 {
+  font-family: 'Space Grotesk', var(--vp-font-family-base);
+}
+
+.VPDoc .custom-block {
+  border-radius: 14px;
+}
+
+.VPFooter {
+  border-top: 1px solid var(--vp-c-divider);
+}
