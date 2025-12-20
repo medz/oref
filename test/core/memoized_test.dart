@@ -78,7 +78,7 @@ void main() {
 
               return Column(
                 children: [
-                  Text('${watch(context, count)}'),
+                  Text('${watch(context, () => count())}'),
                   TextButton(
                     child: const Text('increment'),
                     onPressed: () => count.set(count() + 1),

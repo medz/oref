@@ -137,7 +137,7 @@ class EffectBatchSection extends StatelessWidget {
 
     effect(context, () {
       sum();
-      final current = untrack(effectRuns);
+      final current = untrack(() => effectRuns());
       effectRuns.set(current + 1);
     });
 
@@ -182,7 +182,8 @@ class UntrackSection extends StatelessWidget {
     final source = signal<int>(context, 1);
     final noise = signal<int>(context, 100);
     final tracked = computed<int>(context, (_) => source() + noise());
-    final untracked = computed<int>(context, (_) => source() + untrack(noise));
+    final untracked =
+        computed<int>(context, (_) => source() + untrack(() => noise()));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

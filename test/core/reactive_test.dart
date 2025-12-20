@@ -24,6 +24,10 @@ class Counter with Reactive<Counter> {
     _value = newValue;
     trigger();
   }
+
+  void refresh() {
+    trigger();
+  }
 }
 
 class Point with Reactive<Point> {
@@ -177,7 +181,7 @@ void main() {
       expect(effectCount, equals(1));
 
       // Trigger without actually changing value
-      counter.trigger();
+      counter.refresh();
       expect(effectCount, equals(2));
     });
 

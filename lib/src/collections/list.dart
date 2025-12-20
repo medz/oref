@@ -65,8 +65,8 @@ class ReactiveList<T> extends ListBase<T>
   }
 
   @override
-  bool remove(Object? value) {
-    final result = _source.remove(value);
+  bool remove(Object? element) {
+    final result = _source.remove(element);
     trigger();
     return result;
   }
