@@ -29,6 +29,9 @@ migrate_working_dir/
 .flutter-plugins
 .flutter-plugins-dependencies
 build/
+# DevTools extension build output (published assets)
+!extension/devtools/build/
+!extension/devtools/build/**
 
 # Docs (VitePress)
 docs/node_modules/
