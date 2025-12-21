@@ -104,4 +104,32 @@ void main() {
 
     expect(readText(tester, 'Success:'), contains('Result #2'));
   });
+
+  testWidgets('walkthrough section filters and adds items', (tester) async {
+    await tester.pumpWidget(wrap(const WalkthroughSection()));
+    await tester.pumpAndSettle();
+
+    expect(readText(tester, 'showing'), contains('5 of 5'));
+    expect(find.text('Aurora'), findsOneWidget);
+    expect(find.text('Comet'), findsOneWidget);
+
+    await tester.enterText(find.byKey(const Key('walkthrough-query')), 'or');
+    await tester.pumpAndSettle();
+
+    expect(readText(tester, 'showing'), contains('2 of 5'));
+    expect(find.text('Aurora'), findsOneWidget);
+    expect(find.text('Orion'), findsOneWidget);
+    expect(find.text('Comet'), findsNothing);
+
+    await tester.tap(find.text('Clear filter'));
+    await tester.pumpAndSettle();
+
+    expect(readText(tester, 'showing'), contains('5 of 5'));
+
+    await tester.tap(find.text('Add item'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Nova 1'), findsOneWidget);
+    expect(readText(tester, 'showing'), contains('6 of 6'));
+  });
 }

@@ -52,6 +52,11 @@ class ExampleHome extends StatelessWidget {
             title: 'useAsyncData',
             child: AsyncDataSection(),
           ),
+          SizedBox(height: 16),
+          _Section(
+            title: 'Walkthrough: searchable list',
+            child: WalkthroughSection(),
+          ),
         ],
       ),
     );
@@ -262,6 +267,95 @@ class AsyncDataSection extends StatelessWidget {
               child: const Text('Refresh'),
             ),
           ],
+        ),
+      ],
+    );
+  }
+}
+
+class WalkthroughSection extends StatelessWidget {
+  const WalkthroughSection({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final query = signal<String>(context, '');
+    final items = ReactiveList.scoped(context, [
+      'Aurora',
+      'Comet',
+      'Nebula',
+      'Orion',
+      'Pulsar',
+    ]);
+    final nextId = signal<int>(context, 1);
+    final controller = useMemoized(context, () => TextEditingController());
+
+    effect(context, () {
+      onEffectDispose(controller.dispose);
+    });
+
+    final filtered = computed<List<String>>(context, (_) {
+      final q = query().trim().toLowerCase();
+      if (q.isEmpty) return List.unmodifiable(items);
+      return items.where((item) => item.toLowerCase().contains(q)).toList();
+    });
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextField(
+          key: const Key('walkthrough-query'),
+          controller: controller,
+          decoration: InputDecoration(
+            labelText: 'Search',
+            suffixIcon: IconButton(
+              tooltip: 'Clear filter',
+              onPressed: () {
+                controller.clear();
+                query.set('');
+              },
+              icon: const Icon(Icons.clear),
+            ),
+          ),
+          onChanged: query.set,
+        ),
+        const SizedBox(height: 8),
+        SignalBuilder(
+          builder: (context) {
+            final results = filtered();
+            final total = items.length;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Wrap(
+                  spacing: 8,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        items.add('Nova ${nextId()}');
+                        nextId.set(nextId() + 1);
+                      },
+                      child: const Text('Add item'),
+                    ),
+                    OutlinedButton(
+                      onPressed: total == 0 ? null : () => items.removeLast(),
+                      child: const Text('Remove last'),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        controller.clear();
+                        query.set('');
+                      },
+                      child: const Text('Clear filter'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text('showing ${results.length} of $total'),
+                const SizedBox(height: 4),
+                for (final item in results) Text(item),
+              ],
+            );
+          },
         ),
       ],
     );

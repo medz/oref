@@ -12,6 +12,23 @@ final stop = effect(context, () {
 stop();
 ```
 
+## Effect Lifecycle (Initial Run)
+
+Effects run **once immediately**, then re-run when dependencies change. If you
+need to skip the initial run:
+
+```dart
+var first = true;
+
+effect(context, () {
+  if (first) {
+    first = false;
+    return;
+  }
+  debugPrint('changed: ${count()}');
+});
+```
+
 ## Cleanup Hooks
 
 Use `onEffectCleanup` for re-run cleanup, and `onEffectDispose` for final cleanup.
