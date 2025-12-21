@@ -10,6 +10,41 @@ name(); // read
 name.set('Oref v2'); // write
 ```
 
+## Nullable Context (Widget-bound vs Global)
+
+All core APIs accept `BuildContext?`. When you pass a **widget context**, Oref
+memoizes the reactive node and disposes it with the widget. When you pass
+`null`, the node becomes **global/standalone** and you must manage cleanup.
+
+```dart
+// Inside a widget build -> auto-bound & auto-disposed
+final count = signal(context, 0);
+effect(context, () => debugPrint('count: ${count()}'));
+
+// Outside widgets -> pass null and clean up manually
+final globalCount = signal<int>(null, 0);
+final stop = effect(null, () => debugPrint('global: ${globalCount()}'));
+
+// later...
+stop(); // dispose effect
+```
+
+## Write API in Practice
+
+Signals are callables, not mutable fields. To update, read then `.set(...)`:
+
+```dart
+final count = signal(context, 0);
+
+void increment() {
+  count.set(count() + 1);
+}
+
+void reset() {
+  count.set(0);
+}
+```
+
 ## Computed
 
 Computed values derive from signals and cache automatically.
