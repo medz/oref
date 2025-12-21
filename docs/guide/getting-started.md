@@ -55,4 +55,16 @@ SignalBuilder(
 );
 ```
 
+## Flutter Examples (from the example app)
+
+::: code-group
+
+<<< ../../example/lib/main.dart#counter-section [Counter + computed + writableComputed]
+
+<<< ../../example/lib/main.dart#effect-batch-section [Effect + batch]
+
+<<< ../../example/lib/main.dart#untrack-section [untrack()]
+
+:::
+
 Next up: **Core Concepts**.

@@ -97,3 +97,13 @@ batch(() {
 ```dart
 final value = untrack(() => count());
 ```
+
+## Flutter 示例（来自 example 应用）
+
+::: code-group
+
+<<< ../../../example/lib/main.dart#counter-section [Counter + computed + writableComputed]
+
+<<< ../../../example/lib/main.dart#effect-batch-section [Effect + batch]
+
+:::

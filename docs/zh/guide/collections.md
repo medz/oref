@@ -92,3 +92,15 @@ batch(() {
 ```
 
 读取会 `track()`，写入会 `trigger()`，因此访问过的 UI 会在变化时自动更新。
+
+## Flutter 示例（来自 example 应用）
+
+::: code-group
+
+<<< ../../../example/lib/main.dart#walkthrough-section [Walkthrough: searchable list]
+
+<<< ../../../example/lib/main.dart#reactive-map-section [ReactiveMap]
+
+<<< ../../../example/lib/main.dart#reactive-set-section [ReactiveSet]
+
+:::

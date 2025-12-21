@@ -80,3 +80,11 @@ SignalBuilder(
 
 This pattern keeps validation in `computed`, writes through `.set(...)`,
 triggers async work via `useAsyncData`, and updates UI with `SignalBuilder`.
+
+## Flutter Example (from the example app)
+
+::: code-group
+
+<<< ../../example/lib/main.dart#form-workflow-section [Walkthrough: form validation + async save]
+
+:::

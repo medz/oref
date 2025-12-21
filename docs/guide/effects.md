@@ -42,3 +42,11 @@ batch(() {
   b.set(b() + 1);
 });
 ```
+
+## Flutter Example (from the example app)
+
+::: code-group
+
+<<< ../../example/lib/main.dart#effect-batch-section [Effect + batch]
+
+:::

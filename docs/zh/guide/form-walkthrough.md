@@ -79,3 +79,11 @@ SignalBuilder(
 
 这个模式把校验放在 `computed`，写入通过 `.set(...)`，
 异步处理用 `useAsyncData`，并用 `SignalBuilder` 驱动 UI。
+
+## Flutter 示例（来自 example 应用）
+
+::: code-group
+
+<<< ../../../example/lib/main.dart#form-workflow-section [Walkthrough: form validation + async save]
+
+:::

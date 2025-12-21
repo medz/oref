@@ -42,3 +42,11 @@ batch(() {
   b.set(b() + 1);
 });
 ```
+
+## Flutter 示例（来自 example 应用）
+
+::: code-group
+
+<<< ../../../example/lib/main.dart#effect-batch-section [Effect + batch]
+
+:::

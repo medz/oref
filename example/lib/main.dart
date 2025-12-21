@@ -38,20 +38,15 @@ class ExampleHome extends StatelessWidget {
             child: CounterSection(),
           ),
           SizedBox(height: 16),
-          _Section(
-            title: 'Effect + batch',
-            child: EffectBatchSection(),
-          ),
+          _Section(title: 'Effect + batch', child: EffectBatchSection()),
           SizedBox(height: 16),
-          _Section(
-            title: 'untrack()',
-            child: UntrackSection(),
-          ),
+          _Section(title: 'untrack()', child: UntrackSection()),
           SizedBox(height: 16),
-          _Section(
-            title: 'useAsyncData',
-            child: AsyncDataSection(),
-          ),
+          _Section(title: 'ReactiveMap', child: ReactiveMapSection()),
+          SizedBox(height: 16),
+          _Section(title: 'ReactiveSet', child: ReactiveSetSection()),
+          SizedBox(height: 16),
+          _Section(title: 'useAsyncData', child: AsyncDataSection()),
           SizedBox(height: 16),
           _Section(
             title: 'Walkthrough: searchable list',
@@ -99,6 +94,7 @@ class _Section extends StatelessWidget {
   }
 }
 
+// #region counter-section
 class CounterSection extends StatelessWidget {
   const CounterSection({super.key});
 
@@ -139,7 +135,9 @@ class CounterSection extends StatelessWidget {
     );
   }
 }
+// #endregion counter-section
 
+// #region effect-batch-section
 class EffectBatchSection extends StatelessWidget {
   const EffectBatchSection({super.key});
 
@@ -188,7 +186,9 @@ class EffectBatchSection extends StatelessWidget {
     );
   }
 }
+// #endregion effect-batch-section
 
+// #region untrack-section
 class UntrackSection extends StatelessWidget {
   const UntrackSection({super.key});
 
@@ -197,15 +197,16 @@ class UntrackSection extends StatelessWidget {
     final source = signal<int>(context, 1);
     final noise = signal<int>(context, 100);
     final tracked = computed<int>(context, (_) => source() + noise());
-    final untracked =
-        computed<int>(context, (_) => source() + untrack(() => noise()));
+    final untracked = computed<int>(
+      context,
+      (_) => source() + untrack(() => noise()),
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SignalBuilder(
-          builder: (context) =>
-              Text('source: ${source()}  noise: ${noise()}'),
+          builder: (context) => Text('source: ${source()}  noise: ${noise()}'),
         ),
         SignalBuilder(builder: (context) => Text('tracked: ${tracked()}')),
         SignalBuilder(builder: (context) => Text('untracked: ${untracked()}')),
@@ -232,22 +233,124 @@ class UntrackSection extends StatelessWidget {
     );
   }
 }
+// #endregion untrack-section
 
+// #region reactive-map-section
+class ReactiveMapSection extends StatelessWidget {
+  const ReactiveMapSection({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final inventory = ReactiveMap<String, int>.scoped(context, {
+      'apples': 2,
+      'oranges': 3,
+    });
+    final nextId = signal<int>(context, 1);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SignalBuilder(
+          builder: (context) => Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (final entry in inventory.entries)
+                Text('${entry.key}: ${entry.value}'),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          children: [
+            ElevatedButton(
+              onPressed: () {
+                inventory['apples'] = (inventory['apples'] ?? 0) + 1;
+              },
+              child: const Text('Bump apples'),
+            ),
+            OutlinedButton(
+              onPressed: () {
+                final id = nextId();
+                inventory['item $id'] = id;
+                nextId.set(id + 1);
+              },
+              child: const Text('Add item'),
+            ),
+            TextButton(
+              onPressed: () {
+                if (inventory.isNotEmpty) {
+                  inventory.remove(inventory.keys.first);
+                }
+              },
+              child: const Text('Remove first'),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+// #endregion reactive-map-section
+
+// #region reactive-set-section
+class ReactiveSetSection extends StatelessWidget {
+  const ReactiveSetSection({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final tags = ReactiveSet<String>.scoped(context, {'flutter', 'signals'});
+    final nextId = signal<int>(context, 1);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SignalBuilder(
+          builder: (context) => Wrap(
+            spacing: 8,
+            children: [for (final tag in tags) Chip(label: Text(tag))],
+          ),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          children: [
+            ElevatedButton(
+              onPressed: () {
+                final id = nextId();
+                tags.add('tag-$id');
+                nextId.set(id + 1);
+              },
+              child: const Text('Add tag'),
+            ),
+            OutlinedButton(
+              onPressed: tags.isEmpty ? null : () => tags.remove(tags.first),
+              child: const Text('Remove one'),
+            ),
+            TextButton(
+              onPressed: () => tags.clear(),
+              child: const Text('Clear'),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+// #endregion reactive-set-section
+
+// #region async-data-section
 class AsyncDataSection extends StatelessWidget {
   const AsyncDataSection({super.key});
 
   @override
   Widget build(BuildContext context) {
     final requestId = signal<int>(context, 1);
-    final result = useAsyncData<String>(
-      context,
-      () async {
-        final id = requestId();
-        await Future<void>.delayed(const Duration(milliseconds: 500));
-        return 'Result #$id';
-      },
-      defaults: () => 'Idle',
-    );
+    final result = useAsyncData<String>(context, () async {
+      final id = requestId();
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+      return 'Result #$id';
+    }, defaults: () => 'Idle');
 
     final status = result.when(
       context: context,
@@ -282,7 +385,9 @@ class AsyncDataSection extends StatelessWidget {
     );
   }
 }
+// #endregion async-data-section
 
+// #region walkthrough-section
 class WalkthroughSection extends StatelessWidget {
   const WalkthroughSection({super.key});
 
@@ -371,7 +476,9 @@ class WalkthroughSection extends StatelessWidget {
     );
   }
 }
+// #endregion walkthrough-section
 
+// #region checkout-workflow-section
 class CheckoutWorkflowSection extends StatelessWidget {
   const CheckoutWorkflowSection({super.key});
 
@@ -419,8 +526,7 @@ class CheckoutWorkflowSection extends StatelessWidget {
               child: const Text('Remove 1 item'),
             ),
             TextButton(
-              onPressed: () =>
-                  discount.set(discount() == 0 ? 0.1 : 0.0),
+              onPressed: () => discount.set(discount() == 0 ? 0.1 : 0.0),
               child: const Text('Toggle 10% promo'),
             ),
             TextButton(
@@ -433,7 +539,9 @@ class CheckoutWorkflowSection extends StatelessWidget {
     );
   }
 }
+// #endregion checkout-workflow-section
 
+// #region form-workflow-section
 class FormWorkflowSection extends StatelessWidget {
   const FormWorkflowSection({super.key});
 
@@ -454,13 +562,10 @@ class FormWorkflowSection extends StatelessWidget {
       return dirty() && isValid();
     });
 
-    final submit = useAsyncData<String>(
-      context,
-      () async {
-        await Future<void>.delayed(const Duration(milliseconds: 600));
-        return 'Saved ${name()} <${email()}>';
-      },
-    );
+    final submit = useAsyncData<String>(context, () async {
+      await Future<void>.delayed(const Duration(milliseconds: 600));
+      return 'Saved ${name()} <${email()}>';
+    });
 
     effect(context, () {
       if (submit.status == AsyncStatus.success) {
@@ -530,3 +635,5 @@ class FormWorkflowSection extends StatelessWidget {
     );
   }
 }
+
+// #endregion form-workflow-section

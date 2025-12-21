@@ -70,3 +70,15 @@ effect(context, () {
   debugPrint('snapshot: $snapshot');
 });
 ```
+
+## Flutter 示例（来自 example 应用）
+
+::: code-group
+
+<<< ../../../example/lib/main.dart#counter-section [Counter + computed + writableComputed]
+
+<<< ../../../example/lib/main.dart#effect-batch-section [Effect + batch]
+
+<<< ../../../example/lib/main.dart#untrack-section [untrack()]
+
+:::

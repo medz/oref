@@ -32,3 +32,11 @@ final view = result.when(
 ```dart
 await result.refresh();
 ```
+
+## Flutter 示例（来自 example 应用）
+
+::: code-group
+
+<<< ../../../example/lib/main.dart#async-data-section [useAsyncData]
+
+:::

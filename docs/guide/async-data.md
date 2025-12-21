@@ -32,3 +32,11 @@ Trigger refresh:
 ```dart
 await result.refresh();
 ```
+
+## Flutter Example (from the example app)
+
+::: code-group
+
+<<< ../../example/lib/main.dart#async-data-section [useAsyncData]
+
+:::

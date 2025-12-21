@@ -92,3 +92,15 @@ batch(() {
 ```
 
 These collections call `track()` on reads and `trigger()` on writes, so widgets rebuild when accessed values change.
+
+## Flutter Examples (from the example app)
+
+::: code-group
+
+<<< ../../example/lib/main.dart#walkthrough-section [Walkthrough: searchable list]
+
+<<< ../../example/lib/main.dart#reactive-map-section [ReactiveMap]
+
+<<< ../../example/lib/main.dart#reactive-set-section [ReactiveSet]
+
+:::

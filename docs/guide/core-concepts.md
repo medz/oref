@@ -97,3 +97,13 @@ Use `untrack` when you want to read without subscribing:
 ```dart
 final value = untrack(() => count());
 ```
+
+## Flutter Examples (from the example app)
+
+::: code-group
+
+<<< ../../example/lib/main.dart#counter-section [Counter + computed + writableComputed]
+
+<<< ../../example/lib/main.dart#effect-batch-section [Effect + batch]
+
+:::

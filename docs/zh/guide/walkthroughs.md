@@ -72,3 +72,13 @@ qty.set(qty() + 1);
 discount.set(0.1); // 10% 活动
 unitPrice.set(24.0);
 ```
+
+## Flutter 示例（来自 example 应用）
+
+::: code-group
+
+<<< ../../../example/lib/main.dart#walkthrough-section [Walkthrough: searchable list]
+
+<<< ../../../example/lib/main.dart#checkout-workflow-section [Walkthrough: checkout total + autosave]
+
+:::

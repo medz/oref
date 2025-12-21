@@ -72,3 +72,13 @@ qty.set(qty() + 1);
 discount.set(0.1); // 10% promo
 unitPrice.set(24.0);
 ```
+
+## Flutter Examples (from the example app)
+
+::: code-group
+
+<<< ../../example/lib/main.dart#walkthrough-section [Walkthrough: searchable list]
+
+<<< ../../example/lib/main.dart#checkout-workflow-section [Walkthrough: checkout total + autosave]
+
+:::
