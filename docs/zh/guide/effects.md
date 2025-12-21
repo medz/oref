@@ -12,22 +12,6 @@ final stop = effect(context, () {
 stop();
 ```
 
-## Effect 生命周期（首次执行）
-
-Effect 会**立即执行一次**，随后在依赖变化时重新运行。如果要跳过首次执行：
-
-```dart
-var first = true;
-
-effect(context, () {
-  if (first) {
-    first = false;
-    return;
-  }
-  debugPrint('changed: ${count()}');
-});
-```
-
 ## 清理回调
 
 `onEffectCleanup` 用于重新执行前清理，`onEffectDispose` 用于最终清理。
