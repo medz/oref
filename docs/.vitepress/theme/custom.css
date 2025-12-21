@@ -279,9 +279,8 @@ body {
 
 .hero-canvas {
   position: absolute;
-  inset: -12% -10% -12%;
-  height: auto;
-  width: 120%;
+  inset: -12% 0 -12%;
+  width: 100%;
   z-index: 1;
   pointer-events: none;
   opacity: 0.9;
