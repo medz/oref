@@ -30,6 +30,11 @@ SignalBuilder(
 );
 ```
 
+Use `SignalBuilder` when:
+- Only a small subtree depends on a signal/computed.
+- You want to avoid rebuilding a large widget tree.
+- You’re reading signals inside a list item or tile.
+
 ## Batch Multi-step Updates
 
 Group updates to reduce recomputation:
@@ -40,6 +45,11 @@ batch(() {
   b.set(b() + 1);
 });
 ```
+
+Use `batch` when:
+- You update multiple signals in one user action.
+- You update a collection with many mutations (e.g. sort, clear + addAll).
+- You want effects/computed to re-run only once for the batch.
 
 ## Use Reactive Collections for In-place Mutations
 

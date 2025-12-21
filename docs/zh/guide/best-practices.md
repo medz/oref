@@ -30,6 +30,11 @@ SignalBuilder(
 );
 ```
 
+适合使用 `SignalBuilder` 的场景：
+- 只有局部子树依赖信号/computed
+- 不想重建整棵 widget 树
+- 列表项/卡片等细粒度更新
+
 ## 用 Batch 合并更新
 
 减少重复重算：
@@ -40,6 +45,11 @@ batch(() {
   b.set(b() + 1);
 });
 ```
+
+适合使用 `batch` 的场景：
+- 一次用户操作更新多个信号
+- 集合有大量 mutation（如 sort、clear + addAll）
+- 希望 effect/computed 只重新计算一次
 
 ## 集合用 ReactiveList/Map/Set
 
