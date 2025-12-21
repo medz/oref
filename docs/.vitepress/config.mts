@@ -1,7 +1,9 @@
 import { defineConfig } from 'vitepress';
 
 const repoName = process.env.GITHUB_REPOSITORY?.split('/')[1] ?? 'oref';
-const base = process.env.GITHUB_ACTIONS ? `/${repoName}/` : '/';
+const base =
+  process.env.GITHUB_PAGES_BASE ??
+  (process.env.GITHUB_ACTIONS ? `/${repoName}/` : '/');
 
 export default defineConfig({
   title: 'Oref',
