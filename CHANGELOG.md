@@ -1,10 +1,19 @@
-## Unreleased
+## 2.6.0
 
 ### Compatibility
 
 - Upgrade `alien_signals` to 2.1.0.
 - Align write APIs to use `.set(...)` and update docs/tests accordingly.
 - Fix effect initialization flags to match 2.1.0 reactive behavior.
+
+### Documentation
+
+- Add VitePress docs site with bilingual content and Liquid Glass visual theme.
+- Add animated mascot hero and three.js background.
+
+### CI
+
+- Deploy docs to GitHub Pages via GitHub Actions.
 
 ## 2.5.1
 
