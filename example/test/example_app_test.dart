@@ -155,4 +155,27 @@ void main() {
     expect(readText(tester, 'total:'), contains('\$34.20'));
     expect(readText(tester, 'autosave runs:'), contains('3'));
   });
+
+  testWidgets('form walkthrough validates and saves', (tester) async {
+    await tester.pumpWidget(wrap(const FormWorkflowSection()));
+    await tester.pumpAndSettle();
+
+    expect(readText(tester, 'valid:'), contains('no'));
+    expect(readText(tester, 'can submit:'), contains('no'));
+    expect(readText(tester, 'last saved:'), contains('never'));
+
+    await tester.enterText(find.byKey(const Key('form-name')), 'Ada');
+    await tester.enterText(find.byKey(const Key('form-email')), 'ada@oref.dev');
+    await tester.pumpAndSettle();
+
+    expect(readText(tester, 'valid:'), contains('yes'));
+    expect(readText(tester, 'can submit:'), contains('yes'));
+
+    await tester.tap(find.text('Save'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 700));
+
+    expect(readText(tester, 'status:'), contains('Saved'));
+    expect(readText(tester, 'last saved:'), contains('just now'));
+  });
 }

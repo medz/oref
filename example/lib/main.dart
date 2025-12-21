@@ -62,6 +62,11 @@ class ExampleHome extends StatelessWidget {
             title: 'Walkthrough: checkout total + autosave',
             child: CheckoutWorkflowSection(),
           ),
+          SizedBox(height: 16),
+          _Section(
+            title: 'Walkthrough: form validation + async save',
+            child: FormWorkflowSection(),
+          ),
         ],
       ),
     );
@@ -423,6 +428,103 @@ class CheckoutWorkflowSection extends StatelessWidget {
               child: const Text('Set price = 24'),
             ),
           ],
+        ),
+      ],
+    );
+  }
+}
+
+class FormWorkflowSection extends StatelessWidget {
+  const FormWorkflowSection({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final name = signal<String>(context, '');
+    final email = signal<String>(context, '');
+    final dirty = signal<bool>(context, false);
+    final lastSaved = signal<String>(context, 'never');
+
+    final isValid = computed<bool>(context, (_) {
+      final n = name().trim();
+      final e = email().trim();
+      return n.length >= 2 && e.contains('@');
+    });
+
+    final canSubmit = computed<bool>(context, (_) {
+      return dirty() && isValid();
+    });
+
+    final submit = useAsyncData<String>(
+      context,
+      () async {
+        await Future<void>.delayed(const Duration(milliseconds: 600));
+        return 'Saved ${name()} <${email()}>';
+      },
+    );
+
+    effect(context, () {
+      if (submit.status == AsyncStatus.success) {
+        lastSaved.set('just now');
+      }
+    });
+
+    final nameController = useMemoized(context, () => TextEditingController());
+    final emailController = useMemoized(context, () => TextEditingController());
+    effect(context, () {
+      onEffectDispose(() {
+        nameController.dispose();
+        emailController.dispose();
+      });
+    });
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextField(
+          key: const Key('form-name'),
+          controller: nameController,
+          decoration: const InputDecoration(labelText: 'Name'),
+          onChanged: (value) {
+            name.set(value);
+            dirty.set(true);
+          },
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          key: const Key('form-email'),
+          controller: emailController,
+          decoration: const InputDecoration(labelText: 'Email'),
+          onChanged: (value) {
+            email.set(value);
+            dirty.set(true);
+          },
+        ),
+        const SizedBox(height: 8),
+        SignalBuilder(
+          builder: (context) {
+            final valid = isValid();
+            final can = canSubmit();
+            final status = switch (submit.status) {
+              AsyncStatus.idle => 'Idle',
+              AsyncStatus.pending => 'Saving...',
+              AsyncStatus.success => submit.data ?? 'Saved',
+              AsyncStatus.error => 'Error: ${submit.error?.error ?? 'unknown'}',
+            };
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('valid: ${valid ? 'yes' : 'no'}'),
+                Text('can submit: ${can ? 'yes' : 'no'}'),
+                Text('status: $status'),
+                Text('last saved: ${lastSaved()}'),
+                const SizedBox(height: 8),
+                ElevatedButton(
+                  onPressed: can ? () async => submit.refresh() : null,
+                  child: const Text('Save'),
+                ),
+              ],
+            );
+          },
         ),
       ],
     );
