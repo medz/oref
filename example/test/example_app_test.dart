@@ -132,4 +132,27 @@ void main() {
     expect(find.text('Nova 1'), findsOneWidget);
     expect(readText(tester, 'showing'), contains('6 of 6'));
   });
+
+  testWidgets('checkout walkthrough updates totals and autosave', (tester) async {
+    await tester.pumpWidget(wrap(const CheckoutWorkflowSection()));
+    await tester.pumpAndSettle();
+
+    expect(readText(tester, 'qty:'), contains('1'));
+    expect(readText(tester, 'total:'), contains('\$19.00'));
+    expect(readText(tester, 'autosave runs:'), contains('1'));
+
+    await tester.tap(find.text('Add 1 item'));
+    await tester.pumpAndSettle();
+
+    expect(readText(tester, 'qty:'), contains('2'));
+    expect(readText(tester, 'total:'), contains('\$38.00'));
+    expect(readText(tester, 'autosave runs:'), contains('2'));
+
+    await tester.tap(find.text('Toggle 10% promo'));
+    await tester.pumpAndSettle();
+
+    expect(readText(tester, 'discount:'), contains('10%'));
+    expect(readText(tester, 'total:'), contains('\$34.20'));
+    expect(readText(tester, 'autosave runs:'), contains('3'));
+  });
 }

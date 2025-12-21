@@ -57,6 +57,11 @@ class ExampleHome extends StatelessWidget {
             title: 'Walkthrough: searchable list',
             child: WalkthroughSection(),
           ),
+          SizedBox(height: 16),
+          _Section(
+            title: 'Walkthrough: checkout total + autosave',
+            child: CheckoutWorkflowSection(),
+          ),
         ],
       ),
     );
@@ -356,6 +361,68 @@ class WalkthroughSection extends StatelessWidget {
               ],
             );
           },
+        ),
+      ],
+    );
+  }
+}
+
+class CheckoutWorkflowSection extends StatelessWidget {
+  const CheckoutWorkflowSection({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final qty = signal<int>(context, 1);
+    final unitPrice = signal<double>(context, 19.0);
+    final discount = signal<double>(context, 0.0);
+    final saves = signal<int>(context, 0);
+
+    final subtotal = computed<double>(context, (_) => qty() * unitPrice());
+    final total = computed<double>(
+      context,
+      (_) => subtotal() * (1 - discount()),
+    );
+
+    effect(context, () {
+      total();
+      final current = untrack(() => saves());
+      saves.set(current + 1);
+    });
+
+    String money(double value) => value.toStringAsFixed(2);
+    String percent(double value) => '${(value * 100).round()}%';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('qty: ${qty()}'),
+        Text('unit: \$${money(unitPrice())}'),
+        Text('subtotal: \$${money(subtotal())}'),
+        Text('discount: ${percent(discount())}'),
+        Text('total: \$${money(total())}'),
+        Text('autosave runs: ${saves()}'),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          children: [
+            ElevatedButton(
+              onPressed: () => qty.set(qty() + 1),
+              child: const Text('Add 1 item'),
+            ),
+            OutlinedButton(
+              onPressed: qty() <= 1 ? null : () => qty.set(qty() - 1),
+              child: const Text('Remove 1 item'),
+            ),
+            TextButton(
+              onPressed: () =>
+                  discount.set(discount() == 0 ? 0.1 : 0.0),
+              child: const Text('Toggle 10% promo'),
+            ),
+            TextButton(
+              onPressed: () => unitPrice.set(24.0),
+              child: const Text('Set price = 24'),
+            ),
+          ],
         ),
       ],
     );

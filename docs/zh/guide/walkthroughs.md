@@ -44,3 +44,31 @@ SignalBuilder(
 ```
 
 可以在示例应用中直接体验。
+
+## 结算总价 + 自动保存
+
+这个流程把 `.set(...)`、`computed` 和 `effect` 组合在一起。
+
+```dart
+final qty = signal(context, 1);
+final unitPrice = signal(context, 19.0);
+final discount = signal(context, 0.0); // 0%..30%
+
+final subtotal = computed<double>(context, (_) => qty() * unitPrice());
+final total = computed<double>(context, (_) => subtotal() * (1 - discount()));
+
+final saves = signal(context, 0);
+effect(context, () {
+  total(); // 追踪 computed
+  final current = untrack(() => saves());
+  saves.set(current + 1); // 自动保存次数
+});
+```
+
+用 `.set(...)` 更新输入：
+
+```dart
+qty.set(qty() + 1);
+discount.set(0.1); // 10% 活动
+unitPrice.set(24.0);
+```

@@ -44,3 +44,31 @@ SignalBuilder(
 ```
 
 Try it in the example app and watch the list update instantly.
+
+## Checkout Total + Autosave
+
+This workflow shows `.set(...)`, `computed`, and `effect` working together.
+
+```dart
+final qty = signal(context, 1);
+final unitPrice = signal(context, 19.0);
+final discount = signal(context, 0.0); // 0%..30%
+
+final subtotal = computed<double>(context, (_) => qty() * unitPrice());
+final total = computed<double>(context, (_) => subtotal() * (1 - discount()));
+
+final saves = signal(context, 0);
+effect(context, () {
+  total(); // track computed
+  final current = untrack(() => saves());
+  saves.set(current + 1); // autosave counter
+});
+```
+
+Update inputs using `.set(...)`:
+
+```dart
+qty.set(qty() + 1);
+discount.set(0.1); // 10% promo
+unitPrice.set(24.0);
+```
