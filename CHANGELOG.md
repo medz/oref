@@ -1,3 +1,10 @@
+## Unreleased
+
+### Dependencies
+
+- Upgrade `alien_signals` to 2.1.2.
+- Upgrade VitePress docs tooling to 1.6.4.
+
 ## 2.6.0
 
 ### Compatibility
