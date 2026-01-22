@@ -14,7 +14,7 @@ alien.EffectScope useWidgetScope(BuildContext context) {
 
   final scope = effectScope(null, _noop, detach: true);
   _store[context] = scope;
-  registerElementDisposer(context, scope);
+  registerElementDisposer(context, scope.call);
 
   return scope;
 }

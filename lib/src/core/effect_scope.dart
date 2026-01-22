@@ -69,7 +69,7 @@ _OrefEffectScope _createEffectScope({
   final scope = _OrefEffectScope(), prevSub = alien.setActiveSub(scope);
   if (context != null) {
     _OrefEffectScope.finalizer.attach(context, scope, detach: scope);
-    registerElementDisposer(context, scope);
+    registerElementDisposer(context, scope.call);
   }
 
   if (prevSub != null && !detach) {

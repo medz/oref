@@ -156,40 +156,39 @@ void main() {
     });
 
     // Issue #31: controllers created in effects should be disposed on widget unmount.
-    testWidgets(
-      'TextEditingController is disposed when widget is unmounted',
-      (tester) async {
-        _TestTextController? controller;
-        bool showChild = true;
-        late StateSetter setState;
+    testWidgets('TextEditingController is disposed when widget is unmounted', (
+      tester,
+    ) async {
+      _TestTextController? controller;
+      bool showChild = true;
+      late StateSetter setState;
 
-        await tester.pumpWidget(
-          MaterialApp(
-            home: StatefulBuilder(
-              builder: (context, updateState) {
-                setState = updateState;
-                return showChild
-                    ? _ControllerDisposeProbe(
-                        onCreate: (created) {
-                          controller = created;
-                        },
-                      )
-                    : const SizedBox();
-              },
-            ),
+      await tester.pumpWidget(
+        MaterialApp(
+          home: StatefulBuilder(
+            builder: (context, updateState) {
+              setState = updateState;
+              return showChild
+                  ? _ControllerDisposeProbe(
+                      onCreate: (created) {
+                        controller = created;
+                      },
+                    )
+                  : const SizedBox();
+            },
           ),
-        );
+        ),
+      );
 
-        expect(controller, isNotNull);
-        expect(controller!.disposed, isFalse);
+      expect(controller, isNotNull);
+      expect(controller!.disposed, isFalse);
 
-        showChild = false;
-        setState(() {});
-        await tester.pump();
+      showChild = false;
+      setState(() {});
+      await tester.pump();
 
-        expect(controller!.disposed, isTrue);
-      },
-    );
+      expect(controller!.disposed, isTrue);
+    });
   });
 }
 

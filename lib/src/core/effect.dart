@@ -52,11 +52,7 @@ alien.Effect effect(
     final scope = useWidgetScope(context);
     final prevSub = alien.setActiveSub(scope as alien.ReactiveNode);
     try {
-      return _createEffect(
-        context: context,
-        callback: callback,
-        detach: false,
-      );
+      return _createEffect(context: context, callback: callback, detach: false);
     } finally {
       alien.setActiveSub(prevSub);
     }
@@ -109,7 +105,7 @@ _OrefEffect _createEffect({
   });
   if (context != null) {
     _OrefEffect.finalizer.attach(context, effect, detach: effect);
-    registerElementDisposer(context, effect);
+    registerElementDisposer(context, effect.call);
   }
 
   final prevSub = alien.setActiveSub(effect);
