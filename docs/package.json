@@ -9,6 +9,6 @@
   },
   "devDependencies": {
     "three": "^0.182.0",
-    "vitepress": "^1.6.0"
+    "vitepress": "^1.6.4"
   }
 }
