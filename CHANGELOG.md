@@ -1,5 +1,9 @@
 ## Unreleased
 
+### Bug Fixes
+
+- Ensure widget-scoped effects and scopes dispose on widget unmount so `onEffectDispose` runs promptly ([#31](https://github.com/medz/oref/issues/31)).
+
 ### Dependencies
 
 - Upgrade `alien_signals` to 2.1.2.
