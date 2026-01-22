@@ -1,4 +1,4 @@
-## Unreleased
+## 2.6.1
 
 ### Bug Fixes
 
