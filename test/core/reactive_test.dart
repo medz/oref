@@ -451,8 +451,7 @@ void main() {
       expect(find.text('Doubled: 2'), findsOneWidget);
     });
 
-    testWidgets('reactive with conditional tracking in widget',
-        (tester) async {
+    testWidgets('reactive with conditional tracking in widget', (tester) async {
       final counter1 = Counter();
       final counter2 = Counter();
       counter2.set(10);

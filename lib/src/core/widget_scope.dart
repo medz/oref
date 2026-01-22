@@ -1,6 +1,7 @@
 import 'package:alien_signals/alien_signals.dart' as alien;
 import 'package:flutter/widgets.dart';
 
+import '_element_disposer.dart';
 import 'context.dart';
 import 'effect_scope.dart';
 
@@ -13,6 +14,7 @@ alien.EffectScope useWidgetScope(BuildContext context) {
 
   final scope = effectScope(null, _noop, detach: true);
   _store[context] = scope;
+  registerElementDisposer(context, scope.call);
 
   return scope;
 }
