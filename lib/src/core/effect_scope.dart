@@ -4,6 +4,7 @@ import 'package:alien_signals/preset.dart' as alien;
 import 'package:flutter/widgets.dart';
 
 import '_warn.dart';
+import '_element_disposer.dart';
 import 'memoized.dart';
 import 'widget_scope.dart';
 
@@ -68,6 +69,7 @@ _OrefEffectScope _createEffectScope({
   final scope = _OrefEffectScope(), prevSub = alien.setActiveSub(scope);
   if (context != null) {
     _OrefEffectScope.finalizer.attach(context, scope, detach: scope);
+    registerElementDisposer(context, scope);
   }
 
   if (prevSub != null && !detach) {
