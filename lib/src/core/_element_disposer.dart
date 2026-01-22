@@ -30,17 +30,27 @@ void _ensureFrameCallback() {
 void _handleFrame(Duration _) {
   if (_trackedDisposers.isEmpty) return;
 
-  _trackedDisposers.removeWhere((entry) {
-    final element = entry.element.target;
+  final toRemove = <_ElementDisposer>[];
+  final toDispose = <_ElementDisposer>[];
+
+  for (final disposer in List<_ElementDisposer>.from(_trackedDisposers)) {
+    final element = disposer.element.target;
     if (element == null) {
-      return true;
+      toRemove.add(disposer);
+      continue;
     }
 
     if (!element.mounted) {
-      entry.dispose();
-      return true;
+      toRemove.add(disposer);
+      toDispose.add(disposer);
     }
+  }
 
-    return false;
-  });
+  if (toRemove.isNotEmpty) {
+    _trackedDisposers.removeWhere(toRemove.contains);
+  }
+
+  for (final disposer in toDispose) {
+    disposer.dispose();
+  }
 }
