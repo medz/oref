@@ -162,13 +162,18 @@ class OrefDevToolsController extends ChangeNotifier {
     super.dispose();
   }
 
+  void _resetPerformance() {
+    performance = const [];
+    _lastTotals = null;
+  }
+
   void _updatePerformance(oref.Snapshot snapshot) {
     final totals = _collectTotals(snapshot);
     final previous = _lastTotals;
     int delta(int current, int? before) {
       if (before == null) return current;
-      if (current >= before) return current - before;
-      return current;
+      if (current < before) return 0;
+      return current - before;
     }
 
     final sample = UiPerformanceSample(
@@ -265,6 +270,7 @@ class OrefDevToolsController extends ChangeNotifier {
       status = OrefServiceStatus.disconnected;
       _pollTimer?.cancel();
       _retryTimer?.cancel();
+      _resetPerformance();
       notifyListeners();
       return;
     }
@@ -294,6 +300,7 @@ class OrefDevToolsController extends ChangeNotifier {
       if (_isMissingExtension(error)) {
         status = OrefServiceStatus.unavailable;
         errorMessage = null;
+        _resetPerformance();
         _scheduleRetry();
         notifyListeners();
         return;

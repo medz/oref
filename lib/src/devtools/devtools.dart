@@ -401,17 +401,20 @@ class _DevTools implements DevToolsBinding {
 
   bool _initialized = false;
   bool _extensionsRegistered = false;
+  bool _hasClient = false;
   DevToolsSettings _settings = const DevToolsSettings();
 
-  bool _shouldTrack() {
+  bool _canRegister() {
     if (!_initialized) {
       _ensureInitialized();
     }
     return _initialized && _settings.enabled;
   }
 
+  bool _shouldTrackEvents() => _canRegister() && _hasClient;
+
   Object? _startTiming() {
-    if (!_shouldTrack()) return null;
+    if (!_shouldTrackEvents()) return null;
     return Stopwatch()..start();
   }
 
@@ -449,7 +452,7 @@ class _DevTools implements DevToolsBinding {
     String? debugScope,
     String? debugNote,
   }) {
-    if (!_shouldTrack()) return _noopSignalHandle;
+    if (!_canRegister()) return _noopSignalHandle;
     final existing = _signalIds[node];
     if (existing != null) {
       final record = _signals[existing];
@@ -492,7 +495,7 @@ class _DevTools implements DevToolsBinding {
   }
 
   void _recordSignalWrite(alien_preset.SignalNode node, Object? value) {
-    if (!_shouldTrack()) return;
+    if (!_canRegister()) return;
     final id = _signalIds[node] ?? _ensureSignalRecord(node);
     if (id == -1) return;
     final record = _signals[id];
@@ -501,6 +504,7 @@ class _DevTools implements DevToolsBinding {
     record.updatedAt = _nowMs();
     record.writes++;
 
+    if (!_shouldTrackEvents()) return;
     _timeline.add(
       TimelineEvent(
         id: _nextTimelineId++,
@@ -528,7 +532,7 @@ class _DevTools implements DevToolsBinding {
     String? debugScope,
     String? debugNote,
   }) {
-    if (!_shouldTrack()) return _noopComputedHandle;
+    if (!_canRegister()) return _noopComputedHandle;
     final existing = _computedIds[node];
     if (existing != null) {
       final record = _computed[existing];
@@ -578,7 +582,7 @@ class _DevTools implements DevToolsBinding {
     Object? value,
     int durationUs,
   ) {
-    if (!_shouldTrack()) return;
+    if (!_canRegister()) return;
     final id = _computedIds[node] ?? _ensureComputedRecord(node);
     if (id == -1) return;
     final record = _computed[id];
@@ -588,6 +592,7 @@ class _DevTools implements DevToolsBinding {
     record.runs++;
     record.lastDurationUs = durationUs;
 
+    if (!_shouldTrackEvents()) return;
     _timeline.add(
       TimelineEvent(
         id: _nextTimelineId++,
@@ -610,7 +615,7 @@ class _DevTools implements DevToolsBinding {
     String? debugType,
     String? debugNote,
   }) {
-    if (!_shouldTrack()) return _noopEffectHandle;
+    if (!_canRegister()) return _noopEffectHandle;
     final existing = _effectIds[node];
     if (existing != null) {
       final record = _effects[existing];
@@ -646,7 +651,7 @@ class _DevTools implements DevToolsBinding {
   }
 
   void _recordEffectRun(alien_preset.EffectNode node, int durationUs) {
-    if (!_shouldTrack()) return;
+    if (!_canRegister()) return;
     final id = _effectIds[node] ?? _ensureEffectRecord(node);
     if (id == -1) return;
     final record = _effects[id];
@@ -655,6 +660,7 @@ class _DevTools implements DevToolsBinding {
     record.runs++;
     record.lastDurationUs = durationUs;
 
+    if (!_shouldTrackEvents()) return;
     _timeline.add(
       TimelineEvent(
         id: _nextTimelineId++,
@@ -683,7 +689,7 @@ class _DevTools implements DevToolsBinding {
     String? debugScope,
     String? debugNote,
   }) {
-    if (!_shouldTrack()) return _noopCollectionHandle;
+    if (!_canRegister()) return _noopCollectionHandle;
     final existing = _collectionIds[collection];
     if (existing != null) {
       final record = _collections[existing];
@@ -730,7 +736,7 @@ class _DevTools implements DevToolsBinding {
     required List<CollectionDelta> deltas,
     String? note,
   }) {
-    if (!_shouldTrack()) return;
+    if (!_canRegister()) return;
     final id =
         _collectionIds[collection] ?? _ensureCollectionRecord(collection);
     if (id == -1) return;
@@ -742,6 +748,7 @@ class _DevTools implements DevToolsBinding {
     record.mutations++;
     if (note != null) record.note = note;
 
+    if (!_shouldTrackEvents()) return;
     _timeline.add(
       TimelineEvent(
         id: _nextTimelineId++,
@@ -756,7 +763,7 @@ class _DevTools implements DevToolsBinding {
   }
 
   void _recordBatchStart() {
-    if (!_shouldTrack()) return;
+    if (!_shouldTrackEvents()) return;
     final session = _BatchSession(
       id: _nextBatchId++,
       depth: _batchStack.length + 1,
@@ -766,7 +773,7 @@ class _DevTools implements DevToolsBinding {
   }
 
   void _recordBatchEnd() {
-    if (!_shouldTrack()) return;
+    if (!_shouldTrackEvents()) return;
     if (_batchStack.isEmpty) return;
     final session = _batchStack.removeLast();
     session.endedAt = _nowMs();
@@ -838,6 +845,7 @@ class _DevTools implements DevToolsBinding {
         method,
         params,
       ) async {
+        _hasClient = true;
         final payload = jsonEncode(_snapshot().toJson());
         return developer.ServiceExtensionResponse.result(payload);
       });
@@ -845,6 +853,7 @@ class _DevTools implements DevToolsBinding {
         method,
         params,
       ) async {
+        _hasClient = true;
         final payload = jsonEncode(_settings.toJson());
         return developer.ServiceExtensionResponse.result(payload);
       });
@@ -852,6 +861,7 @@ class _DevTools implements DevToolsBinding {
         method,
         params,
       ) async {
+        _hasClient = true;
         final merged = DevToolsSettings.mergeArgs(_settings, params);
         _configure(
           enabled: merged.enabled,
@@ -868,6 +878,7 @@ class _DevTools implements DevToolsBinding {
         method,
         params,
       ) async {
+        _hasClient = true;
         _clearHistory();
         final payload = jsonEncode({'cleared': true});
         return developer.ServiceExtensionResponse.result(payload);
@@ -966,7 +977,7 @@ class _DevTools implements DevToolsBinding {
   int _ensureSignalRecord(alien_preset.SignalNode node) {
     final existing = _signalIds[node];
     if (existing != null) return existing;
-    if (!_shouldTrack()) return -1;
+    if (!_canRegister()) return -1;
     final id = _nextSignalId++;
     _signalIds[node] = id;
     final record = _SignalRecord(
@@ -988,7 +999,7 @@ class _DevTools implements DevToolsBinding {
   int _ensureComputedRecord(alien_preset.ComputedNode node) {
     final existing = _computedIds[node];
     if (existing != null) return existing;
-    if (!_shouldTrack()) return -1;
+    if (!_canRegister()) return -1;
     final id = _nextComputedId++;
     _computedIds[node] = id;
     final record = _ComputedRecord(
@@ -1013,7 +1024,7 @@ class _DevTools implements DevToolsBinding {
   int _ensureEffectRecord(alien_preset.EffectNode node) {
     final existing = _effectIds[node];
     if (existing != null) return existing;
-    if (!_shouldTrack()) return -1;
+    if (!_canRegister()) return -1;
     final id = _nextEffectId++;
     _effectIds[node] = id;
     final record = _EffectRecord(
@@ -1034,7 +1045,7 @@ class _DevTools implements DevToolsBinding {
   int _ensureCollectionRecord(Object collection) {
     final existing = _collectionIds[collection];
     if (existing != null) return existing;
-    if (!_shouldTrack()) return -1;
+    if (!_canRegister()) return -1;
     final id = _nextCollectionId++;
     _collectionIds[collection] = id;
     final record = _CollectionRecord(
