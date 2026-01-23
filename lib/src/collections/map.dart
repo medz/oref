@@ -13,18 +13,15 @@ class ReactiveMap<K, V> extends MapBase<K, V>
     implements Map<K, V> {
   /// Creates a new [ReactiveMap]
   ReactiveMap(Map<K, V> source) : _source = source {
-    OrefDevTools.registerCollection(this, type: 'Map');
+    registerCollection(this, type: 'Map');
   }
 
   /// Creates a widget scoped [ReactiveMap].
   factory ReactiveMap.scoped(BuildContext context, Map<K, V> source) {
     final map = useMemoized(context, () => ReactiveMap(source));
-    OrefDevTools.registerCollection(map, context: context, type: 'Map');
+    registerCollection(map, context: context, type: 'Map');
     if (!map._devtoolsDisposerRegistered) {
-      registerElementDisposer(
-        context,
-        () => OrefDevTools.markCollectionDisposed(map),
-      );
+      registerElementDisposer(context, () => markCollectionDisposed(map));
       map._devtoolsDisposerRegistered = true;
     }
     return map;
@@ -51,7 +48,7 @@ class ReactiveMap<K, V> extends MapBase<K, V>
     final previous = _source[key];
     _source[key] = value;
     trigger();
-    OrefDevTools.recordCollectionMutation(
+    recordCollectionMutation(
       this,
       operation: exists ? 'Replace' : 'Add',
       deltas: [
@@ -69,7 +66,7 @@ class ReactiveMap<K, V> extends MapBase<K, V>
   void clear() {
     _source.clear();
     trigger();
-    OrefDevTools.recordCollectionMutation(
+    recordCollectionMutation(
       this,
       operation: 'Clear',
       deltas: const [CollectionDelta(kind: 'remove', label: 'all entries')],
@@ -82,7 +79,7 @@ class ReactiveMap<K, V> extends MapBase<K, V>
     final result = _source.remove(key);
     trigger();
     if (existed) {
-      OrefDevTools.recordCollectionMutation(
+      recordCollectionMutation(
         this,
         operation: 'Remove',
         deltas: [CollectionDelta(kind: 'remove', label: '$key')],
@@ -101,7 +98,7 @@ class ReactiveMap<K, V> extends MapBase<K, V>
 
     if (shouldTrigger) {
       trigger();
-      OrefDevTools.recordCollectionMutation(
+      recordCollectionMutation(
         this,
         operation: 'Add',
         deltas: [CollectionDelta(kind: 'add', label: '$key: $result')],

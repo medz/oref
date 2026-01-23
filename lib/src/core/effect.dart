@@ -135,7 +135,7 @@ _OrefEffect _createEffect({
     registerElementDisposer(context, effect.call);
   }
 
-  OrefDevTools.registerEffect(
+  registerEffect(
     effect,
     context: context,
     debugLabel: debugLabel,
@@ -177,7 +177,7 @@ class _OrefEffect extends alien.EffectNode implements alien.Effect {
 
   @override
   void call() {
-    OrefDevTools.markEffectDisposed(this);
+    markEffectDisposed(this);
     onDispose?.call();
     onDispose = null;
     for (alien.Link? link = deps; link != null; link = link.nextDep) {
@@ -212,7 +212,7 @@ VoidCallback _wrapEffectCallback(
       callback();
     } finally {
       stopwatch.stop();
-      OrefDevTools.recordEffectRun(effect, stopwatch.elapsedMilliseconds);
+      recordEffectRun(effect, stopwatch.elapsedMilliseconds);
     }
   };
 }

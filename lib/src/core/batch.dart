@@ -16,10 +16,10 @@ import '../devtools/devtools.dart';
 T batch<T>(T Function() getter) {
   try {
     startBatch();
-    OrefDevTools.recordBatchStart();
+    recordBatchStart();
     return getter();
   } finally {
     endBatch();
-    OrefDevTools.recordBatchEnd();
+    recordBatchEnd();
   }
 }

@@ -31,7 +31,7 @@ alien.WritableSignal<T> signal<T>(
 }) {
   if (context == null) {
     final signal = _SignalImpl(initialValue);
-    OrefDevTools.registerSignal(
+    registerSignal(
       signal,
       debugLabel: debugLabel,
       debugOwner: debugOwner,
@@ -42,7 +42,7 @@ alien.WritableSignal<T> signal<T>(
   }
 
   final signal = useMemoized(context, () => _SignalImpl(initialValue));
-  final registered = OrefDevTools.registerSignal(
+  final registered = registerSignal(
     signal,
     context: context,
     debugLabel: debugLabel,
@@ -51,10 +51,7 @@ alien.WritableSignal<T> signal<T>(
     debugNote: debugNote,
   );
   if (registered) {
-    registerElementDisposer(
-      context,
-      () => OrefDevTools.markSignalDisposed(signal),
-    );
+    registerElementDisposer(context, () => markSignalDisposed(signal));
   }
   return signal;
 }
@@ -70,7 +67,7 @@ class _SignalImpl<T> extends alien.SignalNode<T>
 
   @override
   void set(T newValue) {
-    OrefDevTools.recordSignalWrite(this, newValue);
+    recordSignalWrite(this, newValue);
     super.set(newValue);
   }
 

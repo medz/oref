@@ -13,18 +13,15 @@ class ReactiveSet<T> extends SetBase<T>
     implements Set<T> {
   /// Creates a new reactive set with the given elements.
   ReactiveSet(Iterable<T> elements) : _source = Set.from(elements) {
-    OrefDevTools.registerCollection(this, type: 'Set');
+    registerCollection(this, type: 'Set');
   }
 
   /// Creates a new reactive set with the given elements, scoped to the given context.
   factory ReactiveSet.scoped(BuildContext context, Iterable<T> elements) {
     final set = useMemoized(context, () => ReactiveSet(elements));
-    OrefDevTools.registerCollection(set, context: context, type: 'Set');
+    registerCollection(set, context: context, type: 'Set');
     if (!set._devtoolsDisposerRegistered) {
-      registerElementDisposer(
-        context,
-        () => OrefDevTools.markCollectionDisposed(set),
-      );
+      registerElementDisposer(context, () => markCollectionDisposed(set));
       set._devtoolsDisposerRegistered = true;
     }
     return set;
@@ -50,7 +47,7 @@ class ReactiveSet<T> extends SetBase<T>
     final result = _source.add(value);
     trigger();
     if (result) {
-      OrefDevTools.recordCollectionMutation(
+      recordCollectionMutation(
         this,
         operation: 'Add',
         deltas: [CollectionDelta(kind: 'add', label: value.toString())],
@@ -77,7 +74,7 @@ class ReactiveSet<T> extends SetBase<T>
     final result = _source.remove(value);
     trigger();
     if (result) {
-      OrefDevTools.recordCollectionMutation(
+      recordCollectionMutation(
         this,
         operation: 'Remove',
         deltas: [CollectionDelta(kind: 'remove', label: value.toString())],
@@ -101,7 +98,7 @@ class ReactiveSet<T> extends SetBase<T>
     trigger();
     final preview = elements.take(3).map((item) => item.toString()).toList();
     final deltaLabel = preview.isEmpty ? 'items' : preview.join(', ');
-    OrefDevTools.recordCollectionMutation(
+    recordCollectionMutation(
       this,
       operation: 'Add',
       deltas: [CollectionDelta(kind: 'add', label: deltaLabel)],
@@ -119,7 +116,7 @@ class ReactiveSet<T> extends SetBase<T>
     trigger();
     final preview = elements.take(3).map((item) => item.toString()).toList();
     final deltaLabel = preview.isEmpty ? 'items' : preview.join(', ');
-    OrefDevTools.recordCollectionMutation(
+    recordCollectionMutation(
       this,
       operation: 'Remove',
       deltas: [CollectionDelta(kind: 'remove', label: deltaLabel)],
@@ -133,7 +130,7 @@ class ReactiveSet<T> extends SetBase<T>
   void clear() {
     _source.clear();
     trigger();
-    OrefDevTools.recordCollectionMutation(
+    recordCollectionMutation(
       this,
       operation: 'Clear',
       deltas: const [CollectionDelta(kind: 'remove', label: 'all items')],

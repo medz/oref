@@ -23,7 +23,7 @@ void configure({
   int? performanceLimit,
   int? valuePreviewLength,
 }) {
-  OrefDevTools._instance._configure(
+  _DevTools._instance._configure(
     enabled: enabled,
     sampleIntervalMs: sampleIntervalMs,
     timelineLimit: timelineLimit,
@@ -33,146 +33,146 @@ void configure({
   );
 }
 
-DevToolsSettings get settings => OrefDevTools._instance._settings;
+DevToolsSettings get settings => _DevTools._instance._settings;
 
-class OrefDevTools {
-  OrefDevTools._();
+bool registerSignal(
+  alien_preset.SignalNode node, {
+  BuildContext? context,
+  String? debugLabel,
+  Object? debugOwner,
+  String? debugScope,
+  String? debugNote,
+}) {
+  return _DevTools._instance._registerSignal(
+    node,
+    context: context,
+    debugLabel: debugLabel,
+    debugOwner: debugOwner,
+    debugScope: debugScope,
+    debugNote: debugNote,
+  );
+}
 
-  static final OrefDevTools _instance = OrefDevTools._();
+void markSignalDisposed(alien_preset.SignalNode node) {
+  _DevTools._instance._markSignalDisposed(node);
+}
 
-  static bool registerSignal(
-    alien_system.ReactiveNode node, {
-    BuildContext? context,
-    String? debugLabel,
-    Object? debugOwner,
-    String? debugScope,
-    String? debugNote,
-  }) {
-    return _instance._registerSignal(
-      node,
-      context: context,
-      debugLabel: debugLabel,
-      debugOwner: debugOwner,
-      debugScope: debugScope,
-      debugNote: debugNote,
-    );
-  }
+void recordSignalWrite(alien_preset.SignalNode node, Object? value) {
+  _DevTools._instance._recordSignalWrite(node, value);
+}
 
-  static void markSignalDisposed(alien_system.ReactiveNode node) {
-    _instance._markSignalDisposed(node);
-  }
+bool registerComputed(
+  alien_preset.ComputedNode node, {
+  BuildContext? context,
+  String? debugLabel,
+  Object? debugOwner,
+  String? debugScope,
+  String? debugNote,
+}) {
+  return _DevTools._instance._registerComputed(
+    node,
+    context: context,
+    debugLabel: debugLabel,
+    debugOwner: debugOwner,
+    debugScope: debugScope,
+    debugNote: debugNote,
+  );
+}
 
-  static void recordSignalWrite(alien_system.ReactiveNode node, Object? value) {
-    _instance._recordSignalWrite(node, value);
-  }
+void markComputedDisposed(alien_preset.ComputedNode node) {
+  _DevTools._instance._markComputedDisposed(node);
+}
 
-  static bool registerComputed(
-    alien_system.ReactiveNode node, {
-    BuildContext? context,
-    String? debugLabel,
-    Object? debugOwner,
-    String? debugScope,
-    String? debugNote,
-  }) {
-    return _instance._registerComputed(
-      node,
-      context: context,
-      debugLabel: debugLabel,
-      debugOwner: debugOwner,
-      debugScope: debugScope,
-      debugNote: debugNote,
-    );
-  }
+void recordComputedRun(
+  alien_preset.ComputedNode node,
+  Object? value,
+  int durationMs,
+) {
+  _DevTools._instance._recordComputedRun(node, value, durationMs);
+}
 
-  static void markComputedDisposed(alien_system.ReactiveNode node) {
-    _instance._markComputedDisposed(node);
-  }
+bool registerEffect(
+  alien_preset.EffectNode node, {
+  BuildContext? context,
+  String? debugLabel,
+  Object? debugOwner,
+  String? debugScope,
+  String? debugType,
+  String? debugNote,
+}) {
+  return _DevTools._instance._registerEffect(
+    node,
+    context: context,
+    debugLabel: debugLabel,
+    debugOwner: debugOwner,
+    debugScope: debugScope,
+    debugType: debugType,
+    debugNote: debugNote,
+  );
+}
 
-  static void recordComputedRun(
-    alien_system.ReactiveNode node,
-    Object? value,
-    int durationMs,
-  ) {
-    _instance._recordComputedRun(node, value, durationMs);
-  }
+void recordEffectRun(alien_preset.EffectNode node, int durationMs) {
+  _DevTools._instance._recordEffectRun(node, durationMs);
+}
 
-  static bool registerEffect(
-    alien_system.ReactiveNode node, {
-    BuildContext? context,
-    String? debugLabel,
-    Object? debugOwner,
-    String? debugScope,
-    String? debugType,
-    String? debugNote,
-  }) {
-    return _instance._registerEffect(
-      node,
-      context: context,
-      debugLabel: debugLabel,
-      debugOwner: debugOwner,
-      debugScope: debugScope,
-      debugType: debugType,
-      debugNote: debugNote,
-    );
-  }
+void markEffectDisposed(alien_preset.EffectNode node) {
+  _DevTools._instance._markEffectDisposed(node);
+}
 
-  static void recordEffectRun(alien_system.ReactiveNode node, int durationMs) {
-    _instance._recordEffectRun(node, durationMs);
-  }
+bool registerCollection(
+  Object collection, {
+  BuildContext? context,
+  required String type,
+  String? debugLabel,
+  Object? debugOwner,
+  String? debugScope,
+  String? debugNote,
+}) {
+  return _DevTools._instance._registerCollection(
+    collection,
+    context: context,
+    type: type,
+    debugLabel: debugLabel,
+    debugOwner: debugOwner,
+    debugScope: debugScope,
+    debugNote: debugNote,
+  );
+}
 
-  static void markEffectDisposed(alien_system.ReactiveNode node) {
-    _instance._markEffectDisposed(node);
-  }
+void markCollectionDisposed(Object collection) {
+  _DevTools._instance._markCollectionDisposed(collection);
+}
 
-  static bool registerCollection(
-    Object collection, {
-    BuildContext? context,
-    required String type,
-    String? debugLabel,
-    Object? debugOwner,
-    String? debugScope,
-    String? debugNote,
-  }) {
-    return _instance._registerCollection(
-      collection,
-      context: context,
-      type: type,
-      debugLabel: debugLabel,
-      debugOwner: debugOwner,
-      debugScope: debugScope,
-      debugNote: debugNote,
-    );
-  }
+void recordCollectionMutation(
+  Object collection, {
+  required String operation,
+  required List<CollectionDelta> deltas,
+  String? note,
+}) {
+  _DevTools._instance._recordCollectionMutation(
+    collection,
+    operation: operation,
+    deltas: deltas,
+    note: note,
+  );
+}
 
-  static void markCollectionDisposed(Object collection) {
-    _instance._markCollectionDisposed(collection);
-  }
+void recordBatchStart() {
+  _DevTools._instance._recordBatchStart();
+}
 
-  static void recordCollectionMutation(
-    Object collection, {
-    required String operation,
-    required List<CollectionDelta> deltas,
-    String? note,
-  }) {
-    _instance._recordCollectionMutation(
-      collection,
-      operation: operation,
-      deltas: deltas,
-      note: note,
-    );
-  }
+void recordBatchEnd() {
+  _DevTools._instance._recordBatchEnd();
+}
 
-  static void recordBatchStart() {
-    _instance._recordBatchStart();
-  }
+Snapshot snapshot() => _DevTools._instance._snapshot();
 
-  static void recordBatchEnd() {
-    _instance._recordBatchEnd();
-  }
+void clearHistory() => _DevTools._instance._clearHistory();
 
-  static Snapshot snapshot() => _instance._snapshot();
+class _DevTools {
+  _DevTools._();
 
-  static void clearHistory() => _instance._clearHistory();
+  static final _DevTools _instance = _DevTools._();
 
   final Expando<int> _signalIds = Expando<int>('oref_signal');
   final Expando<int> _computedIds = Expando<int>('oref_computed');
@@ -253,7 +253,7 @@ class OrefDevTools {
   }
 
   bool _registerSignal(
-    alien_system.ReactiveNode node, {
+    alien_preset.SignalNode node, {
     BuildContext? context,
     String? debugLabel,
     Object? debugOwner,
@@ -277,20 +277,18 @@ class OrefDevTools {
       note: debugNote ?? '',
     );
     record.updatedAt = record.createdAt;
-    if (node case alien_preset.SignalNode(:final currentValue)) {
-      record.value = _previewValue(currentValue);
-    }
+    record.value = _previewValue(node.currentValue);
     _signals[id] = record;
     return true;
   }
 
-  void _markSignalDisposed(alien_system.ReactiveNode node) {
+  void _markSignalDisposed(alien_preset.SignalNode node) {
     final id = _signalIds[node];
     if (id == null) return;
     _signals[id]?.disposed = true;
   }
 
-  void _recordSignalWrite(alien_system.ReactiveNode node, Object? value) {
+  void _recordSignalWrite(alien_preset.SignalNode node, Object? value) {
     if (!_shouldTrack()) return;
     final record = _signals[_signalIds[node] ?? _registerSignalFallback(node)];
     if (record == null) return;
@@ -320,7 +318,7 @@ class OrefDevTools {
   }
 
   bool _registerComputed(
-    alien_system.ReactiveNode node, {
+    alien_preset.ComputedNode node, {
     BuildContext? context,
     String? debugLabel,
     Object? debugOwner,
@@ -344,23 +342,22 @@ class OrefDevTools {
       note: debugNote ?? '',
     );
     record.updatedAt = record.createdAt;
-    if (node case alien_preset.ComputedNode(:final currentValue)) {
-      if (currentValue != null) {
-        record.value = _previewValue(currentValue);
-      }
+    final currentValue = node.currentValue;
+    if (currentValue != null) {
+      record.value = _previewValue(currentValue);
     }
     _computed[id] = record;
     return true;
   }
 
-  void _markComputedDisposed(alien_system.ReactiveNode node) {
+  void _markComputedDisposed(alien_preset.ComputedNode node) {
     final id = _computedIds[node];
     if (id == null) return;
     _computed[id]?.disposed = true;
   }
 
   void _recordComputedRun(
-    alien_system.ReactiveNode node,
+    alien_preset.ComputedNode node,
     Object? value,
     int durationMs,
   ) {
@@ -388,7 +385,7 @@ class OrefDevTools {
   }
 
   bool _registerEffect(
-    alien_system.ReactiveNode node, {
+    alien_preset.EffectNode node, {
     BuildContext? context,
     String? debugLabel,
     Object? debugOwner,
@@ -417,7 +414,7 @@ class OrefDevTools {
     return true;
   }
 
-  void _recordEffectRun(alien_system.ReactiveNode node, int durationMs) {
+  void _recordEffectRun(alien_preset.EffectNode node, int durationMs) {
     if (!_shouldTrack()) return;
     final record = _effects[_effectIds[node] ?? _registerEffectFallback(node)];
     if (record == null) return;
@@ -442,7 +439,7 @@ class OrefDevTools {
     _trimList(_timeline, _settings.timelineLimit);
   }
 
-  void _markEffectDisposed(alien_system.ReactiveNode node) {
+  void _markEffectDisposed(alien_preset.EffectNode node) {
     final id = _effectIds[node];
     if (id == null) return;
     _effects[id]?.disposed = true;
@@ -801,17 +798,17 @@ class OrefDevTools {
     );
   }
 
-  int _registerSignalFallback(alien_system.ReactiveNode node) {
+  int _registerSignalFallback(alien_preset.SignalNode node) {
     _registerSignal(node);
     return _signalIds[node] ?? -1;
   }
 
-  int _registerComputedFallback(alien_system.ReactiveNode node) {
+  int _registerComputedFallback(alien_preset.ComputedNode node) {
     _registerComputed(node);
     return _computedIds[node] ?? -1;
   }
 
-  int _registerEffectFallback(alien_system.ReactiveNode node) {
+  int _registerEffectFallback(alien_preset.EffectNode node) {
     _registerEffect(node);
     return _effectIds[node] ?? -1;
   }
@@ -967,10 +964,10 @@ String _describeScope(String? scope, BuildContext? context) {
 
 String _previewValue(Object? value) {
   final text = value == null ? 'null' : value.toString();
-  if (text.length <= OrefDevTools._instance._settings.valuePreviewLength) {
+  if (text.length <= _DevTools._instance._settings.valuePreviewLength) {
     return text;
   }
-  final limit = OrefDevTools._instance._settings.valuePreviewLength;
+  final limit = _DevTools._instance._settings.valuePreviewLength;
   return '${text.substring(0, limit)}...';
 }
 

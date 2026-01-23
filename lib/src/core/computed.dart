@@ -19,7 +19,7 @@ alien.Computed<T> computed<T>(
 }) {
   if (context == null) {
     final computed = _OrefComputed<T>(getter);
-    OrefDevTools.registerComputed(
+    registerComputed(
       computed,
       debugLabel: debugLabel,
       debugOwner: debugOwner,
@@ -30,7 +30,7 @@ alien.Computed<T> computed<T>(
   }
 
   final c = useMemoized(context, () => _OrefComputed<T>(getter));
-  final registered = OrefDevTools.registerComputed(
+  final registered = registerComputed(
     c,
     context: context,
     debugLabel: debugLabel,
@@ -39,10 +39,7 @@ alien.Computed<T> computed<T>(
     debugNote: debugNote,
   );
   if (registered) {
-    registerElementDisposer(
-      context,
-      () => OrefDevTools.markComputedDisposed(c),
-    );
+    registerElementDisposer(context, () => markComputedDisposed(c));
   }
   assert(() {
     c.fn = getter;
@@ -67,11 +64,7 @@ class _OrefComputed<T> extends alien.ComputedNode<T>
     final stopwatch = Stopwatch()..start();
     final changed = super.didUpdate();
     stopwatch.stop();
-    OrefDevTools.recordComputedRun(
-      this,
-      currentValue,
-      stopwatch.elapsedMilliseconds,
-    );
+    recordComputedRun(this, currentValue, stopwatch.elapsedMilliseconds);
     return changed;
   }
 
@@ -84,11 +77,7 @@ class _OrefComputed<T> extends alien.ComputedNode<T>
     final stopwatch = Stopwatch()..start();
     final value = super.get();
     stopwatch.stop();
-    OrefDevTools.recordComputedRun(
-      this,
-      currentValue,
-      stopwatch.elapsedMilliseconds,
-    );
+    recordComputedRun(this, currentValue, stopwatch.elapsedMilliseconds);
     return value;
   }
 
@@ -143,7 +132,7 @@ WritableComputed<T> writableComputed<T>(
 }) {
   if (context == null) {
     final computed = _OrefWritableComputed(get, set);
-    OrefDevTools.registerComputed(
+    registerComputed(
       computed,
       debugLabel: debugLabel,
       debugOwner: debugOwner,
@@ -154,7 +143,7 @@ WritableComputed<T> writableComputed<T>(
   }
 
   final c = useMemoized(context, () => _OrefWritableComputed(get, set));
-  final registered = OrefDevTools.registerComputed(
+  final registered = registerComputed(
     c,
     context: context,
     debugLabel: debugLabel,
@@ -163,10 +152,7 @@ WritableComputed<T> writableComputed<T>(
     debugNote: debugNote,
   );
   if (registered) {
-    registerElementDisposer(
-      context,
-      () => OrefDevTools.markComputedDisposed(c),
-    );
+    registerElementDisposer(context, () => markComputedDisposed(c));
   }
   assert(() {
     c.fn = get;
