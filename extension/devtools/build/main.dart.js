@@ -44858,7 +44858,7 @@ default:s=q}switch(p){case 3:p="Connected"
 break
 case 1:p="Connecting"
 break
-case 2:p="Extension missing"
+case 2:p="Inactive"
 break
 case 4:p="Connection error"
 break
@@ -98882,7 +98882,7 @@ B.a_d=new A.Vm(null)
 B.Hn=new A.cu(63577,"MaterialIcons",!1)
 B.a_e=new A.xS(B.Hn,"No app connected","Run your Flutter app and open DevTools to connect.",null)
 B.Hl=new A.cu(63275,"MaterialIcons",!1)
-B.a_f=new A.xS(B.Hl,"DevTools not enabled","Call registerOrefDevToolsServiceExtensions() in main() and run a debug build to expose diagnostics.",null)
+B.a_f=new A.xS(B.Hl,"DevTools not active","Diagnostics auto-register after the first signal/computed/effect in debug mode. Interact with the app to activate.",null)
 B.a_g=new A.Vq(null)
 B.BC=new A.mz(0,"idle")
 B.a_h=new A.mz(1,"start")

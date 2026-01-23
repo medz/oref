@@ -491,7 +491,7 @@ class _StatusPill extends StatelessWidget {
     final label = switch (status) {
       OrefServiceStatus.ready => 'Connected',
       OrefServiceStatus.connecting => 'Connecting',
-      OrefServiceStatus.unavailable => 'Extension missing',
+      OrefServiceStatus.unavailable => 'Inactive',
       OrefServiceStatus.error => 'Connection error',
       OrefServiceStatus.disconnected => 'Disconnected',
     };
@@ -4827,10 +4827,10 @@ class _ConnectionGuard extends StatelessWidget {
     if (controller.isUnavailable) {
       return const _PanelStateCard(
         icon: Icons.extension_off_rounded,
-        title: 'DevTools not enabled',
+        title: 'DevTools not active',
         message:
-            'Call registerOrefDevToolsServiceExtensions() in main() and run '
-            'a debug build to expose diagnostics.',
+            'Diagnostics auto-register after the first signal/computed/effect '
+            'in debug mode. Interact with the app to activate.',
       );
     }
     if (controller.isConnecting && controller.snapshot == null) {
