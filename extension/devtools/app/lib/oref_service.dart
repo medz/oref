@@ -3,14 +3,8 @@ import 'dart:convert';
 
 import 'package:devtools_extensions/devtools_extensions.dart';
 import 'package:flutter/foundation.dart';
+import 'package:oref/devtools.dart';
 import 'package:vm_service/vm_service.dart';
-
-import 'oref_models.dart';
-
-const String _snapshotService = 'ext.oref.snapshot';
-const String _settingsService = 'ext.oref.settings';
-const String _updateSettingsService = 'ext.oref.updateSettings';
-const String _clearService = 'ext.oref.clear';
 
 enum OrefServiceStatus { disconnected, connecting, unavailable, ready, error }
 
@@ -46,7 +40,7 @@ class OrefDevToolsController extends ChangeNotifier {
     if (!connected) return;
     try {
       await _callExtension(
-        _updateSettingsService,
+        OrefDevToolsProtocol.updateSettingsService,
         args: _encodeArgs(settings.toJson()),
       );
       await _fetchSnapshot();
@@ -58,7 +52,7 @@ class OrefDevToolsController extends ChangeNotifier {
   Future<void> clearHistory() async {
     if (!connected) return;
     try {
-      await _callExtension(_clearService);
+      await _callExtension(OrefDevToolsProtocol.clearService);
       await _fetchSnapshot();
     } catch (error) {
       _setError(error);
@@ -68,7 +62,9 @@ class OrefDevToolsController extends ChangeNotifier {
   Future<void> reloadSettings() async {
     if (!connected) return;
     try {
-      final payload = await _callExtension(_settingsService);
+      final payload = await _callExtension(
+        OrefDevToolsProtocol.settingsService,
+      );
       final settings = OrefDevToolsSettings.fromJson(payload);
       if (snapshot != null) {
         snapshot = OrefSnapshot(
@@ -123,7 +119,9 @@ class OrefDevToolsController extends ChangeNotifier {
   Future<void> _fetchSnapshot() async {
     if (!connected) return;
     try {
-      final payload = await _callExtension(_snapshotService);
+      final payload = await _callExtension(
+        OrefDevToolsProtocol.snapshotService,
+      );
       snapshot = OrefSnapshot.fromJson(payload);
       status = OrefServiceStatus.ready;
       errorMessage = null;

@@ -3,8 +3,8 @@ import 'dart:ui';
 import 'package:devtools_extensions/devtools_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:oref/devtools.dart';
 
-import 'oref_models.dart';
 import 'oref_service.dart';
 
 void main() {
