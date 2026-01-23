@@ -2359,7 +2359,7 @@ class _TimelineEventRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  event.detail,
+                  _formatTimelineDetail(event),
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
@@ -5089,6 +5089,7 @@ String _formatAge(int? timestamp) {
 }
 
 String _formatDurationUs(int durationUs) {
+  if (durationUs <= 0) return '<1us';
   if (durationUs < 1000) return '${durationUs}us';
   final ms = durationUs / 1000;
   if (ms < 10) {
@@ -5098,6 +5099,34 @@ String _formatDurationUs(int durationUs) {
     return '${ms.toStringAsFixed(1)}ms';
   }
   return '${ms.round()}ms';
+}
+
+String _formatTimelineDetail(TimelineEvent event) {
+  final durationUs = event.durationUs;
+  switch (event.type) {
+    case 'computed':
+      return durationUs == null
+          ? event.detail
+          : 'Recomputed in ${_formatDurationUs(durationUs)}';
+    case 'effect':
+      return durationUs == null
+          ? event.detail
+          : 'Ran in ${_formatDurationUs(durationUs)}';
+    case 'collection':
+      final op = event.operation;
+      return op == null ? event.detail : '$op mutation';
+    case 'batch':
+      if (durationUs == null && event.writeCount == null) return event.detail;
+      final duration = durationUs == null ? '' : _formatDurationUs(durationUs);
+      final writes = event.writeCount == null
+          ? ''
+          : '${event.writeCount} writes';
+      if (duration.isEmpty) return writes;
+      if (writes.isEmpty) return 'Batch in $duration';
+      return '$writes in $duration';
+    default:
+      return event.detail;
+  }
 }
 
 String _formatCount(int? value) {

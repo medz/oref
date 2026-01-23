@@ -291,6 +291,7 @@ class _DevTools implements DevToolsBinding {
   _DevTools._();
 
   static final _DevTools _instance = _DevTools._();
+  static const int _clientTtlMs = 5000;
 
   @override
   SignalHandle bindSignal(
@@ -401,7 +402,7 @@ class _DevTools implements DevToolsBinding {
 
   bool _initialized = false;
   bool _extensionsRegistered = false;
-  bool _hasClient = false;
+  int? _lastClientSeenMs;
   DevToolsSettings _settings = const DevToolsSettings();
 
   bool _canRegister() {
@@ -411,7 +412,16 @@ class _DevTools implements DevToolsBinding {
     return _initialized && _settings.enabled;
   }
 
-  bool _shouldTrackEvents() => _canRegister() && _hasClient;
+  bool _shouldTrackEvents() {
+    if (!_canRegister()) return false;
+    final lastSeen = _lastClientSeenMs;
+    if (lastSeen == null) return false;
+    return (_nowMs() - lastSeen) <= _clientTtlMs;
+  }
+
+  void _markClientSeen() {
+    _lastClientSeenMs = _nowMs();
+  }
 
   Object? _startTiming() {
     if (!_shouldTrackEvents()) return null;
@@ -599,8 +609,9 @@ class _DevTools implements DevToolsBinding {
         timestamp: record.updatedAt,
         type: 'computed',
         title: record.label,
-        detail: 'Recomputed in ${_formatDurationUs(durationUs)}',
+        detail: 'Recomputed',
         severity: durationUs > 16000 ? 'warn' : 'info',
+        durationUs: durationUs,
       ),
     );
     _trimList(_timeline, _settings.timelineLimit);
@@ -667,8 +678,9 @@ class _DevTools implements DevToolsBinding {
         timestamp: record.updatedAt,
         type: 'effect',
         title: record.label,
-        detail: 'Ran in ${_formatDurationUs(durationUs)}',
+        detail: 'Ran',
         severity: durationUs > 16000 ? 'warn' : 'info',
+        durationUs: durationUs,
       ),
     );
     _trimList(_timeline, _settings.timelineLimit);
@@ -755,8 +767,9 @@ class _DevTools implements DevToolsBinding {
         timestamp: record.updatedAt,
         type: 'collection',
         title: record.label,
-        detail: '$operation mutation',
+        detail: 'Mutation',
         severity: 'info',
+        operation: operation,
       ),
     );
     _trimList(_timeline, _settings.timelineLimit);
@@ -795,8 +808,10 @@ class _DevTools implements DevToolsBinding {
         timestamp: record.endedAt,
         type: 'batch',
         title: 'Batch #${record.id}',
-        detail: '${record.writeCount} writes in ${record.durationMs}ms',
+        detail: 'Batch',
         severity: record.durationMs > 16 ? 'warn' : 'info',
+        durationUs: record.durationMs * 1000,
+        writeCount: record.writeCount,
       ),
     );
     _trimList(_timeline, _settings.timelineLimit);
@@ -845,7 +860,7 @@ class _DevTools implements DevToolsBinding {
         method,
         params,
       ) async {
-        _hasClient = true;
+        _markClientSeen();
         final payload = jsonEncode(_snapshot().toJson());
         return developer.ServiceExtensionResponse.result(payload);
       });
@@ -853,7 +868,7 @@ class _DevTools implements DevToolsBinding {
         method,
         params,
       ) async {
-        _hasClient = true;
+        _markClientSeen();
         final payload = jsonEncode(_settings.toJson());
         return developer.ServiceExtensionResponse.result(payload);
       });
@@ -861,7 +876,7 @@ class _DevTools implements DevToolsBinding {
         method,
         params,
       ) async {
-        _hasClient = true;
+        _markClientSeen();
         final merged = DevToolsSettings.mergeArgs(_settings, params);
         _configure(
           enabled: merged.enabled,
@@ -878,7 +893,7 @@ class _DevTools implements DevToolsBinding {
         method,
         params,
       ) async {
-        _hasClient = true;
+        _markClientSeen();
         _clearHistory();
         final payload = jsonEncode({'cleared': true});
         return developer.ServiceExtensionResponse.result(payload);

@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 
 class Protocol {
-  static const int version = 3;
+  static const int version = 4;
 
   static const String servicePrefix = 'ext.oref';
   static const String snapshotService = '$servicePrefix.snapshot';
@@ -311,6 +311,9 @@ class TimelineEvent {
     required this.title,
     required this.detail,
     required this.severity,
+    this.durationUs,
+    this.operation,
+    this.writeCount,
   });
 
   final int id;
@@ -319,9 +322,12 @@ class TimelineEvent {
   final String title;
   final String detail;
   final String severity;
+  final int? durationUs;
+  final String? operation;
+  final int? writeCount;
 
   Map<String, Object?> toJson() {
-    return {
+    final data = <String, Object?>{
       'id': id,
       'timestamp': timestamp,
       'type': type,
@@ -329,6 +335,10 @@ class TimelineEvent {
       'detail': detail,
       'severity': severity,
     };
+    if (durationUs != null) data['durationUs'] = durationUs;
+    if (operation != null) data['operation'] = operation;
+    if (writeCount != null) data['writeCount'] = writeCount;
+    return data;
   }
 
   factory TimelineEvent.fromJson(Map<String, dynamic> json) {
@@ -339,6 +349,9 @@ class TimelineEvent {
       title: _readString(json['title']),
       detail: _readString(json['detail']),
       severity: _readString(json['severity'], fallback: 'info'),
+      durationUs: _readOptionalInt(json, 'durationUs'),
+      operation: _readOptionalString(json, 'operation'),
+      writeCount: _readOptionalInt(json, 'writeCount'),
     );
   }
 }
