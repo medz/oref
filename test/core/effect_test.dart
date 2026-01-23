@@ -429,8 +429,9 @@ void main() {
       expect(buildCount, equals(2));
     });
 
-    testWidgets('effect with conditional dependencies in widget',
-        (tester) async {
+    testWidgets('effect with conditional dependencies in widget', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Builder(

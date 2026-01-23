@@ -1,3 +1,21 @@
+## 2.7.0
+
+### Features
+
+- Add `onMounted` widget lifecycle hook to run once after the first frame.
+- Add `onUnmounted` widget lifecycle hook to run once when a widget unmounts.
+
+## 2.6.1
+
+### Bug Fixes
+
+- Ensure widget-scoped effects and scopes dispose on widget unmount so `onEffectDispose` runs promptly ([#31](https://github.com/medz/oref/issues/31)).
+
+### Dependencies
+
+- Upgrade `alien_signals` to 2.1.2.
+- Upgrade VitePress docs tooling to 1.6.4.
+
 ## 2.6.0
 
 ### Compatibility

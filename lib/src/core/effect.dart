@@ -4,6 +4,7 @@ import 'package:alien_signals/preset.dart' as alien;
 import 'package:flutter/widgets.dart';
 
 import '_warn.dart';
+import '_element_disposer.dart';
 import 'memoized.dart';
 import 'widget_scope.dart';
 
@@ -41,13 +42,17 @@ alien.Effect effect(
 
   final e = useMemoized(context, () {
     if (detach || alien.getActiveSub() != null) {
-      return _createEffect(callback: callback, detach: detach);
+      return _createEffect(
+        context: context,
+        callback: callback,
+        detach: detach,
+      );
     }
 
     final scope = useWidgetScope(context);
     final prevSub = alien.setActiveSub(scope as alien.ReactiveNode);
     try {
-      return _createEffect(callback: callback, detach: false);
+      return _createEffect(context: context, callback: callback, detach: false);
     } finally {
       alien.setActiveSub(prevSub);
     }
@@ -100,6 +105,7 @@ _OrefEffect _createEffect({
   });
   if (context != null) {
     _OrefEffect.finalizer.attach(context, effect, detach: effect);
+    registerElementDisposer(context, effect.call);
   }
 
   final prevSub = alien.setActiveSub(effect);

@@ -14,7 +14,9 @@ String readText(WidgetTester tester, String startsWith) {
 }
 
 Widget wrap(Widget child) {
-  return MaterialApp(home: Scaffold(body: Center(child: child)));
+  return MaterialApp(
+    home: Scaffold(body: Center(child: child)),
+  );
 }
 
 void main() {
@@ -61,7 +63,9 @@ void main() {
     expect(readText(tester, 'effect runs:'), contains('3'));
   });
 
-  testWidgets('untrack ignores noise updates until source changes', (tester) async {
+  testWidgets('untrack ignores noise updates until source changes', (
+    tester,
+  ) async {
     await tester.pumpWidget(wrap(const UntrackSection()));
     await tester.pumpAndSettle();
 
@@ -133,7 +137,9 @@ void main() {
     expect(readText(tester, 'showing'), contains('6 of 6'));
   });
 
-  testWidgets('checkout walkthrough updates totals and autosave', (tester) async {
+  testWidgets('checkout walkthrough updates totals and autosave', (
+    tester,
+  ) async {
     await tester.pumpWidget(wrap(const CheckoutWorkflowSection()));
     await tester.pumpAndSettle();
 

@@ -222,17 +222,23 @@ void main() {
 
       map['c'] = 3;
       expect(effect1Count, equals(2));
-      expect(effect2Count, equals(2)); // coarse-grained: any mutation triggers all effects
+      expect(
+        effect2Count,
+        equals(2),
+      ); // coarse-grained: any mutation triggers all effects
 
       map['a'] = 10;
-      expect(effect1Count, equals(3)); // coarse-grained: any mutation triggers all effects
+      expect(
+        effect1Count,
+        equals(3),
+      ); // coarse-grained: any mutation triggers all effects
       expect(effect2Count, equals(3));
     });
 
     test('map with complex values', () {
       final map = ReactiveMap<String, List<int>>({
         'a': [1, 2, 3],
-        'b': [4, 5, 6]
+        'b': [4, 5, 6],
       });
 
       expect(map['a'], equals([1, 2, 3]));
@@ -301,7 +307,10 @@ void main() {
       expect(effectCount, equals(2));
 
       map.putIfAbsent('a', () => 10); // Should not add or trigger
-      expect(effectCount, equals(2)); // Should not trigger since no modification
+      expect(
+        effectCount,
+        equals(2),
+      ); // Should not trigger since no modification
       expect(map['a'], equals(1)); // Value unchanged
     });
   });

@@ -3,6 +3,7 @@ export 'src/core/computed.dart';
 export 'src/core/effect.dart';
 export 'src/core/effect_scope.dart';
 export 'src/core/memoized.dart';
+export 'src/core/lifecycle.dart';
 export 'src/core/signal.dart';
 export 'src/core/widget_effect.dart';
 export 'src/core/widget_scope.dart';

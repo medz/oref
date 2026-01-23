@@ -165,6 +165,29 @@ body {
   opacity: calc(0.55 + var(--glass-scroll) * 0.25);
 }
 
+.VPFeature::before,
+.section-card::before {
+  background:
+    radial-gradient(
+      140% 120% at var(--glass-card-light-x, var(--glass-light-x))
+        var(--glass-card-light-y, var(--glass-light-y)),
+      var(--glass-highlight),
+      transparent 55%
+    ),
+    radial-gradient(
+      140% 120% at var(--glass-card-light-x, var(--glass-light-x))
+        var(--glass-card-light-y, var(--glass-light-y)),
+      var(--glass-highlight-soft),
+      transparent 60%
+    ),
+    radial-gradient(
+      140% 140% at calc(var(--glass-card-light-x, var(--glass-light-x)) + 12%)
+        calc(var(--glass-card-light-y, var(--glass-light-y)) + 18%),
+      var(--glass-shadow-tint),
+      transparent 65%
+    );
+}
+
 .glass-surface::after,
 .VPLocalNav::after,
 .VPSidebar::after,
@@ -279,9 +302,8 @@ body {
 
 .hero-canvas {
   position: absolute;
-  inset: -12% -10% -12%;
-  height: auto;
-  width: 120%;
+  inset: -12% 0 -12%;
+  width: 100%;
   z-index: 1;
   pointer-events: none;
   opacity: 0.9;
