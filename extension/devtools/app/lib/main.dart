@@ -13,18 +13,39 @@ void main() {
   runApp(const DevToolsExtension(child: OrefDevToolsApp()));
 }
 
-class OrefDevToolsApp extends StatelessWidget {
+class OrefDevToolsApp extends StatefulWidget {
   const OrefDevToolsApp({super.key});
 
   @override
+  State<OrefDevToolsApp> createState() => _OrefDevToolsAppState();
+}
+
+class _OrefDevToolsAppState extends State<OrefDevToolsApp> {
+  final _themeController = _ThemeController();
+
+  @override
+  void dispose() {
+    _themeController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Oref DevTools',
-      theme: OrefTheme.light(),
-      darkTheme: OrefTheme.dark(),
-      themeMode: ThemeMode.system,
-      home: const _DevToolsShell(),
+    return _ThemeScope(
+      controller: _themeController,
+      child: AnimatedBuilder(
+        animation: _themeController,
+        builder: (context, _) {
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            title: 'Oref DevTools',
+            theme: OrefTheme.light(),
+            darkTheme: OrefTheme.dark(),
+            themeMode: _themeController.mode,
+            home: const _DevToolsShell(),
+          );
+        },
+      ),
     );
   }
 }
@@ -40,6 +61,31 @@ class OrefDevToolsScope extends InheritedNotifier<OrefDevToolsController> {
     final scope = context
         .dependOnInheritedWidgetOfExactType<OrefDevToolsScope>();
     assert(scope != null, 'OrefDevToolsScope not found in widget tree.');
+    return scope!.notifier!;
+  }
+}
+
+class _ThemeController extends ChangeNotifier {
+  ThemeMode _mode = ThemeMode.system;
+
+  ThemeMode get mode => _mode;
+
+  void setMode(ThemeMode mode) {
+    if (_mode == mode) return;
+    _mode = mode;
+    notifyListeners();
+  }
+}
+
+class _ThemeScope extends InheritedNotifier<_ThemeController> {
+  const _ThemeScope({
+    required _ThemeController controller,
+    required Widget child,
+  }) : super(notifier: controller, child: child);
+
+  static _ThemeController of(BuildContext context) {
+    final scope = context.dependOnInheritedWidgetOfExactType<_ThemeScope>();
+    assert(scope != null, '_ThemeScope not found in widget tree.');
     return scope!.notifier!;
   }
 }
@@ -75,14 +121,36 @@ class OrefTheme {
         ? ThemeData.dark().textTheme
         : ThemeData.light().textTheme;
     final textTheme = GoogleFonts.spaceGroteskTextTheme(baseTextTheme).copyWith(
+      headlineSmall: baseTextTheme.headlineSmall?.copyWith(
+        fontWeight: FontWeight.w600,
+        letterSpacing: -0.2,
+      ),
       titleLarge: baseTextTheme.titleLarge?.copyWith(
         fontWeight: FontWeight.w600,
+        letterSpacing: -0.2,
       ),
       titleMedium: baseTextTheme.titleMedium?.copyWith(
         fontWeight: FontWeight.w600,
+        letterSpacing: -0.1,
       ),
+      titleSmall: baseTextTheme.titleSmall?.copyWith(
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.0,
+      ),
+      bodyLarge: baseTextTheme.bodyLarge?.copyWith(height: 1.4),
+      bodyMedium: baseTextTheme.bodyMedium?.copyWith(height: 1.4),
+      bodySmall: baseTextTheme.bodySmall?.copyWith(height: 1.3),
       labelLarge: baseTextTheme.labelLarge?.copyWith(
         fontWeight: FontWeight.w600,
+        letterSpacing: 0.2,
+      ),
+      labelMedium: baseTextTheme.labelMedium?.copyWith(
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.2,
+      ),
+      labelSmall: baseTextTheme.labelSmall?.copyWith(
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.4,
       ),
     );
 
@@ -402,12 +470,7 @@ class _BrandMark extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Oref DevTools', style: textTheme.titleMedium),
-            Text(
-              'Signals • Effects • Collections',
-              style: textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-              ),
-            ),
+            Text('Signals • Effects • Collections', style: textTheme.bodySmall),
           ],
         ),
       ],
@@ -448,12 +511,7 @@ class _StatusPill extends StatelessWidget {
             decoration: BoxDecoration(shape: BoxShape.circle, color: tone),
           ),
           const SizedBox(width: 8),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
+          Text(label, style: Theme.of(context).textTheme.labelMedium),
         ],
       ),
     );
@@ -470,9 +528,6 @@ class _ActionPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isEnabled = onTap != null;
-    final color = isEnabled
-        ? Theme.of(context).colorScheme.onSurface
-        : Theme.of(context).colorScheme.onSurface.withOpacity(0.45);
     return Opacity(
       opacity: isEnabled ? 1 : 0.6,
       child: InkWell(
@@ -482,14 +537,9 @@ class _ActionPill extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 16, color: color),
+              Icon(icon, size: 16),
               const SizedBox(width: 8),
-              Text(
-                label,
-                style: Theme.of(
-                  context,
-                ).textTheme.labelMedium?.copyWith(color: color),
-              ),
+              Text(label, style: Theme.of(context).textTheme.labelMedium),
             ],
           ),
         ),
@@ -721,14 +771,9 @@ class _NavItem extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(item.icon, size: 18, color: isActive ? Colors.black : null),
+              Icon(item.icon, size: 18),
               const SizedBox(width: 8),
-              Text(
-                item.label,
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: isActive ? Colors.black : null,
-                ),
-              ),
+              Text(item.label, style: Theme.of(context).textTheme.labelLarge),
             ],
           ),
         ),
@@ -891,9 +936,7 @@ class _OverviewPanel extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             'Signal diagnostics, activity, and collection health in one place.',
-            style: textTheme.bodyLarge?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-            ),
+            style: textTheme.bodyLarge,
           ),
           const SizedBox(height: 20),
           _AdaptiveWrap(
@@ -989,11 +1032,7 @@ class _OverviewPanel extends StatelessWidget {
                       'Streaming updates from the active Flutter isolate. '
                       'Refresh to sync the latest snapshot or clear the '
                       'history for a new pass.',
-                      style: textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withOpacity(0.65),
-                      ),
+                      style: textTheme.bodyMedium,
                     ),
                     const SizedBox(height: 16),
                     Wrap(
@@ -1085,11 +1124,7 @@ class _OverviewPanel extends StatelessWidget {
                         Text(
                           'Track how signals refresh across the frame '
                           'timeline and spot hot paths early.',
-                          style: textTheme.bodyMedium?.copyWith(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withOpacity(0.65),
-                          ),
+                          style: textTheme.bodyMedium,
                         ),
                       ],
                     ),
@@ -1113,11 +1148,7 @@ class _OverviewPanel extends StatelessWidget {
                         const SizedBox(height: 12),
                         Text(
                           'Spot dense write bursts and their scopes.',
-                          style: textTheme.bodyMedium?.copyWith(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withOpacity(0.65),
-                          ),
+                          style: textTheme.bodyMedium,
                         ),
                       ],
                     ),
@@ -1207,9 +1238,9 @@ class _SignalsPanelState extends State<_SignalsPanel> {
                 controller.snapshot?.signals ?? const <OrefSignal>[];
             final isSplit = constraints.maxWidth >= 980;
             final filtered = _filterSignals(entries);
-            final selected =
-                entries.firstWhereOrNull((entry) => entry.id == _selectedId) ??
-                (entries.isNotEmpty ? entries.first : null);
+            final selected = entries.firstWhereOrNull(
+              (entry) => entry.id == _selectedId,
+            );
             final list = _SignalList(
               entries: filtered,
               selectedId: selected?.id,
@@ -1218,7 +1249,9 @@ class _SignalsPanelState extends State<_SignalsPanel> {
               sortAscending: _sortAscending,
               onSortName: () => _toggleSort(_SortKey.name),
               onSortUpdated: () => _toggleSort(_SortKey.updated),
-              onSelect: (entry) => setState(() => _selectedId = entry.id),
+              onSelect: (entry) => setState(() {
+                _selectedId = _selectedId == entry.id ? null : entry.id;
+              }),
             );
             final detail = _SignalDetail(entry: selected);
 
@@ -1239,19 +1272,28 @@ class _SignalsPanelState extends State<_SignalsPanel> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                isSplit
-                    ? Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(flex: 3, child: list),
-                          const SizedBox(width: 20),
-                          SizedBox(width: 320, child: detail),
-                        ],
-                      )
-                    : Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [list, const SizedBox(height: 16), detail],
-                      ),
+                if (isSplit)
+                  selected == null
+                      ? list
+                      : Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(flex: 3, child: list),
+                            const SizedBox(width: 20),
+                            SizedBox(width: 320, child: detail),
+                          ],
+                        )
+                else
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      list,
+                      if (selected != null) ...[
+                        const SizedBox(height: 16),
+                        detail,
+                      ],
+                    ],
+                  ),
               ],
             );
           },
@@ -1333,9 +1375,9 @@ class _ComputedPanelState extends State<_ComputedPanel> {
                 controller.snapshot?.computed ?? const <OrefComputed>[];
             final isSplit = constraints.maxWidth >= 980;
             final filtered = _filterComputed(entries);
-            final selected =
-                entries.firstWhereOrNull((entry) => entry.id == _selectedId) ??
-                (entries.isNotEmpty ? entries.first : null);
+            final selected = entries.firstWhereOrNull(
+              (entry) => entry.id == _selectedId,
+            );
             final list = _ComputedList(
               entries: filtered,
               selectedId: selected?.id,
@@ -1344,7 +1386,9 @@ class _ComputedPanelState extends State<_ComputedPanel> {
               sortAscending: _sortAscending,
               onSortName: () => _toggleSort(_SortKey.name),
               onSortUpdated: () => _toggleSort(_SortKey.updated),
-              onSelect: (entry) => setState(() => _selectedId = entry.id),
+              onSelect: (entry) => setState(() {
+                _selectedId = _selectedId == entry.id ? null : entry.id;
+              }),
             );
             final detail = _ComputedDetail(entry: selected);
 
@@ -1365,19 +1409,28 @@ class _ComputedPanelState extends State<_ComputedPanel> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                isSplit
-                    ? Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(flex: 3, child: list),
-                          const SizedBox(width: 20),
-                          SizedBox(width: 320, child: detail),
-                        ],
-                      )
-                    : Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [list, const SizedBox(height: 16), detail],
-                      ),
+                if (isSplit)
+                  selected == null
+                      ? list
+                      : Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(flex: 3, child: list),
+                            const SizedBox(width: 20),
+                            SizedBox(width: 320, child: detail),
+                          ],
+                        )
+                else
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      list,
+                      if (selected != null) ...[
+                        const SizedBox(height: 16),
+                        detail,
+                      ],
+                    ],
+                  ),
               ],
             );
           },
@@ -1470,9 +1523,7 @@ class _ComputedHeader extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           'Inspect derived state, cache hits, and dependency churn.',
-          style: textTheme.bodyMedium?.copyWith(
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.65),
-          ),
+          style: textTheme.bodyMedium,
         ),
         const SizedBox(height: 16),
         _GlassInput(
@@ -1577,10 +1628,7 @@ class _ComputedTableHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final labelStyle = Theme.of(context).textTheme.labelSmall?.copyWith(
-      letterSpacing: 0.4,
-      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-    );
+    final labelStyle = Theme.of(context).textTheme.labelSmall;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -1603,9 +1651,27 @@ class _ComputedTableHeader extends StatelessWidget {
               style: labelStyle,
             ),
           ),
-          Expanded(flex: 2, child: Text('Value', style: labelStyle)),
-          Expanded(flex: 2, child: Text('Status', style: labelStyle)),
-          Expanded(flex: 2, child: Text('Runs', style: labelStyle)),
+          Expanded(
+            flex: 2,
+            child: Align(
+              alignment: Alignment.center,
+              child: Text('Value', style: labelStyle),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Align(
+              alignment: Alignment.center,
+              child: Text('Status', style: labelStyle),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Align(
+              alignment: Alignment.center,
+              child: Text('Runs', style: labelStyle),
+            ),
+          ),
           Expanded(
             flex: 2,
             child: _SortHeaderCell(
@@ -1689,9 +1755,7 @@ class _ComputedRow extends StatelessWidget {
                     const SizedBox(height: 8),
                     Text(
                       entry.value,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurface.withOpacity(0.7),
-                      ),
+                      style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
                 )
@@ -1700,16 +1764,14 @@ class _ComputedRow extends StatelessWidget {
                     Expanded(
                       flex: 3,
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Text(entry.label),
+                          Text(entry.label, textAlign: TextAlign.center),
                           const SizedBox(height: 4),
                           Text(
                             entry.owner,
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: colorScheme.onSurface.withOpacity(0.6),
-                                ),
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.bodySmall,
                           ),
                         ],
                       ),
@@ -1720,20 +1782,26 @@ class _ComputedRow extends StatelessWidget {
                         entry.value,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
                       ),
                     ),
                     Expanded(
                       flex: 2,
-                      child: _StatusBadge(status: entry.status),
+                      child: Align(
+                        alignment: Alignment.center,
+                        child: _StatusBadge(status: entry.status),
+                      ),
                     ),
-                    Expanded(flex: 2, child: Text('${entry.runs}')),
+                    Expanded(
+                      flex: 2,
+                      child: Text('${entry.runs}', textAlign: TextAlign.center),
+                    ),
                     Expanded(
                       flex: 2,
                       child: Text(
                         _formatAge(entry.updatedAt),
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurface.withOpacity(0.6),
-                        ),
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ),
                   ],
@@ -1785,12 +1853,7 @@ class _ComputedDetail extends StatelessWidget {
           _InfoRow(label: 'Deps', value: entry!.dependencies.toString()),
           if (entry!.note.isNotEmpty) ...[
             const SizedBox(height: 12),
-            Text(
-              entry!.note,
-              style: textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-              ),
-            ),
+            Text(entry!.note, style: textTheme.bodySmall),
           ],
         ],
       ),
@@ -1977,11 +2040,7 @@ class _BatchingPanel extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   'Inspect batched writes and flush timing.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withOpacity(0.65),
-                  ),
+                  style: Theme.of(context).textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 16),
                 _AdaptiveWrap(
@@ -2066,10 +2125,7 @@ class _BatchHeaderRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final labelStyle = Theme.of(context).textTheme.labelSmall?.copyWith(
-      letterSpacing: 0.4,
-      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-    );
+    final labelStyle = Theme.of(context).textTheme.labelSmall;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -2082,11 +2138,41 @@ class _BatchHeaderRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Expanded(flex: 2, child: Text('Batch', style: labelStyle)),
-          Expanded(flex: 2, child: Text('Depth', style: labelStyle)),
-          Expanded(flex: 2, child: Text('Writes', style: labelStyle)),
-          Expanded(flex: 2, child: Text('Duration', style: labelStyle)),
-          Expanded(flex: 3, child: Text('Ended', style: labelStyle)),
+          Expanded(
+            flex: 2,
+            child: Align(
+              alignment: Alignment.center,
+              child: Text('Batch', style: labelStyle),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Align(
+              alignment: Alignment.center,
+              child: Text('Depth', style: labelStyle),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Align(
+              alignment: Alignment.center,
+              child: Text('Writes', style: labelStyle),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Align(
+              alignment: Alignment.center,
+              child: Text('Duration', style: labelStyle),
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Align(
+              alignment: Alignment.center,
+              child: Text('Ended', style: labelStyle),
+            ),
+          ),
         ],
       ),
     );
@@ -2101,7 +2187,6 @@ class _BatchRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final subdued = Theme.of(context).colorScheme.onSurface.withOpacity(0.6);
     return _GlassCard(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       child: isCompact
@@ -2148,15 +2233,36 @@ class _BatchRow extends StatelessWidget {
             )
           : Row(
               children: [
-                Expanded(flex: 2, child: Text('Batch #${batch.id}')),
-                Expanded(flex: 2, child: Text('${batch.depth}')),
-                Expanded(flex: 2, child: Text('${batch.writeCount}')),
-                Expanded(flex: 2, child: Text('${batch.durationMs}ms')),
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    'Batch #${batch.id}',
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: Text('${batch.depth}', textAlign: TextAlign.center),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    '${batch.writeCount}',
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    '${batch.durationMs}ms',
+                    textAlign: TextAlign.center,
+                  ),
+                ),
                 Expanded(
                   flex: 3,
                   child: Text(
                     _formatAge(batch.endedAt),
-                    style: TextStyle(color: subdued),
+                    textAlign: TextAlign.center,
                   ),
                 ),
               ],
@@ -2230,11 +2336,7 @@ class _TimelinePanelState extends State<_TimelinePanel> {
             const SizedBox(height: 8),
             Text(
               'Correlate signal updates with effects, batches, and collections.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withOpacity(0.65),
-              ),
+              style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 12),
             Wrap(
@@ -2316,7 +2418,6 @@ class _TimelineEventRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tone = _timelineColors[event.type] ?? OrefPalette.teal;
-    final subdued = Theme.of(context).colorScheme.onSurface.withOpacity(0.6);
     return _GlassCard(
       padding: const EdgeInsets.all(16),
       child: Row(
@@ -2340,9 +2441,7 @@ class _TimelineEventRow extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   event.detail,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(color: subdued),
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
             ),
@@ -2350,9 +2449,7 @@ class _TimelineEventRow extends StatelessWidget {
           const SizedBox(width: 12),
           Text(
             _formatAge(event.timestamp),
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: subdued),
+            style: Theme.of(context).textTheme.bodySmall,
           ),
         ],
       ),
@@ -2409,11 +2506,7 @@ class _PerformancePanel extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               'Sampled signal throughput and effect costs.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withOpacity(0.65),
-              ),
+              style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 16),
             _AdaptiveWrap(
@@ -2493,26 +2586,43 @@ class _PerformanceRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final subdued = Theme.of(context).colorScheme.onSurface.withOpacity(0.6);
     return _GlassCard(
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [
-          Expanded(flex: 2, child: Text(_formatAge(sample.timestamp))),
-          Expanded(flex: 2, child: Text('${sample.signalWrites} writes')),
-          Expanded(flex: 2, child: Text('${sample.effectRuns} runs')),
+          Expanded(
+            flex: 2,
+            child: Text(
+              _formatAge(sample.timestamp),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Text(
+              '${sample.signalWrites} writes',
+              textAlign: TextAlign.center,
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Text(
+              '${sample.effectRuns} runs',
+              textAlign: TextAlign.center,
+            ),
+          ),
           Expanded(
             flex: 2,
             child: Text(
               '${sample.avgEffectDurationMs.toStringAsFixed(1)}ms',
-              style: TextStyle(color: subdued),
+              textAlign: TextAlign.center,
             ),
           ),
           Expanded(
             flex: 2,
             child: Text(
               '${sample.collectionMutations} mutations',
-              style: TextStyle(color: subdued),
+              textAlign: TextAlign.center,
             ),
           ),
         ],
@@ -2535,6 +2645,7 @@ class _SettingsPanelState extends State<_SettingsPanel> {
   @override
   Widget build(BuildContext context) {
     final controller = OrefDevToolsScope.of(context);
+    final themeController = _ThemeScope.of(context);
     final current =
         controller.snapshot?.settings ?? const OrefDevToolsSettings();
     if (!_isEditing) {
@@ -2563,10 +2674,43 @@ class _SettingsPanelState extends State<_SettingsPanel> {
             const SizedBox(height: 8),
             Text(
               'Tune how diagnostics are collected.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withOpacity(0.65),
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 16),
+            _GlassCard(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Appearance',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 12),
+                  SegmentedButton<ThemeMode>(
+                    segments: const [
+                      ButtonSegment<ThemeMode>(
+                        value: ThemeMode.system,
+                        label: Text('System'),
+                        icon: Icon(Icons.brightness_auto_rounded),
+                      ),
+                      ButtonSegment<ThemeMode>(
+                        value: ThemeMode.light,
+                        label: Text('Light'),
+                        icon: Icon(Icons.light_mode_rounded),
+                      ),
+                      ButtonSegment<ThemeMode>(
+                        value: ThemeMode.dark,
+                        label: Text('Dark'),
+                        icon: Icon(Icons.dark_mode_rounded),
+                      ),
+                    ],
+                    selected: {themeController.mode},
+                    onSelectionChanged: (selection) {
+                      themeController.setMode(selection.first);
+                    },
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 16),
@@ -2807,9 +2951,7 @@ class _CollectionsHeader extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           'Inspect reactive list, map, and set mutations.',
-          style: textTheme.bodyMedium?.copyWith(
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.65),
-          ),
+          style: textTheme.bodyMedium,
         ),
         const SizedBox(height: 12),
         _GlassInput(controller: controller, hintText: 'Search collections...'),
@@ -2919,10 +3061,7 @@ class _CollectionsHeaderRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final labelStyle = Theme.of(context).textTheme.labelSmall?.copyWith(
-      letterSpacing: 0.4,
-      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-    );
+    final labelStyle = Theme.of(context).textTheme.labelSmall;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -2945,9 +3084,27 @@ class _CollectionsHeaderRow extends StatelessWidget {
               style: labelStyle,
             ),
           ),
-          Expanded(flex: 2, child: Text('Type', style: labelStyle)),
-          Expanded(flex: 2, child: Text('Op', style: labelStyle)),
-          Expanded(flex: 2, child: Text('Scope', style: labelStyle)),
+          Expanded(
+            flex: 2,
+            child: Align(
+              alignment: Alignment.center,
+              child: Text('Type', style: labelStyle),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Align(
+              alignment: Alignment.center,
+              child: Text('Op', style: labelStyle),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Align(
+              alignment: Alignment.center,
+              child: Text('Scope', style: labelStyle),
+            ),
+          ),
           Expanded(
             flex: 2,
             child: _SortHeaderCell(
@@ -2973,7 +3130,7 @@ class _CollectionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tone = _collectionOpColors[entry.operation] ?? OrefPalette.teal;
-    final subdued = Theme.of(context).colorScheme.onSurface.withOpacity(0.6);
+    final textTheme = Theme.of(context).textTheme;
 
     return _GlassCard(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -3022,35 +3179,45 @@ class _CollectionRow extends StatelessWidget {
                 Expanded(
                   flex: 3,
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Text(entry.label),
+                      Text(entry.label, textAlign: TextAlign.center),
                       const SizedBox(height: 4),
-                      Text(entry.owner, style: TextStyle(color: subdued)),
+                      Text(
+                        entry.owner,
+                        textAlign: TextAlign.center,
+                        style: textTheme.bodySmall,
+                      ),
                     ],
                   ),
                 ),
-                Expanded(flex: 2, child: Text(entry.type)),
                 Expanded(
                   flex: 2,
-                  child: _GlassPill(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 6,
+                  child: Text(entry.type, textAlign: TextAlign.center),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: Align(
+                    alignment: Alignment.center,
+                    child: _GlassPill(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      color: tone.withOpacity(0.22),
+                      child: Text(entry.operation),
                     ),
-                    color: tone.withOpacity(0.22),
-                    child: Text(entry.operation),
                   ),
                 ),
                 Expanded(
                   flex: 2,
-                  child: Text(entry.scope, style: TextStyle(color: subdued)),
+                  child: Text(entry.scope, textAlign: TextAlign.center),
                 ),
                 Expanded(
                   flex: 2,
                   child: Text(
                     _formatAge(entry.updatedAt),
-                    style: TextStyle(color: subdued),
+                    textAlign: TextAlign.center,
                   ),
                 ),
               ],
@@ -3065,7 +3232,7 @@ class _CollectionRow extends StatelessWidget {
           ),
           if (entry.note.isNotEmpty) ...[
             const SizedBox(height: 8),
-            Text(entry.note, style: TextStyle(color: subdued)),
+            Text(entry.note, style: textTheme.bodySmall),
           ],
         ],
       ),
@@ -3196,9 +3363,7 @@ class _EffectsHeader extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           'Monitor effect lifecycle, timings, and hot paths.',
-          style: textTheme.bodyMedium?.copyWith(
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.65),
-          ),
+          style: textTheme.bodyMedium,
         ),
         const SizedBox(height: 12),
         Wrap(
@@ -3288,7 +3453,6 @@ class _EffectRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final tone = _effectColors[entry.type] ?? OrefPalette.teal;
 
     return Row(
@@ -3329,9 +3493,7 @@ class _EffectRow extends StatelessWidget {
                   entry.note.isEmpty
                       ? 'Last run ${_formatAge(entry.updatedAt)}'
                       : entry.note,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurface.withOpacity(0.6),
-                  ),
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
                 const SizedBox(height: 12),
                 Wrap(
@@ -3370,12 +3532,6 @@ class _EffectRow extends StatelessWidget {
                           : OrefPalette.lime.withOpacity(0.2),
                       child: Text('${entry.lastDurationMs}ms'),
                     ),
-                    Text(
-                      _formatAge(entry.updatedAt),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurface.withOpacity(0.6),
-                      ),
-                    ),
                   ],
                 ),
               ],
@@ -3395,12 +3551,7 @@ class _HotBadge extends StatelessWidget {
     return _GlassPill(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       color: OrefPalette.coral.withOpacity(0.25),
-      child: Text(
-        'HOT',
-        style: Theme.of(
-          context,
-        ).textTheme.labelMedium?.copyWith(color: OrefPalette.coral),
-      ),
+      child: Text('HOT', style: Theme.of(context).textTheme.labelMedium),
     );
   }
 }
@@ -3453,9 +3604,7 @@ class _SignalsHeader extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           'Inspect live signal values, owners, and update cadence.',
-          style: textTheme.bodyMedium?.copyWith(
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.65),
-          ),
+          style: textTheme.bodyMedium,
         ),
         const SizedBox(height: 16),
         _GlassInput(controller: controller, hintText: 'Search signals...'),
@@ -3557,10 +3706,7 @@ class _SignalTableHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final labelStyle = Theme.of(context).textTheme.labelSmall?.copyWith(
-      letterSpacing: 0.4,
-      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-    );
+    final labelStyle = Theme.of(context).textTheme.labelSmall;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -3583,9 +3729,27 @@ class _SignalTableHeader extends StatelessWidget {
               style: labelStyle,
             ),
           ),
-          Expanded(flex: 2, child: Text('Value', style: labelStyle)),
-          Expanded(flex: 2, child: Text('Type', style: labelStyle)),
-          Expanded(flex: 2, child: Text('Status', style: labelStyle)),
+          Expanded(
+            flex: 2,
+            child: Align(
+              alignment: Alignment.center,
+              child: Text('Value', style: labelStyle),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Align(
+              alignment: Alignment.center,
+              child: Text('Type', style: labelStyle),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Align(
+              alignment: Alignment.center,
+              child: Text('Status', style: labelStyle),
+            ),
+          ),
           Expanded(
             flex: 2,
             child: _SortHeaderCell(
@@ -3669,9 +3833,7 @@ class _SignalRow extends StatelessWidget {
                     const SizedBox(height: 8),
                     Text(
                       entry.value,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurface.withOpacity(0.7),
-                      ),
+                      style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
                 )
@@ -3680,16 +3842,14 @@ class _SignalRow extends StatelessWidget {
                     Expanded(
                       flex: 3,
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Text(entry.label),
+                          Text(entry.label, textAlign: TextAlign.center),
                           const SizedBox(height: 4),
                           Text(
                             entry.owner,
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: colorScheme.onSurface.withOpacity(0.6),
-                                ),
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.bodySmall,
                           ),
                         ],
                       ),
@@ -3700,28 +3860,25 @@ class _SignalRow extends StatelessWidget {
                         entry.value,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
                       ),
                     ),
                     Expanded(
                       flex: 2,
-                      child: Text(
-                        entry.type,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurface.withOpacity(0.7),
-                        ),
-                      ),
+                      child: Text(entry.type, textAlign: TextAlign.center),
                     ),
                     Expanded(
                       flex: 2,
-                      child: _StatusBadge(status: entry.status),
+                      child: Align(
+                        alignment: Alignment.center,
+                        child: _StatusBadge(status: entry.status),
+                      ),
                     ),
                     Expanded(
                       flex: 2,
                       child: Text(
                         _formatAge(entry.updatedAt),
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurface.withOpacity(0.6),
-                        ),
+                        textAlign: TextAlign.center,
                       ),
                     ),
                   ],
@@ -3771,12 +3928,7 @@ class _SignalDetail extends StatelessWidget {
           _InfoRow(label: 'Deps', value: entry!.dependencies.toString()),
           if (entry!.note.isNotEmpty) ...[
             const SizedBox(height: 12),
-            Text(
-              entry!.note,
-              style: textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-              ),
-            ),
+            Text(entry!.note, style: textTheme.bodySmall),
           ],
         ],
       ),
@@ -3849,12 +4001,7 @@ class _FilterChip extends StatelessWidget {
                   : colorScheme.onSurface.withOpacity(0.1),
             ),
           ),
-          child: Text(
-            label,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: isSelected ? Colors.white : null,
-            ),
-          ),
+          child: Text(label, style: Theme.of(context).textTheme.labelMedium),
         ),
       ),
     );
@@ -3880,11 +4027,7 @@ class _GlassInput extends StatelessWidget {
               controller: controller,
               decoration: InputDecoration(
                 hintText: hintText,
-                hintStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withOpacity(0.5),
-                ),
+                hintStyle: Theme.of(context).textTheme.bodySmall,
                 border: InputBorder.none,
                 isDense: true,
               ),
@@ -3914,13 +4057,6 @@ class _SortHeaderCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isActive
-        ? Theme.of(context).colorScheme.onSurface
-        : Theme.of(context).colorScheme.onSurface.withOpacity(0.6);
-    final textStyle = style?.copyWith(
-      color: color,
-      fontWeight: isActive ? FontWeight.w600 : style?.fontWeight,
-    );
     final icon = ascending ? Icons.arrow_drop_up : Icons.arrow_drop_down;
 
     return Material(
@@ -3933,9 +4069,10 @@ class _SortHeaderCell extends StatelessWidget {
           child: SizedBox(
             width: double.infinity,
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(label, style: textStyle),
-                if (isActive) Icon(icon, size: 16, color: color),
+                Text(label, style: style),
+                if (isActive) Icon(icon, size: 16),
               ],
             ),
           ),
@@ -4009,12 +4146,7 @@ class _PanelPlaceholder extends StatelessWidget {
           const SizedBox(height: 16),
           Text(info.title, style: textTheme.headlineSmall),
           const SizedBox(height: 8),
-          Text(
-            info.description,
-            style: textTheme.bodyLarge?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-            ),
-          ),
+          Text(info.description, style: textTheme.bodyLarge),
           const SizedBox(height: 20),
           LayoutBuilder(
             builder: (context, constraints) {
@@ -4137,13 +4269,7 @@ class _MetricTile extends StatelessWidget {
           const SizedBox(height: 12),
           Text(label, style: Theme.of(context).textTheme.labelLarge),
           const SizedBox(height: 6),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              color: accent,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
+          Text(value, style: Theme.of(context).textTheme.headlineSmall),
           const SizedBox(height: 10),
           _Sparkline(color: accent),
         ],
@@ -4212,12 +4338,7 @@ class _InsightCard extends StatelessWidget {
         children: [
           Text(title, style: textTheme.titleMedium),
           const SizedBox(height: 6),
-          Text(
-            subtitle,
-            style: textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-            ),
-          ),
+          Text(subtitle, style: textTheme.bodySmall),
           const SizedBox(height: 16),
           LayoutBuilder(
             builder: (context, constraints) {
@@ -4260,7 +4381,6 @@ class _InsightRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final subdued = Theme.of(context).colorScheme.onSurface.withOpacity(0.6);
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
@@ -4275,7 +4395,6 @@ class _InsightRow extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.right,
-              style: TextStyle(color: subdued),
             ),
           ),
         ],
@@ -4311,9 +4430,7 @@ class _HealthCard extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             'Service health and steady-state metrics.',
-            style: textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-            ),
+            style: textTheme.bodySmall,
           ),
           const SizedBox(height: 16),
           _HealthBar(
@@ -4357,7 +4474,6 @@ class _HealthBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final subdued = Theme.of(context).colorScheme.onSurface.withOpacity(0.6);
     final clamped = progress.clamp(0.0, 1.0);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -4365,7 +4481,7 @@ class _HealthBar extends StatelessWidget {
         Row(
           children: [
             Expanded(child: Text(label)),
-            Text(value, style: TextStyle(color: subdued)),
+            Text(value),
           ],
         ),
         const SizedBox(height: 6),
@@ -4512,11 +4628,7 @@ class _MiniChart extends StatelessWidget {
                 Expanded(
                   child: Text(
                     caption,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.onSurface.withOpacity(0.7),
-                    ),
+                    style: Theme.of(context).textTheme.bodySmall,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -4591,11 +4703,7 @@ class _TimelineRow extends StatelessWidget {
                 ),
                 Text(
                   '${event.detail} · ${_formatAge(event.timestamp)}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withOpacity(0.6),
-                  ),
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
             ),
@@ -4620,12 +4728,7 @@ class _InfoRow extends StatelessWidget {
         children: [
           SizedBox(
             width: 84,
-            child: Text(
-              label,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-              ),
-            ),
+            child: Text(label, style: Theme.of(context).textTheme.bodySmall),
           ),
           Expanded(child: Text(value)),
         ],
@@ -4757,12 +4860,7 @@ class _GradientButton extends StatelessWidget {
             ),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              child: Text(
-                label,
-                style: Theme.of(
-                  context,
-                ).textTheme.labelLarge?.copyWith(color: Colors.black),
-              ),
+              child: Text(label, style: Theme.of(context).textTheme.labelLarge),
             ),
           ),
         ),
@@ -4794,12 +4892,7 @@ class _OutlineButton extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: color.withOpacity(0.2)),
             ),
-            child: Text(
-              label,
-              style: Theme.of(
-                context,
-              ).textTheme.labelLarge?.copyWith(color: color),
-            ),
+            child: Text(label, style: Theme.of(context).textTheme.labelLarge),
           ),
         ),
       ),
@@ -4872,9 +4965,7 @@ class _PanelStateCard extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-              ),
+              style: Theme.of(context).textTheme.bodyMedium,
             ),
           ],
         ),
