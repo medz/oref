@@ -232,7 +232,7 @@ class DevToolsSettings {
 }
 
 @immutable
-class Sample {
+abstract class Sample {
   const Sample({
     required this.id,
     required this.label,
