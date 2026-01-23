@@ -3341,6 +3341,14 @@ class _EffectsHeader extends StatelessWidget {
   }
 }
 
+const double _effectsTimelineDotSize = 14;
+const double _effectsTimelineLineWidth = 2;
+const double _effectsTimelineHorizontalPadding = 16;
+const double _effectsTimelineLineLeft =
+    _effectsTimelineHorizontalPadding +
+    _effectsTimelineDotSize / 2 -
+    _effectsTimelineLineWidth / 2;
+
 class _EffectsTimeline extends StatelessWidget {
   const _EffectsTimeline({required this.entries});
 
@@ -3353,11 +3361,11 @@ class _EffectsTimeline extends StatelessWidget {
       child: Stack(
         children: [
           Positioned(
-            left: 30,
+            left: _effectsTimelineLineLeft,
             top: 0,
             bottom: 0,
             child: Container(
-              width: 2,
+              width: _effectsTimelineLineWidth,
               color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
             ),
           ),
@@ -3371,7 +3379,10 @@ class _EffectsTimeline extends StatelessWidget {
             )
           else
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              padding: const EdgeInsets.symmetric(
+                horizontal: _effectsTimelineHorizontalPadding,
+                vertical: 16,
+              ),
               child: Column(
                 children: [
                   for (var index = 0; index < entries.length; index++) ...[
@@ -3403,8 +3414,8 @@ class _EffectRow extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          width: 14,
-          height: 14,
+          width: _effectsTimelineDotSize,
+          height: _effectsTimelineDotSize,
           margin: const EdgeInsets.only(top: 18),
           decoration: BoxDecoration(
             color: tone,
