@@ -506,35 +506,58 @@ class _SideNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _GlassCard(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Panels', style: Theme.of(context).textTheme.titleSmall),
-          const SizedBox(height: 12),
-          for (final item in _navItems)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: _NavItem(
-                item: item,
-                isActive: item.label == selectedLabel,
-                onTap: () => onSelect(item),
+    return SizedBox.expand(
+      child: _GlassCard(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Navigation', style: Theme.of(context).textTheme.titleSmall),
+            const SizedBox(height: 12),
+            Expanded(
+              child: Scrollbar(
+                thumbVisibility: true,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Panels',
+                        style: Theme.of(context).textTheme.labelMedium,
+                      ),
+                      const SizedBox(height: 10),
+                      for (final item in _navItems)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: _NavItem(
+                            item: item,
+                            isActive: item.label == selectedLabel,
+                            onTap: () => onSelect(item),
+                          ),
+                        ),
+                      const Divider(height: 32),
+                      Text(
+                        'Utilities',
+                        style: Theme.of(context).textTheme.labelMedium,
+                      ),
+                      const SizedBox(height: 10),
+                      for (final item in _utilityItems)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: _NavItem(
+                            item: item,
+                            isActive: item.label == selectedLabel,
+                            onTap: () => onSelect(item),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
               ),
             ),
-          const Divider(height: 32),
-          Text('Utilities', style: Theme.of(context).textTheme.titleSmall),
-          const SizedBox(height: 12),
-          for (final item in _utilityItems)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: _NavItem(
-                item: item,
-                isActive: item.label == selectedLabel,
-                onTap: () => onSelect(item),
-              ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
