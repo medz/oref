@@ -1,6 +1,5 @@
 import "package:alien_signals/alien_signals.dart" as alien;
 import "package:alien_signals/preset.dart" as alien;
-import 'package:alien_signals/system.dart' as alien show ReactiveFlags;
 import "package:flutter/widgets.dart";
 
 import "context.dart";
@@ -58,6 +57,7 @@ class _OrefComputed<T> extends alien.ComputedNode<T>
 
   T Function(T?) fn;
   ComputedHandle? _devtools;
+  bool _hasEvaluated = false;
 
   void attachDevTools(ComputedHandle handle) {
     _devtools = handle;
@@ -77,14 +77,14 @@ class _OrefComputed<T> extends alien.ComputedNode<T>
 
   @override
   T get() {
-    final isInitial = flags == alien.ReactiveFlags.none;
-    if (!isInitial) {
+    if (_hasEvaluated) {
       return super.get();
     }
     final handle = _devtools;
     final token = handle?.start();
     final value = super.get();
     handle?.finish(token, currentValue);
+    _hasEvaluated = true;
     return value;
   }
 

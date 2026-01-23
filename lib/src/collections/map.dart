@@ -19,16 +19,22 @@ class ReactiveMap<K, V> extends MapBase<K, V>
   /// Creates a widget scoped [ReactiveMap].
   factory ReactiveMap.scoped(BuildContext context, Map<K, V> source) {
     final map = useMemoized(context, () => ReactiveMap(source));
-    map._devtools = devtools.bindCollection(map, context: context, type: 'Map');
-    if (!map._devtoolsDisposerRegistered) {
-      registerElementDisposer(context, map._devtools.dispose);
-      map._devtoolsDisposerRegistered = true;
+    if (map._devtools == null) {
+      map._devtools = devtools.bindCollection(
+        map,
+        context: context,
+        type: 'Map',
+      );
+      if (!map._devtoolsDisposerRegistered) {
+        registerElementDisposer(context, map._devtools!.dispose);
+        map._devtoolsDisposerRegistered = true;
+      }
     }
     return map;
   }
 
   final Map<K, V> _source;
-  late CollectionHandle _devtools;
+  CollectionHandle? _devtools;
   bool _devtoolsDisposerRegistered = false;
 
   @override
@@ -49,7 +55,7 @@ class ReactiveMap<K, V> extends MapBase<K, V>
     final previous = _source[key];
     _source[key] = value;
     trigger();
-    _devtools.mutate(
+    _devtools?.mutate(
       operation: exists ? 'Replace' : 'Add',
       deltas: [
         CollectionDelta(
@@ -66,7 +72,7 @@ class ReactiveMap<K, V> extends MapBase<K, V>
   void clear() {
     _source.clear();
     trigger();
-    _devtools.mutate(
+    _devtools?.mutate(
       operation: 'Clear',
       deltas: const [CollectionDelta(kind: 'remove', label: 'all entries')],
     );
@@ -78,7 +84,7 @@ class ReactiveMap<K, V> extends MapBase<K, V>
     final result = _source.remove(key);
     trigger();
     if (existed) {
-      _devtools.mutate(
+      _devtools?.mutate(
         operation: 'Remove',
         deltas: [CollectionDelta(kind: 'remove', label: '$key')],
       );
@@ -96,7 +102,7 @@ class ReactiveMap<K, V> extends MapBase<K, V>
 
     if (shouldTrigger) {
       trigger();
-      _devtools.mutate(
+      _devtools?.mutate(
         operation: 'Add',
         deltas: [CollectionDelta(kind: 'add', label: '$key: $result')],
       );

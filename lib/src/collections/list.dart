@@ -19,20 +19,22 @@ class ReactiveList<T> extends ListBase<T>
   /// Created a widget scoped [ReactiveList] instance.
   factory ReactiveList.scoped(BuildContext context, Iterable<T> elements) {
     final list = useMemoized(context, () => ReactiveList(elements));
-    list._devtools = devtools.bindCollection(
-      list,
-      context: context,
-      type: 'List',
-    );
-    if (!list._devtoolsDisposerRegistered) {
-      registerElementDisposer(context, list._devtools.dispose);
-      list._devtoolsDisposerRegistered = true;
+    if (list._devtools == null) {
+      list._devtools = devtools.bindCollection(
+        list,
+        context: context,
+        type: 'List',
+      );
+      if (!list._devtoolsDisposerRegistered) {
+        registerElementDisposer(context, list._devtools!.dispose);
+        list._devtoolsDisposerRegistered = true;
+      }
     }
     return list;
   }
 
   final List<T> _source;
-  late CollectionHandle _devtools;
+  CollectionHandle? _devtools;
   bool _devtoolsDisposerRegistered = false;
 
   @override
@@ -45,7 +47,7 @@ class ReactiveList<T> extends ListBase<T>
   set length(value) {
     _source.length = value;
     trigger();
-    _devtools.mutate(
+    _devtools?.mutate(
       operation: 'Resize',
       deltas: [CollectionDelta(kind: 'update', label: 'length -> $value')],
     );
@@ -62,7 +64,7 @@ class ReactiveList<T> extends ListBase<T>
     final previous = index < _source.length ? _source[index] : null;
     _source[index] = value;
     trigger();
-    _devtools.mutate(
+    _devtools?.mutate(
       operation: 'Replace',
       deltas: [
         CollectionDelta(
@@ -80,7 +82,7 @@ class ReactiveList<T> extends ListBase<T>
     /// So we directly operate on the source.
     _source.add(element);
     trigger();
-    _devtools.mutate(
+    _devtools?.mutate(
       operation: 'Add',
       deltas: [CollectionDelta(kind: 'add', label: element.toString())],
     );
@@ -92,7 +94,7 @@ class ReactiveList<T> extends ListBase<T>
     trigger();
     final preview = iterable.take(3).map((item) => item.toString()).toList();
     final deltaLabel = preview.isEmpty ? 'items' : preview.join(', ');
-    _devtools.mutate(
+    _devtools?.mutate(
       operation: 'Add',
       deltas: [CollectionDelta(kind: 'add', label: deltaLabel)],
       note: iterable.length > preview.length
@@ -105,7 +107,7 @@ class ReactiveList<T> extends ListBase<T>
   void insert(int index, T element) {
     _source.insert(index, element);
     trigger();
-    _devtools.mutate(
+    _devtools?.mutate(
       operation: 'Add',
       deltas: [CollectionDelta(kind: 'add', label: '[$index] $element')],
     );
@@ -116,7 +118,7 @@ class ReactiveList<T> extends ListBase<T>
     final result = _source.remove(element);
     trigger();
     if (result) {
-      _devtools.mutate(
+      _devtools?.mutate(
         operation: 'Remove',
         deltas: [CollectionDelta(kind: 'remove', label: element.toString())],
       );
@@ -128,7 +130,7 @@ class ReactiveList<T> extends ListBase<T>
   T removeAt(int index) {
     final result = _source.removeAt(index);
     trigger();
-    _devtools.mutate(
+    _devtools?.mutate(
       operation: 'Remove',
       deltas: [CollectionDelta(kind: 'remove', label: '[$index] $result')],
     );
@@ -139,7 +141,7 @@ class ReactiveList<T> extends ListBase<T>
   void clear() {
     _source.clear();
     trigger();
-    _devtools.mutate(
+    _devtools?.mutate(
       operation: 'Clear',
       deltas: const [CollectionDelta(kind: 'remove', label: 'all items')],
     );

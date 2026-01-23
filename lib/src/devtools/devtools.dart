@@ -467,13 +467,18 @@ class _DevTools implements DevToolsBinding {
     int? performanceLimit,
     int? valuePreviewLength,
   }) {
+    int? clampNonNegative(int? value) {
+      if (value == null) return null;
+      return value < 0 ? 0 : value;
+    }
+
     final updated = _settings.copyWith(
       enabled: enabled,
-      sampleIntervalMs: sampleIntervalMs,
-      timelineLimit: timelineLimit,
-      batchLimit: batchLimit,
-      performanceLimit: performanceLimit,
-      valuePreviewLength: valuePreviewLength,
+      sampleIntervalMs: clampNonNegative(sampleIntervalMs),
+      timelineLimit: clampNonNegative(timelineLimit),
+      batchLimit: clampNonNegative(batchLimit),
+      performanceLimit: clampNonNegative(performanceLimit),
+      valuePreviewLength: clampNonNegative(valuePreviewLength),
     );
     _settings = updated;
   }
@@ -810,10 +815,10 @@ class _DevTools implements DevToolsBinding {
   }
 
   void _recordBatchEnd() {
-    if (!_shouldTrackEvents()) return;
     if (_batchStack.isEmpty) return;
     final session = _batchStack.removeLast();
     session.endedAt = _nowMs();
+    if (!_shouldTrackEvents()) return;
     final endedAt = session.endedAt ?? session.startedAt;
     final record = BatchSample(
       id: session.id,
