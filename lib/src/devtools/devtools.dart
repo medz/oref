@@ -79,12 +79,16 @@ abstract class SignalHandle {
 
 abstract class ComputedHandle {
   bool get isNew;
+  Object? start();
+  void finish(Object? token, Object? value);
   void run(Object? value, int durationMs);
   void dispose();
 }
 
 abstract class EffectHandle {
   bool get isNew;
+  Object? start();
+  void finish(Object? token);
   void run(int durationMs);
   void dispose();
 }
@@ -126,6 +130,12 @@ class _NoopComputedHandle implements ComputedHandle {
   bool get isNew => false;
 
   @override
+  Object? start() => null;
+
+  @override
+  void finish(Object? token, Object? value) {}
+
+  @override
   void run(Object? value, int durationMs) {}
 
   @override
@@ -137,6 +147,12 @@ class _NoopEffectHandle implements EffectHandle {
 
   @override
   bool get isNew => false;
+
+  @override
+  Object? start() => null;
+
+  @override
+  void finish(Object? token) {}
 
   @override
   void run(int durationMs) {}
@@ -192,6 +208,16 @@ class _ComputedHandle implements ComputedHandle {
   final bool isNew;
 
   @override
+  Object? start() => _devtools._startTiming();
+
+  @override
+  void finish(Object? token, Object? value) {
+    if (token is! Stopwatch) return;
+    token.stop();
+    _devtools._recordComputedRun(_node, value, token.elapsedMilliseconds);
+  }
+
+  @override
   void run(Object? value, int durationMs) {
     _devtools._recordComputedRun(_node, value, durationMs);
   }
@@ -210,6 +236,16 @@ class _EffectHandle implements EffectHandle {
 
   @override
   final bool isNew;
+
+  @override
+  Object? start() => _devtools._startTiming();
+
+  @override
+  void finish(Object? token) {
+    if (token is! Stopwatch) return;
+    token.stop();
+    _devtools._recordEffectRun(_node, token.elapsedMilliseconds);
+  }
 
   @override
   void run(int durationMs) {
@@ -372,6 +408,11 @@ class _DevTools implements DevToolsBinding {
       _ensureInitialized();
     }
     return _initialized && _settings.enabled;
+  }
+
+  Object? _startTiming() {
+    if (!_shouldTrack()) return null;
+    return Stopwatch()..start();
   }
 
   void _ensureInitialized() {

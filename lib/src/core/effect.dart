@@ -213,12 +213,12 @@ VoidCallback _wrapEffectCallback(
     final effect = effectGetter();
     effect.cleanup?.call();
     effect.cleanup = null;
-    final stopwatch = Stopwatch()..start();
+    final handle = effect._devtools;
+    final token = handle?.start();
     try {
       callback();
     } finally {
-      stopwatch.stop();
-      effect._devtools?.run(stopwatch.elapsedMilliseconds);
+      handle?.finish(token);
     }
   };
 }

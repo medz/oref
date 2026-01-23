@@ -68,10 +68,10 @@ class _OrefComputed<T> extends alien.ComputedNode<T>
 
   @override
   bool didUpdate() {
-    final stopwatch = Stopwatch()..start();
+    final handle = _devtools;
+    final token = handle?.start();
     final changed = super.didUpdate();
-    stopwatch.stop();
-    _devtools?.run(currentValue, stopwatch.elapsedMilliseconds);
+    handle?.finish(token, currentValue);
     return changed;
   }
 
@@ -81,10 +81,10 @@ class _OrefComputed<T> extends alien.ComputedNode<T>
     if (!isInitial) {
       return super.get();
     }
-    final stopwatch = Stopwatch()..start();
+    final handle = _devtools;
+    final token = handle?.start();
     final value = super.get();
-    stopwatch.stop();
-    _devtools?.run(currentValue, stopwatch.elapsedMilliseconds);
+    handle?.finish(token, currentValue);
     return value;
   }
 
