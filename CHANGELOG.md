@@ -1,3 +1,10 @@
+## 2.6.2
+
+### Features
+
+- Add `onMounted` widget lifecycle hook to run once after the first frame.
+- Add `onUnmounted` widget lifecycle hook to run once when a widget unmounts.
+
 ## 2.6.1
 
 ### Bug Fixes
