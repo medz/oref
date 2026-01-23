@@ -506,6 +506,12 @@ class _SideNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final labelStyle = Theme.of(context).textTheme.labelMedium;
+    final brightness = Theme.of(context).brightness;
+    final headerBackground = brightness == Brightness.dark
+        ? Colors.black.withOpacity(0.18)
+        : Colors.white.withOpacity(0.7);
+    final headerBorder = Theme.of(context).dividerColor.withOpacity(0.4);
     return SizedBox.expand(
       child: _GlassCard(
         padding: const EdgeInsets.all(16),
@@ -517,42 +523,70 @@ class _SideNav extends StatelessWidget {
             Expanded(
               child: Scrollbar(
                 thumbVisibility: true,
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.only(right: 6),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Panels',
-                        style: Theme.of(context).textTheme.labelMedium,
-                      ),
-                      const SizedBox(height: 10),
-                      for (final item in _navItems)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: _NavItem(
-                            item: item,
-                            isActive: item.label == selectedLabel,
-                            onTap: () => onSelect(item),
-                          ),
+                child: CustomScrollView(
+                  slivers: [
+                    SliverPadding(
+                      padding: const EdgeInsets.only(right: 6),
+                      sliver: SliverPersistentHeader(
+                        pinned: true,
+                        delegate: _StickyHeaderDelegate(
+                          label: 'Panels',
+                          textStyle: labelStyle,
+                          background: headerBackground,
+                          borderColor: headerBorder,
                         ),
-                      const Divider(height: 32),
-                      Text(
-                        'Utilities',
-                        style: Theme.of(context).textTheme.labelMedium,
                       ),
-                      const SizedBox(height: 10),
-                      for (final item in _utilityItems)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: _NavItem(
-                            item: item,
-                            isActive: item.label == selectedLabel,
-                            onTap: () => onSelect(item),
-                          ),
+                    ),
+                    SliverPadding(
+                      padding: const EdgeInsets.only(right: 6, top: 8),
+                      sliver: SliverList(
+                        delegate: SliverChildBuilderDelegate((context, index) {
+                          final item = _navItems[index];
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: _NavItem(
+                              item: item,
+                              isActive: item.label == selectedLabel,
+                              onTap: () => onSelect(item),
+                            ),
+                          );
+                        }, childCount: _navItems.length),
+                      ),
+                    ),
+                    const SliverPadding(
+                      padding: EdgeInsets.only(top: 8),
+                      sliver: SliverToBoxAdapter(child: SizedBox(height: 4)),
+                    ),
+                    SliverPadding(
+                      padding: const EdgeInsets.only(right: 6),
+                      sliver: SliverPersistentHeader(
+                        pinned: true,
+                        delegate: _StickyHeaderDelegate(
+                          label: 'Utilities',
+                          textStyle: labelStyle,
+                          background: headerBackground,
+                          borderColor: headerBorder,
                         ),
-                    ],
-                  ),
+                      ),
+                    ),
+                    SliverPadding(
+                      padding: const EdgeInsets.only(right: 6, top: 8),
+                      sliver: SliverList(
+                        delegate: SliverChildBuilderDelegate((context, index) {
+                          final item = _utilityItems[index];
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: _NavItem(
+                              item: item,
+                              isActive: item.label == selectedLabel,
+                              onTap: () => onSelect(item),
+                            ),
+                          );
+                        }, childCount: _utilityItems.length),
+                      ),
+                    ),
+                    const SliverToBoxAdapter(child: SizedBox(height: 8)),
+                  ],
                 ),
               ),
             ),
@@ -560,6 +594,51 @@ class _SideNav extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _StickyHeaderDelegate extends SliverPersistentHeaderDelegate {
+  _StickyHeaderDelegate({
+    required this.label,
+    required this.textStyle,
+    required this.background,
+    required this.borderColor,
+  });
+
+  final String label;
+  final TextStyle? textStyle;
+  final Color background;
+  final Color borderColor;
+
+  @override
+  double get minExtent => 36;
+
+  @override
+  double get maxExtent => 36;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return Container(
+      alignment: Alignment.centerLeft,
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      decoration: BoxDecoration(
+        color: background,
+        border: Border(bottom: BorderSide(color: borderColor)),
+      ),
+      child: Text(label, style: textStyle),
+    );
+  }
+
+  @override
+  bool shouldRebuild(covariant _StickyHeaderDelegate oldDelegate) {
+    return label != oldDelegate.label ||
+        textStyle != oldDelegate.textStyle ||
+        background != oldDelegate.background ||
+        borderColor != oldDelegate.borderColor;
   }
 }
 
