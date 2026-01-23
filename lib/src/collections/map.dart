@@ -5,6 +5,7 @@ import 'package:oref/oref.dart';
 
 import '../core/_element_disposer.dart';
 import '../devtools/devtools.dart';
+import '../devtools/protocol.dart';
 
 /// A reactive map that tracks changes to its source map.
 class ReactiveMap<K, V> extends MapBase<K, V>

@@ -5,6 +5,7 @@ import 'package:oref/oref.dart';
 
 import '../core/_element_disposer.dart';
 import '../devtools/devtools.dart';
+import '../devtools/protocol.dart';
 
 /// A reactive [List] implementation.
 class ReactiveList<T> extends ListBase<T>

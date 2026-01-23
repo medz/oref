@@ -5,6 +5,7 @@ import 'package:oref/oref.dart';
 
 import '../core/_element_disposer.dart';
 import '../devtools/devtools.dart';
+import '../devtools/protocol.dart';
 
 /// A reactive set that tracks changes to its elements.
 class ReactiveSet<T> extends SetBase<T>

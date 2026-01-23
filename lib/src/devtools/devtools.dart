@@ -7,71 +7,7 @@ import 'package:alien_signals/system.dart' as alien_system;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
-const int _protocolVersion = 1;
-const String _servicePrefix = 'ext.oref';
-const String _snapshotService = '$_servicePrefix.snapshot';
-const String _settingsService = '$_servicePrefix.settings';
-const String _updateSettingsService = '$_servicePrefix.updateSettings';
-const String _clearService = '$_servicePrefix.clear';
-
-@immutable
-class OrefDevToolsSettings {
-  const OrefDevToolsSettings({
-    this.enabled = true,
-    this.sampleIntervalMs = 1000,
-    this.timelineLimit = 200,
-    this.batchLimit = 120,
-    this.performanceLimit = 180,
-    this.valuePreviewLength = 120,
-  });
-
-  final bool enabled;
-  final int sampleIntervalMs;
-  final int timelineLimit;
-  final int batchLimit;
-  final int performanceLimit;
-  final int valuePreviewLength;
-
-  OrefDevToolsSettings copyWith({
-    bool? enabled,
-    int? sampleIntervalMs,
-    int? timelineLimit,
-    int? batchLimit,
-    int? performanceLimit,
-    int? valuePreviewLength,
-  }) {
-    return OrefDevToolsSettings(
-      enabled: enabled ?? this.enabled,
-      sampleIntervalMs: sampleIntervalMs ?? this.sampleIntervalMs,
-      timelineLimit: timelineLimit ?? this.timelineLimit,
-      batchLimit: batchLimit ?? this.batchLimit,
-      performanceLimit: performanceLimit ?? this.performanceLimit,
-      valuePreviewLength: valuePreviewLength ?? this.valuePreviewLength,
-    );
-  }
-
-  Map<String, Object?> toJson() {
-    return {
-      'enabled': enabled,
-      'sampleIntervalMs': sampleIntervalMs,
-      'timelineLimit': timelineLimit,
-      'batchLimit': batchLimit,
-      'performanceLimit': performanceLimit,
-      'valuePreviewLength': valuePreviewLength,
-    };
-  }
-
-  static OrefDevToolsSettings fromJson(Map<String, Object?> json) {
-    return OrefDevToolsSettings(
-      enabled: _readBool(json['enabled'], fallback: true),
-      sampleIntervalMs: _readInt(json['sampleIntervalMs'], fallback: 1000),
-      timelineLimit: _readInt(json['timelineLimit'], fallback: 200),
-      batchLimit: _readInt(json['batchLimit'], fallback: 120),
-      performanceLimit: _readInt(json['performanceLimit'], fallback: 180),
-      valuePreviewLength: _readInt(json['valuePreviewLength'], fallback: 120),
-    );
-  }
-}
+import 'protocol.dart';
 
 void registerOrefDevToolsServiceExtensions() {
   OrefDevTools._instance._ensureInitialized();
@@ -111,7 +47,7 @@ class OrefDevTools {
     String? debugScope,
     String? debugNote,
   }) {
-    return _instance.registerSignal(
+    return _instance._registerSignal(
       node,
       context: context,
       debugLabel: debugLabel,
@@ -122,11 +58,11 @@ class OrefDevTools {
   }
 
   static void markSignalDisposed(alien_system.ReactiveNode node) {
-    _instance.markSignalDisposed(node);
+    _instance._markSignalDisposed(node);
   }
 
   static void recordSignalWrite(alien_system.ReactiveNode node, Object? value) {
-    _instance.recordSignalWrite(node, value);
+    _instance._recordSignalWrite(node, value);
   }
 
   static bool registerComputed(
@@ -137,7 +73,7 @@ class OrefDevTools {
     String? debugScope,
     String? debugNote,
   }) {
-    return _instance.registerComputed(
+    return _instance._registerComputed(
       node,
       context: context,
       debugLabel: debugLabel,
@@ -148,7 +84,7 @@ class OrefDevTools {
   }
 
   static void markComputedDisposed(alien_system.ReactiveNode node) {
-    _instance.markComputedDisposed(node);
+    _instance._markComputedDisposed(node);
   }
 
   static void recordComputedRun(
@@ -156,7 +92,7 @@ class OrefDevTools {
     Object? value,
     int durationMs,
   ) {
-    _instance.recordComputedRun(node, value, durationMs);
+    _instance._recordComputedRun(node, value, durationMs);
   }
 
   static bool registerEffect(
@@ -168,7 +104,7 @@ class OrefDevTools {
     String? debugType,
     String? debugNote,
   }) {
-    return _instance.registerEffect(
+    return _instance._registerEffect(
       node,
       context: context,
       debugLabel: debugLabel,
@@ -180,11 +116,11 @@ class OrefDevTools {
   }
 
   static void recordEffectRun(alien_system.ReactiveNode node, int durationMs) {
-    _instance.recordEffectRun(node, durationMs);
+    _instance._recordEffectRun(node, durationMs);
   }
 
   static void markEffectDisposed(alien_system.ReactiveNode node) {
-    _instance.markEffectDisposed(node);
+    _instance._markEffectDisposed(node);
   }
 
   static bool registerCollection(
@@ -196,7 +132,7 @@ class OrefDevTools {
     String? debugScope,
     String? debugNote,
   }) {
-    return _instance.registerCollection(
+    return _instance._registerCollection(
       collection,
       context: context,
       type: type,
@@ -208,7 +144,7 @@ class OrefDevTools {
   }
 
   static void markCollectionDisposed(Object collection) {
-    _instance.markCollectionDisposed(collection);
+    _instance._markCollectionDisposed(collection);
   }
 
   static void recordCollectionMutation(
@@ -217,7 +153,7 @@ class OrefDevTools {
     required List<OrefCollectionDelta> deltas,
     String? note,
   }) {
-    _instance.recordCollectionMutation(
+    _instance._recordCollectionMutation(
       collection,
       operation: operation,
       deltas: deltas,
@@ -226,16 +162,16 @@ class OrefDevTools {
   }
 
   static void recordBatchStart() {
-    _instance.recordBatchStart();
+    _instance._recordBatchStart();
   }
 
   static void recordBatchEnd() {
-    _instance.recordBatchEnd();
+    _instance._recordBatchEnd();
   }
 
-  static Map<String, Object?> snapshot() => _instance.snapshot();
+  static OrefSnapshot snapshot() => _instance._snapshot();
 
-  static void clearHistory() => _instance.clearHistory();
+  static void clearHistory() => _instance._clearHistory();
 
   final Expando<int> _signalIds = Expando<int>('oref_signal');
   final Expando<int> _computedIds = Expando<int>('oref_computed');
@@ -247,9 +183,9 @@ class OrefDevTools {
   final Map<int, _EffectRecord> _effects = {};
   final Map<int, _CollectionRecord> _collections = {};
 
-  final List<_TimelineEvent> _timeline = [];
-  final List<_BatchRecord> _batches = [];
-  final List<_PerformanceSample> _performance = [];
+  final List<OrefTimelineEvent> _timeline = [];
+  final List<OrefBatch> _batches = [];
+  final List<OrefPerformanceSample> _performance = [];
 
   final List<_BatchSession> _batchStack = [];
 
@@ -313,7 +249,7 @@ class OrefDevTools {
     }
   }
 
-  bool registerSignal(
+  bool _registerSignal(
     alien_system.ReactiveNode node, {
     BuildContext? context,
     String? debugLabel,
@@ -345,13 +281,13 @@ class OrefDevTools {
     return true;
   }
 
-  void markSignalDisposed(alien_system.ReactiveNode node) {
+  void _markSignalDisposed(alien_system.ReactiveNode node) {
     final id = _signalIds[node];
     if (id == null) return;
     _signals[id]?.disposed = true;
   }
 
-  void recordSignalWrite(alien_system.ReactiveNode node, Object? value) {
+  void _recordSignalWrite(alien_system.ReactiveNode node, Object? value) {
     if (!_shouldTrack()) return;
     final record = _signals[_signalIds[node] ?? _registerSignalFallback(node)];
     if (record == null) return;
@@ -361,7 +297,7 @@ class OrefDevTools {
     _signalWrites++;
 
     _timeline.add(
-      _TimelineEvent(
+      OrefTimelineEvent(
         id: _nextTimelineId++,
         timestamp: record.updatedAt,
         type: 'signal',
@@ -380,7 +316,7 @@ class OrefDevTools {
     }
   }
 
-  bool registerComputed(
+  bool _registerComputed(
     alien_system.ReactiveNode node, {
     BuildContext? context,
     String? debugLabel,
@@ -414,13 +350,13 @@ class OrefDevTools {
     return true;
   }
 
-  void markComputedDisposed(alien_system.ReactiveNode node) {
+  void _markComputedDisposed(alien_system.ReactiveNode node) {
     final id = _computedIds[node];
     if (id == null) return;
     _computed[id]?.disposed = true;
   }
 
-  void recordComputedRun(
+  void _recordComputedRun(
     alien_system.ReactiveNode node,
     Object? value,
     int durationMs,
@@ -436,7 +372,7 @@ class OrefDevTools {
     _computedRuns++;
 
     _timeline.add(
-      _TimelineEvent(
+      OrefTimelineEvent(
         id: _nextTimelineId++,
         timestamp: record.updatedAt,
         type: 'computed',
@@ -448,7 +384,7 @@ class OrefDevTools {
     _trimList(_timeline, _settings.timelineLimit);
   }
 
-  bool registerEffect(
+  bool _registerEffect(
     alien_system.ReactiveNode node, {
     BuildContext? context,
     String? debugLabel,
@@ -478,7 +414,7 @@ class OrefDevTools {
     return true;
   }
 
-  void recordEffectRun(alien_system.ReactiveNode node, int durationMs) {
+  void _recordEffectRun(alien_system.ReactiveNode node, int durationMs) {
     if (!_shouldTrack()) return;
     final record = _effects[_effectIds[node] ?? _registerEffectFallback(node)];
     if (record == null) return;
@@ -491,7 +427,7 @@ class OrefDevTools {
     _effectDurationCount++;
 
     _timeline.add(
-      _TimelineEvent(
+      OrefTimelineEvent(
         id: _nextTimelineId++,
         timestamp: record.updatedAt,
         type: 'effect',
@@ -503,13 +439,13 @@ class OrefDevTools {
     _trimList(_timeline, _settings.timelineLimit);
   }
 
-  void markEffectDisposed(alien_system.ReactiveNode node) {
+  void _markEffectDisposed(alien_system.ReactiveNode node) {
     final id = _effectIds[node];
     if (id == null) return;
     _effects[id]?.disposed = true;
   }
 
-  bool registerCollection(
+  bool _registerCollection(
     Object collection, {
     BuildContext? context,
     required String type,
@@ -553,13 +489,13 @@ class OrefDevTools {
     return true;
   }
 
-  void markCollectionDisposed(Object collection) {
+  void _markCollectionDisposed(Object collection) {
     final id = _collectionIds[collection];
     if (id == null) return;
     _collections[id]?.disposed = true;
   }
 
-  void recordCollectionMutation(
+  void _recordCollectionMutation(
     Object collection, {
     required String operation,
     required List<OrefCollectionDelta> deltas,
@@ -578,7 +514,7 @@ class OrefDevTools {
     _collectionMutations++;
 
     _timeline.add(
-      _TimelineEvent(
+      OrefTimelineEvent(
         id: _nextTimelineId++,
         timestamp: record.updatedAt,
         type: 'collection',
@@ -590,7 +526,7 @@ class OrefDevTools {
     _trimList(_timeline, _settings.timelineLimit);
   }
 
-  void recordBatchStart() {
+  void _recordBatchStart() {
     if (!_shouldTrack()) return;
     final session = _BatchSession(
       id: _nextBatchId++,
@@ -600,17 +536,25 @@ class OrefDevTools {
     _batchStack.add(session);
   }
 
-  void recordBatchEnd() {
+  void _recordBatchEnd() {
     if (!_shouldTrack()) return;
     if (_batchStack.isEmpty) return;
     final session = _batchStack.removeLast();
     session.endedAt = _nowMs();
-    final record = _BatchRecord.fromSession(session);
+    final endedAt = session.endedAt ?? session.startedAt;
+    final record = OrefBatch(
+      id: session.id,
+      depth: session.depth,
+      startedAt: session.startedAt,
+      endedAt: endedAt,
+      durationMs: endedAt - session.startedAt,
+      writeCount: session.writeCount,
+    );
     _batches.add(record);
     _trimList(_batches, _settings.batchLimit);
 
     _timeline.add(
-      _TimelineEvent(
+      OrefTimelineEvent(
         id: _nextTimelineId++,
         timestamp: record.endedAt,
         type: 'batch',
@@ -622,40 +566,40 @@ class OrefDevTools {
     _trimList(_timeline, _settings.timelineLimit);
   }
 
-  Map<String, Object?> snapshot() {
+  OrefSnapshot _snapshot() {
     if (!_initialized) {
-      return {
-        'protocolVersion': _protocolVersion,
-        'timestamp': _nowMs(),
-        'settings': _settings.toJson(),
-        'stats': _buildStats(),
-        'signals': <Object?>[],
-        'computed': <Object?>[],
-        'effects': <Object?>[],
-        'collections': <Object?>[],
-        'batches': <Object?>[],
-        'timeline': <Object?>[],
-        'performance': <Object?>[],
-      };
+      return OrefSnapshot(
+        protocolVersion: OrefDevToolsProtocol.version,
+        timestamp: _nowMs(),
+        settings: _settings,
+        stats: const OrefStats(),
+        signals: const [],
+        computed: const [],
+        effects: const [],
+        collections: const [],
+        batches: const [],
+        timeline: const [],
+        performance: const [],
+      );
     }
 
     _purgeCollected();
-    return {
-      'protocolVersion': _protocolVersion,
-      'timestamp': _nowMs(),
-      'settings': _settings.toJson(),
-      'stats': _buildStats(),
-      'signals': _signals.values.map(_signalToJson).toList(),
-      'computed': _computed.values.map(_computedToJson).toList(),
-      'effects': _effects.values.map(_effectToJson).toList(),
-      'collections': _collections.values.map(_collectionToJson).toList(),
-      'batches': _batches.map((record) => record.toJson()).toList(),
-      'timeline': _timeline.map((event) => event.toJson()).toList(),
-      'performance': _performance.map((sample) => sample.toJson()).toList(),
-    };
+    return OrefSnapshot(
+      protocolVersion: OrefDevToolsProtocol.version,
+      timestamp: _nowMs(),
+      settings: _settings,
+      stats: _buildStats(),
+      signals: _signals.values.map(_signalToProtocol).toList(),
+      computed: _computed.values.map(_computedToProtocol).toList(),
+      effects: _effects.values.map(_effectToProtocol).toList(),
+      collections: _collections.values.map(_collectionToProtocol).toList(),
+      batches: List<OrefBatch>.from(_batches),
+      timeline: List<OrefTimelineEvent>.from(_timeline),
+      performance: List<OrefPerformanceSample>.from(_performance),
+    );
   }
 
-  void clearHistory() {
+  void _clearHistory() {
     _timeline.clear();
     _batches.clear();
     _performance.clear();
@@ -673,31 +617,41 @@ class OrefDevTools {
     _extensionsRegistered = true;
 
     try {
-      developer.registerExtension(_snapshotService, (method, params) async {
-        final payload = jsonEncode(snapshot());
-        return developer.ServiceExtensionResponse.result(payload);
-      });
-      developer.registerExtension(_settingsService, (method, params) async {
-        final payload = jsonEncode(_settings.toJson());
-        return developer.ServiceExtensionResponse.result(payload);
-      });
-      developer.registerExtension(_updateSettingsService, (
+      developer.registerExtension(OrefDevToolsProtocol.snapshotService, (
         method,
         params,
       ) async {
+        final payload = jsonEncode(_snapshot().toJson());
+        return developer.ServiceExtensionResponse.result(payload);
+      });
+      developer.registerExtension(OrefDevToolsProtocol.settingsService, (
+        method,
+        params,
+      ) async {
+        final payload = jsonEncode(_settings.toJson());
+        return developer.ServiceExtensionResponse.result(payload);
+      });
+      developer.registerExtension(OrefDevToolsProtocol.updateSettingsService, (
+        method,
+        params,
+      ) async {
+        final merged = OrefDevToolsSettings.mergeArgs(_settings, params);
         _configure(
-          enabled: _parseBool(params['enabled']),
-          sampleIntervalMs: _parseInt(params['sampleIntervalMs']),
-          timelineLimit: _parseInt(params['timelineLimit']),
-          batchLimit: _parseInt(params['batchLimit']),
-          performanceLimit: _parseInt(params['performanceLimit']),
-          valuePreviewLength: _parseInt(params['valuePreviewLength']),
+          enabled: merged.enabled,
+          sampleIntervalMs: merged.sampleIntervalMs,
+          timelineLimit: merged.timelineLimit,
+          batchLimit: merged.batchLimit,
+          performanceLimit: merged.performanceLimit,
+          valuePreviewLength: merged.valuePreviewLength,
         );
         final payload = jsonEncode(_settings.toJson());
         return developer.ServiceExtensionResponse.result(payload);
       });
-      developer.registerExtension(_clearService, (method, params) async {
-        clearHistory();
+      developer.registerExtension(OrefDevToolsProtocol.clearService, (
+        method,
+        params,
+      ) async {
+        _clearHistory();
         final payload = jsonEncode({'cleared': true});
         return developer.ServiceExtensionResponse.result(payload);
       });
@@ -721,7 +675,7 @@ class OrefDevTools {
     final avgEffect = _effectDurationCount == 0
         ? 0.0
         : _effectDurationTotalMs / _effectDurationCount;
-    final sample = _PerformanceSample(
+    final sample = OrefPerformanceSample(
       timestamp: now,
       signalCount: _signals.length,
       computedCount: _computed.length,
@@ -746,121 +700,121 @@ class OrefDevTools {
     _effectDurationCount = 0;
   }
 
-  Map<String, Object?> _buildStats() {
-    return {
-      'signals': _signals.length,
-      'computed': _computed.length,
-      'effects': _effects.length,
-      'collections': _collections.length,
-      'batches': _batches.length,
-      'timelineEvents': _timeline.length,
-      'signalWrites': _signalWrites,
-      'effectRuns': _effectRuns,
-      'computedRuns': _computedRuns,
-      'collectionMutations': _collectionMutations,
-    };
+  OrefStats _buildStats() {
+    return OrefStats(
+      signals: _signals.length,
+      computed: _computed.length,
+      effects: _effects.length,
+      collections: _collections.length,
+      batches: _batches.length,
+      timelineEvents: _timeline.length,
+      signalWrites: _signalWrites,
+      effectRuns: _effectRuns,
+      computedRuns: _computedRuns,
+      collectionMutations: _collectionMutations,
+    );
   }
 
-  Map<String, Object?> _signalToJson(_SignalRecord record) {
+  OrefSignal _signalToProtocol(_SignalRecord record) {
     final node = record.node.target;
     if (node == null) {
       record.disposed = true;
     }
-    return {
-      'id': record.id,
-      'label': record.label,
-      'owner': record.owner,
-      'scope': record.scope,
-      'type': record.type,
-      'value': record.value,
-      'status': _statusForNode(node, record.disposed),
-      'updatedAt': record.updatedAt,
-      'writes': record.writes,
-      'listeners': node == null ? 0 : _countSubs(node),
-      'dependencies': node == null ? 0 : _countDeps(node),
-      'note': record.note,
-    };
+    return OrefSignal(
+      id: record.id,
+      label: record.label,
+      owner: record.owner,
+      scope: record.scope,
+      type: record.type,
+      value: record.value,
+      status: _statusForNode(node, record.disposed),
+      updatedAt: record.updatedAt,
+      writes: record.writes,
+      listeners: node == null ? 0 : _countSubs(node),
+      dependencies: node == null ? 0 : _countDeps(node),
+      note: record.note,
+    );
   }
 
-  Map<String, Object?> _computedToJson(_ComputedRecord record) {
+  OrefComputed _computedToProtocol(_ComputedRecord record) {
     final node = record.node.target;
     if (node == null) {
       record.disposed = true;
     }
-    return {
-      'id': record.id,
-      'label': record.label,
-      'owner': record.owner,
-      'scope': record.scope,
-      'type': record.type,
-      'value': record.value,
-      'status': _statusForNode(node, record.disposed),
-      'updatedAt': record.updatedAt,
-      'runs': record.runs,
-      'lastDurationMs': record.lastDurationMs,
-      'listeners': node == null ? 0 : _countSubs(node),
-      'dependencies': node == null ? 0 : _countDeps(node),
-      'note': record.note,
-    };
+    return OrefComputed(
+      id: record.id,
+      label: record.label,
+      owner: record.owner,
+      scope: record.scope,
+      type: record.type,
+      value: record.value,
+      status: _statusForNode(node, record.disposed),
+      updatedAt: record.updatedAt,
+      runs: record.runs,
+      lastDurationMs: record.lastDurationMs,
+      listeners: node == null ? 0 : _countSubs(node),
+      dependencies: node == null ? 0 : _countDeps(node),
+      note: record.note,
+    );
   }
 
-  Map<String, Object?> _effectToJson(_EffectRecord record) {
+  OrefEffect _effectToProtocol(_EffectRecord record) {
     final node = record.node.target;
     if (node == null) {
       record.disposed = true;
     }
-    return {
-      'id': record.id,
-      'label': record.label,
-      'owner': record.owner,
-      'scope': record.scope,
-      'type': record.type,
-      'updatedAt': record.updatedAt,
-      'runs': record.runs,
-      'lastDurationMs': record.lastDurationMs,
-      'isHot': record.isHot,
-      'status': record.disposed ? 'Disposed' : 'Active',
-      'note': record.note,
-    };
+    return OrefEffect(
+      id: record.id,
+      label: record.label,
+      owner: record.owner,
+      scope: record.scope,
+      type: record.type,
+      updatedAt: record.updatedAt,
+      runs: record.runs,
+      lastDurationMs: record.lastDurationMs,
+      isHot: record.isHot,
+      status: record.disposed ? 'Disposed' : 'Active',
+      note: record.note,
+    );
   }
 
-  Map<String, Object?> _collectionToJson(_CollectionRecord record) {
+  OrefCollection _collectionToProtocol(_CollectionRecord record) {
     final collection = record.collection.target;
     if (collection == null) {
       record.disposed = true;
     }
-    return {
-      'id': record.id,
-      'label': record.label,
-      'owner': record.owner,
-      'scope': record.scope,
-      'type': record.type,
-      'operation': record.operation,
-      'updatedAt': record.updatedAt,
-      'deltas': record.deltas.map((delta) => delta.toJson()).toList(),
-      'note': record.note,
-      'mutations': record.mutations,
-      'status': record.disposed ? 'Disposed' : 'Active',
-    };
+    return OrefCollection(
+      id: record.id,
+      label: record.label,
+      owner: record.owner,
+      scope: record.scope,
+      type: record.type,
+      operation: record.operation,
+      updatedAt: record.updatedAt,
+      deltas: record.deltas,
+      note: record.note,
+      mutations: record.mutations,
+      status: record.disposed ? 'Disposed' : 'Active',
+    );
   }
 
   int _registerSignalFallback(alien_system.ReactiveNode node) {
-    registerSignal(node);
+    _registerSignal(node);
     return _signalIds[node] ?? -1;
   }
 
   int _registerComputedFallback(alien_system.ReactiveNode node) {
-    registerComputed(node);
+    _registerComputed(node);
     return _computedIds[node] ?? -1;
   }
 
   int _registerEffectFallback(alien_system.ReactiveNode node) {
-    registerEffect(node);
+    _registerEffect(node);
     return _effectIds[node] ?? -1;
   }
 
   int _registerCollectionFallback(Object collection) {
-    registerCollection(collection, type: 'Collection');
+    _registerCollection(collection, type: 'Collection');
     return _collectionIds[collection] ?? -1;
   }
 
@@ -979,44 +933,6 @@ class _CollectionRecord {
   bool disposed = false;
 }
 
-class OrefCollectionDelta {
-  const OrefCollectionDelta({required this.kind, required this.label});
-
-  final String kind;
-  final String label;
-
-  Map<String, Object?> toJson() => {'kind': kind, 'label': label};
-}
-
-class _TimelineEvent {
-  _TimelineEvent({
-    required this.id,
-    required this.timestamp,
-    required this.type,
-    required this.title,
-    required this.detail,
-    required this.severity,
-  });
-
-  final int id;
-  final int timestamp;
-  final String type;
-  final String title;
-  final String detail;
-  final String severity;
-
-  Map<String, Object?> toJson() {
-    return {
-      'id': id,
-      'timestamp': timestamp,
-      'type': type,
-      'title': title,
-      'detail': detail,
-      'severity': severity,
-    };
-  }
-}
-
 class _BatchSession {
   _BatchSession({
     required this.id,
@@ -1029,91 +945,6 @@ class _BatchSession {
   final int startedAt;
   int? endedAt;
   int writeCount = 0;
-}
-
-class _BatchRecord {
-  _BatchRecord({
-    required this.id,
-    required this.depth,
-    required this.startedAt,
-    required this.endedAt,
-    required this.durationMs,
-    required this.writeCount,
-  });
-
-  final int id;
-  final int depth;
-  final int startedAt;
-  final int endedAt;
-  final int durationMs;
-  final int writeCount;
-
-  factory _BatchRecord.fromSession(_BatchSession session) {
-    final endedAt = session.endedAt ?? session.startedAt;
-    return _BatchRecord(
-      id: session.id,
-      depth: session.depth,
-      startedAt: session.startedAt,
-      endedAt: endedAt,
-      durationMs: endedAt - session.startedAt,
-      writeCount: session.writeCount,
-    );
-  }
-
-  Map<String, Object?> toJson() {
-    return {
-      'id': id,
-      'depth': depth,
-      'startedAt': startedAt,
-      'endedAt': endedAt,
-      'durationMs': durationMs,
-      'writeCount': writeCount,
-    };
-  }
-}
-
-class _PerformanceSample {
-  _PerformanceSample({
-    required this.timestamp,
-    required this.signalCount,
-    required this.computedCount,
-    required this.effectCount,
-    required this.collectionCount,
-    required this.signalWrites,
-    required this.computedRuns,
-    required this.effectRuns,
-    required this.collectionMutations,
-    required this.batchWrites,
-    required this.avgEffectDurationMs,
-  });
-
-  final int timestamp;
-  final int signalCount;
-  final int computedCount;
-  final int effectCount;
-  final int collectionCount;
-  final int signalWrites;
-  final int computedRuns;
-  final int effectRuns;
-  final int collectionMutations;
-  final int batchWrites;
-  final double avgEffectDurationMs;
-
-  Map<String, Object?> toJson() {
-    return {
-      'timestamp': timestamp,
-      'signalCount': signalCount,
-      'computedCount': computedCount,
-      'effectCount': effectCount,
-      'collectionCount': collectionCount,
-      'signalWrites': signalWrites,
-      'computedRuns': computedRuns,
-      'effectRuns': effectRuns,
-      'collectionMutations': collectionMutations,
-      'batchWrites': batchWrites,
-      'avgEffectDurationMs': avgEffectDurationMs,
-    };
-  }
 }
 
 String _describeOwner(Object? owner, BuildContext? context) {
@@ -1173,31 +1004,4 @@ int _nowMs() => DateTime.now().toUtc().millisecondsSinceEpoch;
 void _trimList<T>(List<T> list, int limit) {
   if (list.length <= limit) return;
   list.removeRange(0, list.length - limit);
-}
-
-bool _readBool(Object? value, {required bool fallback}) {
-  if (value is bool) return value;
-  if (value is String) {
-    return value.toLowerCase() == 'true';
-  }
-  return fallback;
-}
-
-int _readInt(Object? value, {required int fallback}) {
-  if (value is int) return value;
-  if (value is String) return int.tryParse(value) ?? fallback;
-  if (value is num) return value.toInt();
-  return fallback;
-}
-
-bool? _parseBool(String? value) {
-  if (value == null) return null;
-  if (value.toLowerCase() == 'true') return true;
-  if (value.toLowerCase() == 'false') return false;
-  return null;
-}
-
-int? _parseInt(String? value) {
-  if (value == null) return null;
-  return int.tryParse(value);
 }
