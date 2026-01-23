@@ -12,6 +12,7 @@ export 'src/core/watch.dart';
 export 'src/core/untrack.dart';
 export 'src/core/signal_builder.dart';
 export 'src/core/reactive.dart';
+export 'src/devtools/devtools.dart';
 
 export 'src/collections/list.dart';
 export 'src/collections/map.dart';

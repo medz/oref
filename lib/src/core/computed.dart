@@ -5,16 +5,44 @@ import "package:flutter/widgets.dart";
 import "context.dart";
 import "memoized.dart";
 import "watch.dart";
+import "../devtools/devtools.dart";
+import "_element_disposer.dart";
 
 alien.Computed<T> computed<T>(
   BuildContext? context,
-  T Function(T? previousValue) getter,
-) {
+  T Function(T? previousValue) getter, {
+  String? debugLabel,
+  Object? debugOwner,
+  String? debugScope,
+  String? debugNote,
+}) {
   if (context == null) {
-    return _OrefComputed<T>(getter);
+    final computed = _OrefComputed<T>(getter);
+    OrefDevTools.registerComputed(
+      computed,
+      debugLabel: debugLabel,
+      debugOwner: debugOwner,
+      debugScope: debugScope,
+      debugNote: debugNote,
+    );
+    return computed;
   }
 
   final c = useMemoized(context, () => _OrefComputed<T>(getter));
+  final registered = OrefDevTools.registerComputed(
+    c,
+    context: context,
+    debugLabel: debugLabel,
+    debugOwner: debugOwner,
+    debugScope: debugScope,
+    debugNote: debugNote,
+  );
+  if (registered) {
+    registerElementDisposer(
+      context,
+      () => OrefDevTools.markComputedDisposed(c),
+    );
+  }
   assert(() {
     c.fn = getter;
     c.flags &= 16 /* Dirty */;
@@ -32,6 +60,36 @@ class _OrefComputed<T> extends alien.ComputedNode<T>
 
   @override
   T Function(T?) get getter => fn;
+
+  @override
+  bool didUpdate() {
+    final stopwatch = Stopwatch()..start();
+    final changed = super.didUpdate();
+    stopwatch.stop();
+    OrefDevTools.recordComputedRun(
+      this,
+      currentValue,
+      stopwatch.elapsedMilliseconds,
+    );
+    return changed;
+  }
+
+  @override
+  T get() {
+    final isInitial = flags == alien.ReactiveFlags.none;
+    if (!isInitial) {
+      return super.get();
+    }
+    final stopwatch = Stopwatch()..start();
+    final value = super.get();
+    stopwatch.stop();
+    OrefDevTools.recordComputedRun(
+      this,
+      currentValue,
+      stopwatch.elapsedMilliseconds,
+    );
+    return value;
+  }
 
   @override
   T call() {
@@ -77,10 +135,38 @@ WritableComputed<T> writableComputed<T>(
   BuildContext? context, {
   required T Function(T? cached) get,
   required void Function(T value) set,
+  String? debugLabel,
+  Object? debugOwner,
+  String? debugScope,
+  String? debugNote,
 }) {
-  if (context == null) return _OrefWritableComputed(get, set);
+  if (context == null) {
+    final computed = _OrefWritableComputed(get, set);
+    OrefDevTools.registerComputed(
+      computed,
+      debugLabel: debugLabel,
+      debugOwner: debugOwner,
+      debugScope: debugScope,
+      debugNote: debugNote,
+    );
+    return computed;
+  }
 
   final c = useMemoized(context, () => _OrefWritableComputed(get, set));
+  final registered = OrefDevTools.registerComputed(
+    c,
+    context: context,
+    debugLabel: debugLabel,
+    debugOwner: debugOwner,
+    debugScope: debugScope,
+    debugNote: debugNote,
+  );
+  if (registered) {
+    registerElementDisposer(
+      context,
+      () => OrefDevTools.markComputedDisposed(c),
+    );
+  }
   assert(() {
     c.fn = get;
     c.setter = set;
