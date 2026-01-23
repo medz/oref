@@ -2187,86 +2187,90 @@ class _BatchRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
     return _GlassCard(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-      child: isCompact
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Batch #${batch.id}'),
-                const SizedBox(height: 6),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    _GlassPill(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
+      child: DefaultTextStyle.merge(
+        style: textTheme.bodyMedium,
+        child: isCompact
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Batch #${batch.id}'),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _GlassPill(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        child: Text('Depth ${batch.depth}'),
                       ),
-                      child: Text('Depth ${batch.depth}'),
-                    ),
-                    _GlassPill(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
+                      _GlassPill(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        child: Text('${batch.writeCount} writes'),
                       ),
-                      child: Text('${batch.writeCount} writes'),
-                    ),
-                    _GlassPill(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
+                      _GlassPill(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        child: Text('${batch.durationMs}ms'),
                       ),
-                      child: Text('${batch.durationMs}ms'),
-                    ),
-                    _GlassPill(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
+                      _GlassPill(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        child: Text(_formatAge(batch.endedAt)),
                       ),
-                      child: Text(_formatAge(batch.endedAt)),
+                    ],
+                  ),
+                ],
+              )
+            : Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      'Batch #${batch.id}',
+                      textAlign: TextAlign.center,
                     ),
-                  ],
-                ),
-              ],
-            )
-          : Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    'Batch #${batch.id}',
-                    textAlign: TextAlign.center,
                   ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text('${batch.depth}', textAlign: TextAlign.center),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    '${batch.writeCount}',
-                    textAlign: TextAlign.center,
+                  Expanded(
+                    flex: 2,
+                    child: Text('${batch.depth}', textAlign: TextAlign.center),
                   ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    '${batch.durationMs}ms',
-                    textAlign: TextAlign.center,
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      '${batch.writeCount}',
+                      textAlign: TextAlign.center,
+                    ),
                   ),
-                ),
-                Expanded(
-                  flex: 3,
-                  child: Text(
-                    _formatAge(batch.endedAt),
-                    textAlign: TextAlign.center,
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      '${batch.durationMs}ms',
+                      textAlign: TextAlign.center,
+                    ),
                   ),
-                ),
-              ],
-            ),
+                  Expanded(
+                    flex: 3,
+                    child: Text(
+                      _formatAge(batch.endedAt),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
+              ),
+      ),
     );
   }
 }
@@ -4381,23 +4385,27 @@ class _InsightRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              value,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.right,
+      child: DefaultTextStyle.merge(
+        style: textTheme.bodySmall,
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
             ),
-          ),
-        ],
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.right,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -4474,14 +4482,15 @@ class _HealthBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
     final clamped = progress.clamp(0.0, 1.0);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            Expanded(child: Text(label)),
-            Text(value),
+            Expanded(child: Text(label, style: textTheme.bodySmall)),
+            Text(value, style: textTheme.bodySmall),
           ],
         ),
         const SizedBox(height: 6),
