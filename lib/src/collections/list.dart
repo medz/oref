@@ -94,15 +94,16 @@ class ReactiveList<T> extends ListBase<T>
 
   @override
   void addAll(Iterable<T> iterable) {
-    _source.addAll(iterable);
+    final items = iterable.toList();
+    _source.addAll(items);
     trigger();
-    final preview = iterable.take(3).map((item) => item.toString()).toList();
+    final preview = items.take(3).map((item) => item.toString()).toList();
     final deltaLabel = preview.isEmpty ? 'items' : preview.join(', ');
     _devtools?.mutate(
       operation: 'Add',
       deltas: [CollectionDelta(kind: 'add', label: deltaLabel)],
-      note: iterable.length > preview.length
-          ? 'Added ${iterable.length} items'
+      note: items.length > preview.length
+          ? 'Added ${items.length} items'
           : null,
     );
   }
