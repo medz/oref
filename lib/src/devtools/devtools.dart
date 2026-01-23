@@ -171,7 +171,7 @@ class OrefDevTools {
     _instance._recordBatchEnd();
   }
 
-  static OrefSnapshot snapshot() => _instance._snapshot();
+  static Snapshot snapshot() => _instance._snapshot();
 
   static void clearHistory() => _instance._clearHistory();
 
@@ -570,9 +570,9 @@ class OrefDevTools {
     _trimList(_timeline, _settings.timelineLimit);
   }
 
-  OrefSnapshot _snapshot() {
+  Snapshot _snapshot() {
     if (!_initialized) {
-      return OrefSnapshot(
+      return Snapshot(
         protocolVersion: OrefDevToolsProtocol.version,
         timestamp: _nowMs(),
         settings: _settings,
@@ -588,7 +588,7 @@ class OrefDevTools {
     }
 
     _purgeCollected();
-    return OrefSnapshot(
+    return Snapshot(
       protocolVersion: OrefDevToolsProtocol.version,
       timestamp: _nowMs(),
       settings: _settings,

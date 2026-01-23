@@ -13,8 +13,8 @@ class OrefDevToolsProtocol {
 }
 
 @immutable
-class OrefSnapshot {
-  const OrefSnapshot({
+class Snapshot {
+  const Snapshot({
     required this.protocolVersion,
     required this.timestamp,
     required this.settings,
@@ -56,8 +56,8 @@ class OrefSnapshot {
     };
   }
 
-  factory OrefSnapshot.fromJson(Map<String, dynamic> json) {
-    return OrefSnapshot(
+  factory Snapshot.fromJson(Map<String, dynamic> json) {
+    return Snapshot(
       protocolVersion: _readInt(json['protocolVersion'], fallback: 0),
       timestamp: _readInt(json['timestamp'], fallback: 0),
       settings: OrefDevToolsSettings.fromJson(_readMap(json['settings'])),
@@ -75,7 +75,7 @@ class OrefSnapshot {
     );
   }
 
-  static OrefSnapshot empty() => OrefSnapshot(
+  static Snapshot empty() => Snapshot(
     protocolVersion: OrefDevToolsProtocol.version,
     timestamp: 0,
     settings: const OrefDevToolsSettings(),
@@ -89,15 +89,15 @@ class OrefSnapshot {
     performance: const [],
   );
 
-  static OrefSnapshot? tryParse(String? payload) {
+  static Snapshot? tryParse(String? payload) {
     if (payload == null || payload.isEmpty) return null;
     try {
       final decoded = jsonDecode(payload);
       if (decoded is Map<String, dynamic>) {
-        return OrefSnapshot.fromJson(decoded);
+        return Snapshot.fromJson(decoded);
       }
       if (decoded is Map) {
-        return OrefSnapshot.fromJson(Map<String, dynamic>.from(decoded));
+        return Snapshot.fromJson(Map<String, dynamic>.from(decoded));
       }
     } catch (_) {}
     return null;

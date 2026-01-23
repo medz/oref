@@ -19,7 +19,7 @@ class OrefDevToolsController extends ChangeNotifier {
   final Duration _pollInterval;
   late final VoidCallback _connectionListener;
 
-  OrefSnapshot? snapshot;
+  Snapshot? snapshot;
   OrefServiceStatus status = OrefServiceStatus.disconnected;
   String? errorMessage;
 
@@ -67,7 +67,7 @@ class OrefDevToolsController extends ChangeNotifier {
       );
       final settings = OrefDevToolsSettings.fromJson(payload);
       if (snapshot != null) {
-        snapshot = OrefSnapshot(
+        snapshot = Snapshot(
           protocolVersion: snapshot!.protocolVersion,
           timestamp: snapshot!.timestamp,
           settings: settings,
@@ -122,7 +122,7 @@ class OrefDevToolsController extends ChangeNotifier {
       final payload = await _callExtension(
         OrefDevToolsProtocol.snapshotService,
       );
-      snapshot = OrefSnapshot.fromJson(payload);
+      snapshot = Snapshot.fromJson(payload);
       status = OrefServiceStatus.ready;
       errorMessage = null;
       notifyListeners();
