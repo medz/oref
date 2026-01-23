@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'dart:ui';
 
 import 'package:devtools_extensions/devtools_extensions.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:oref/devtools.dart';
 
@@ -142,6 +144,14 @@ class _DevToolsShellState extends State<_DevToolsShell> {
     setState(() => _selectedLabel = item.label);
   }
 
+  void _openSettings() {
+    final settings = _allNavItems.firstWhere(
+      (item) => item.label == 'Settings',
+      orElse: () => _utilityItems.last,
+    );
+    _handleSelect(settings);
+  }
+
   _NavItemData get _selectedItem {
     return _allNavItems.firstWhere(
       (item) => item.label == _selectedLabel,
@@ -171,7 +181,7 @@ class _DevToolsShellState extends State<_DevToolsShell> {
                   padding: padding,
                   child: Column(
                     children: [
-                      const _TopBar(),
+                      _TopBar(onOpenSettings: _openSettings),
                       const SizedBox(height: 20),
                       Expanded(
                         child: isWide
@@ -301,33 +311,30 @@ class _GlowBlob extends StatelessWidget {
 }
 
 class _TopBar extends StatelessWidget {
-  const _TopBar();
+  const _TopBar({required this.onOpenSettings});
+
+  final VoidCallback onOpenSettings;
 
   @override
   Widget build(BuildContext context) {
     final controller = OrefDevToolsScope.of(context);
     final isCompact = MediaQuery.of(context).size.width < 900;
     final canInteract = controller.connected;
-    final children = <Widget>[
-      const _BrandMark(),
-      const SizedBox(width: 16),
-      _StatusPill(status: controller.status),
-      const Spacer(),
+    final actions = <Widget>[
       _ActionPill(
         label: 'Refresh',
         icon: Icons.refresh_rounded,
         onTap: canInteract ? controller.refresh : null,
       ),
-      const SizedBox(width: 12),
       _ActionPill(
         label: 'Clear',
         icon: Icons.delete_sweep_rounded,
         onTap: canInteract ? controller.clearHistory : null,
       ),
-      const SizedBox(width: 12),
-      _IconAction(
-        icon: Icons.more_horiz,
-        onTap: canInteract ? controller.refresh : null,
+      _ActionPill(
+        label: 'Settings',
+        icon: Icons.tune_rounded,
+        onTap: onOpenSettings,
       ),
     ];
 
@@ -337,12 +344,29 @@ class _TopBar extends StatelessWidget {
           ? Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(children: children.take(2).toList()),
+                Row(
+                  children: [
+                    const _BrandMark(),
+                    const Spacer(),
+                    _StatusPill(status: controller.status),
+                  ],
+                ),
                 const SizedBox(height: 12),
-                Row(children: children.skip(2).toList()),
+                Wrap(spacing: 12, runSpacing: 12, children: actions),
               ],
             )
-          : Row(children: children),
+          : Row(
+              children: [
+                const _BrandMark(),
+                const SizedBox(width: 16),
+                _StatusPill(status: controller.status),
+                const Spacer(),
+                for (var index = 0; index < actions.length; index++) ...[
+                  actions[index],
+                  if (index != actions.length - 1) const SizedBox(width: 12),
+                ],
+              ],
+            ),
     );
   }
 }
@@ -445,37 +469,30 @@ class _ActionPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(999),
-      onTap: onTap,
-      child: _GlassPill(
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 16),
-            const SizedBox(width: 8),
-            Text(label),
-          ],
+    final isEnabled = onTap != null;
+    final color = isEnabled
+        ? Theme.of(context).colorScheme.onSurface
+        : Theme.of(context).colorScheme.onSurface.withOpacity(0.45);
+    return Opacity(
+      opacity: isEnabled ? 1 : 0.6,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(999),
+        onTap: onTap,
+        child: _GlassPill(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 16, color: color),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: Theme.of(
+                  context,
+                ).textTheme.labelMedium?.copyWith(color: color),
+              ),
+            ],
+          ),
         ),
-      ),
-    );
-  }
-}
-
-class _IconAction extends StatelessWidget {
-  const _IconAction({required this.icon, this.onTap});
-
-  final IconData icon;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(999),
-      onTap: onTap,
-      child: _GlassPill(
-        padding: const EdgeInsets.all(10),
-        child: Icon(icon, size: 18),
       ),
     );
   }
@@ -677,6 +694,92 @@ class _OverviewPanel extends StatelessWidget {
     final controller = OrefDevToolsScope.of(context);
     final snapshot = controller.snapshot;
     final stats = snapshot?.stats;
+    final signals = snapshot?.signals ?? const <OrefSignal>[];
+    final computed = snapshot?.computed ?? const <OrefComputed>[];
+    final effects = snapshot?.effects ?? const <OrefEffect>[];
+    final collections = snapshot?.collections ?? const <OrefCollection>[];
+    final batches = snapshot?.batches ?? const <OrefBatch>[];
+    final performance =
+        snapshot?.performance ?? const <OrefPerformanceSample>[];
+    final settings = snapshot?.settings ?? const OrefDevToolsSettings();
+    final canInteract = controller.connected;
+
+    String summarizeTop<T>(
+      List<T> entries,
+      int Function(T entry) score,
+      String Function(T entry) label,
+    ) {
+      final active = entries.where((entry) => score(entry) > 0).toList();
+      if (active.isEmpty) return '—';
+      active.sort((a, b) => score(b).compareTo(score(a)));
+      return active.take(2).map(label).join(' · ');
+    }
+
+    List<int> tail(List<int> values, int count) {
+      if (values.length <= count) return values;
+      return values.sublist(values.length - count);
+    }
+
+    final topSignals = summarizeTop(
+      signals,
+      (entry) => entry.writes,
+      (entry) => '${entry.label} (${entry.writes})',
+    );
+    final topComputed = summarizeTop(
+      computed,
+      (entry) => entry.runs,
+      (entry) => '${entry.label} (${entry.runs})',
+    );
+    final hotEffects = summarizeTop(
+      effects,
+      (entry) => entry.lastDurationMs,
+      (entry) => '${entry.label} (${entry.lastDurationMs}ms)',
+    );
+    final busyCollections = summarizeTop(
+      collections,
+      (entry) => entry.mutations,
+      (entry) => '${entry.label} (${entry.mutations})',
+    );
+
+    final totalNodes = signals.length + computed.length + effects.length;
+    final activeNodes =
+        signals.where((entry) => entry.status != 'Disposed').length +
+        computed.where((entry) => entry.status != 'Disposed').length +
+        effects.where((entry) => entry.status != 'Disposed').length;
+    final watchedNodes =
+        signals.where((entry) => entry.listeners > 0).length +
+        computed.where((entry) => entry.listeners > 0).length;
+
+    int activityScore(OrefPerformanceSample sample) {
+      return sample.signalWrites +
+          sample.computedRuns +
+          sample.effectRuns +
+          sample.collectionMutations;
+    }
+
+    final lastSample = performance.isNotEmpty ? performance.last : null;
+    final lastActivity = lastSample == null ? 0 : activityScore(lastSample);
+    final maxActivity = performance.isEmpty
+        ? 0
+        : performance
+              .map(activityScore)
+              .reduce((value, element) => value > element ? value : element);
+    final activityProgress = maxActivity == 0
+        ? 0.0
+        : lastActivity / maxActivity;
+    final activityRate = settings.sampleIntervalMs == 0
+        ? 0
+        : (lastActivity * 60000 / settings.sampleIntervalMs).round();
+
+    final signalPulseValues = tail(
+      performance.map((sample) => sample.signalWrites).toList(),
+      12,
+    );
+    final batchPulseValues = tail(
+      batches.map((batch) => batch.writeCount).toList(),
+      12,
+    );
+
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -690,9 +793,7 @@ class _OverviewPanel extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          Wrap(
-            spacing: 16,
-            runSpacing: 16,
+          _AdaptiveWrap(
             children: [
               _MetricTile(
                 label: 'Signals',
@@ -731,18 +832,27 @@ class _OverviewPanel extends StatelessWidget {
               final insightCard = _InsightCard(
                 title: 'Insights',
                 subtitle: 'Highlights from the latest signal activity.',
-                primary: const [
-                  _InsightRow('Top signals', 'cartTotal · userLocale'),
-                  _InsightRow('Hot effects', 'refreshShippingRates'),
-                  _InsightRow('Muted', 'promoBannerVisible'),
+                primary: [
+                  _InsightRow('Most updated', topSignals),
+                  _InsightRow('Hot effects', hotEffects),
+                  _InsightRow('Busy collections', busyCollections),
                 ],
-                secondary: const [
-                  _InsightRow('High churn', 'cartItems (12)'),
-                  _InsightRow('Stable', 'shippingQuote'),
-                  _InsightRow('Idle', 'syncQueueSize'),
+                secondary: [
+                  _InsightRow('Computed churn', topComputed),
+                  _InsightRow(
+                    'Active nodes',
+                    totalNodes == 0 ? '—' : '$activeNodes / $totalNodes',
+                  ),
+                  _InsightRow('Last update', _formatAge(snapshot?.timestamp)),
                 ],
               );
-              const healthCard = _HealthCard();
+              final healthCard = _HealthCard(
+                activeNodes: activeNodes,
+                totalNodes: totalNodes,
+                watchedNodes: watchedNodes,
+                activityRate: activityRate,
+                activityProgress: activityProgress,
+              );
 
               return isStacked
                   ? Column(
@@ -774,7 +884,8 @@ class _OverviewPanel extends StatelessWidget {
                     const SizedBox(height: 8),
                     Text(
                       'Streaming updates from the active Flutter isolate. '
-                      'You can pin a session or start a capture.',
+                      'Refresh to sync the latest snapshot or clear the '
+                      'history for a new pass.',
                       style: textTheme.bodyMedium?.copyWith(
                         color: Theme.of(
                           context,
@@ -785,9 +896,15 @@ class _OverviewPanel extends StatelessWidget {
                     Wrap(
                       spacing: 12,
                       runSpacing: 12,
-                      children: const [
-                        _GradientButton(label: 'Start Capture'),
-                        _OutlineButton(label: 'Pin Session'),
+                      children: [
+                        _GradientButton(
+                          label: 'Refresh data',
+                          onTap: canInteract ? controller.refresh : null,
+                        ),
+                        _OutlineButton(
+                          label: 'Clear history',
+                          onTap: canInteract ? controller.clearHistory : null,
+                        ),
                       ],
                     ),
                   ],
@@ -853,9 +970,13 @@ class _OverviewPanel extends StatelessWidget {
                       children: [
                         Text('Signal Pulse', style: textTheme.titleMedium),
                         const SizedBox(height: 12),
-                        const _ChartPlaceholder(
+                        _MiniChart(
+                          values: signalPulseValues,
                           icon: Icons.stacked_line_chart_rounded,
-                          caption: 'Awaiting samples',
+                          caption: signalPulseValues.isEmpty
+                              ? 'Awaiting samples'
+                              : '${signalPulseValues.last} writes / sample',
+                          color: OrefPalette.teal,
                         ),
                         const SizedBox(height: 12),
                         Text(
@@ -878,9 +999,13 @@ class _OverviewPanel extends StatelessWidget {
                       children: [
                         Text('Batch Heatmap', style: textTheme.titleMedium),
                         const SizedBox(height: 12),
-                        const _ChartPlaceholder(
+                        _MiniChart(
+                          values: batchPulseValues,
                           icon: Icons.grid_view_rounded,
-                          caption: 'No batches recorded',
+                          caption: batchPulseValues.isEmpty
+                              ? 'No batches recorded'
+                              : '${batchPulseValues.last} writes last batch',
+                          color: OrefPalette.indigo,
                         ),
                         const SizedBox(height: 12),
                         Text(
@@ -987,6 +1112,13 @@ class _SignalsPanelState extends State<_SignalsPanel> {
                 selectedFilter: _statusFilter,
                 onFilterChange: (value) =>
                     setState(() => _statusFilter = value),
+                totalCount: entries.length,
+                filteredCount: filtered.length,
+                onExport: () => _exportData(
+                  context,
+                  'signals',
+                  filtered.map((entry) => entry.toJson()).toList(),
+                ),
               ),
               const SizedBox(height: 16),
               Expanded(
@@ -1094,6 +1226,13 @@ class _ComputedPanelState extends State<_ComputedPanel> {
                 selectedFilter: _statusFilter,
                 onFilterChange: (value) =>
                     setState(() => _statusFilter = value),
+                totalCount: entries.length,
+                filteredCount: filtered.length,
+                onExport: () => _exportData(
+                  context,
+                  'computed',
+                  filtered.map((entry) => entry.toJson()).toList(),
+                ),
               ),
               const SizedBox(height: 16),
               Expanded(
@@ -1160,11 +1299,17 @@ class _ComputedHeader extends StatelessWidget {
     required this.controller,
     required this.selectedFilter,
     required this.onFilterChange,
+    required this.totalCount,
+    required this.filteredCount,
+    required this.onExport,
   });
 
   final TextEditingController controller;
   final String selectedFilter;
   final ValueChanged<String> onFilterChange;
+  final int totalCount;
+  final int filteredCount;
+  final VoidCallback onExport;
 
   @override
   Widget build(BuildContext context) {
@@ -1182,7 +1327,16 @@ class _ComputedHeader extends StatelessWidget {
               child: Text('Live'),
             ),
             const Spacer(),
-            const _ActionPill(label: 'Export', icon: Icons.download_rounded),
+            _GlassPill(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              child: Text('$filteredCount / $totalCount'),
+            ),
+            const SizedBox(width: 12),
+            _ActionPill(
+              label: 'Export',
+              icon: Icons.download_rounded,
+              onTap: onExport,
+            ),
           ],
         ),
         const SizedBox(height: 8),
@@ -1538,6 +1692,13 @@ class _CollectionsPanelState extends State<_CollectionsPanel> {
             opFilters: opFilters,
             onTypeChange: (value) => setState(() => _typeFilter = value),
             onOpChange: (value) => setState(() => _opFilter = value),
+            totalCount: entries.length,
+            filteredCount: filtered.length,
+            onExport: () => _exportData(
+              context,
+              'collections',
+              filtered.map((entry) => entry.toJson()).toList(),
+            ),
           ),
           const SizedBox(height: 16),
           Expanded(
@@ -1591,7 +1752,23 @@ class _BatchingPanel extends StatelessWidget {
                 child: Text('Live'),
               ),
               const Spacer(),
-              const _ActionPill(label: 'Export', icon: Icons.download_rounded),
+              _GlassPill(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                child: Text('${batches.length} batches'),
+              ),
+              const SizedBox(width: 12),
+              _ActionPill(
+                label: 'Export',
+                icon: Icons.download_rounded,
+                onTap: () => _exportData(
+                  context,
+                  'batches',
+                  batches.map((batch) => batch.toJson()).toList(),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 8),
@@ -1602,9 +1779,7 @@ class _BatchingPanel extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          Wrap(
-            spacing: 16,
-            runSpacing: 16,
+          _AdaptiveWrap(
             children: [
               _MetricTile(
                 label: 'Batches',
@@ -1827,7 +2002,23 @@ class _TimelinePanelState extends State<_TimelinePanel> {
                 child: Text('Live'),
               ),
               const Spacer(),
-              const _ActionPill(label: 'Export', icon: Icons.download_rounded),
+              _GlassPill(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                child: Text('${filtered.length} events'),
+              ),
+              const SizedBox(width: 12),
+              _ActionPill(
+                label: 'Export',
+                icon: Icons.download_rounded,
+                onTap: () => _exportData(
+                  context,
+                  'timeline',
+                  filtered.map((event) => event.toJson()).toList(),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 8),
@@ -1980,7 +2171,23 @@ class _PerformancePanel extends StatelessWidget {
                 child: Text('Live'),
               ),
               const Spacer(),
-              const _ActionPill(label: 'Export', icon: Icons.download_rounded),
+              _GlassPill(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                child: Text('${samples.length} samples'),
+              ),
+              const SizedBox(width: 12),
+              _ActionPill(
+                label: 'Export',
+                icon: Icons.download_rounded,
+                onTap: () => _exportData(
+                  context,
+                  'performance',
+                  samples.map((sample) => sample.toJson()).toList(),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 8),
@@ -1991,9 +2198,7 @@ class _PerformancePanel extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          Wrap(
-            spacing: 16,
-            runSpacing: 16,
+          _AdaptiveWrap(
             children: [
               _MetricTile(
                 label: 'Effect avg',
@@ -2341,6 +2546,9 @@ class _CollectionsHeader extends StatelessWidget {
     required this.opFilters,
     required this.onTypeChange,
     required this.onOpChange,
+    required this.totalCount,
+    required this.filteredCount,
+    required this.onExport,
   });
 
   final TextEditingController controller;
@@ -2350,6 +2558,9 @@ class _CollectionsHeader extends StatelessWidget {
   final List<String> opFilters;
   final ValueChanged<String> onTypeChange;
   final ValueChanged<String> onOpChange;
+  final int totalCount;
+  final int filteredCount;
+  final VoidCallback onExport;
 
   @override
   Widget build(BuildContext context) {
@@ -2367,7 +2578,16 @@ class _CollectionsHeader extends StatelessWidget {
               child: Text('Live'),
             ),
             const Spacer(),
-            const _ActionPill(label: 'Export', icon: Icons.download_rounded),
+            _GlassPill(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              child: Text('$filteredCount / $totalCount'),
+            ),
+            const SizedBox(width: 12),
+            _ActionPill(
+              label: 'Export',
+              icon: Icons.download_rounded,
+              onTap: onExport,
+            ),
           ],
         ),
         const SizedBox(height: 8),
@@ -2645,6 +2865,13 @@ class _EffectsPanelState extends State<_EffectsPanel> {
             scopeFilters: scopeFilters,
             onTypeChange: (value) => setState(() => _typeFilter = value),
             onScopeChange: (value) => setState(() => _scopeFilter = value),
+            totalCount: entries.length,
+            filteredCount: filtered.length,
+            onExport: () => _exportData(
+              context,
+              'effects',
+              filtered.map((entry) => entry.toJson()).toList(),
+            ),
           ),
           const SizedBox(height: 16),
           Expanded(child: _EffectsTimeline(entries: filtered)),
@@ -2662,6 +2889,9 @@ class _EffectsHeader extends StatelessWidget {
     required this.scopeFilters,
     required this.onTypeChange,
     required this.onScopeChange,
+    required this.totalCount,
+    required this.filteredCount,
+    required this.onExport,
   });
 
   final String typeFilter;
@@ -2670,6 +2900,9 @@ class _EffectsHeader extends StatelessWidget {
   final List<String> scopeFilters;
   final ValueChanged<String> onTypeChange;
   final ValueChanged<String> onScopeChange;
+  final int totalCount;
+  final int filteredCount;
+  final VoidCallback onExport;
 
   @override
   Widget build(BuildContext context) {
@@ -2687,12 +2920,16 @@ class _EffectsHeader extends StatelessWidget {
               child: Text('Live'),
             ),
             const Spacer(),
-            const _ActionPill(
-              label: 'Capture',
-              icon: Icons.fiber_manual_record,
+            _GlassPill(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              child: Text('$filteredCount / $totalCount'),
             ),
-            const SizedBox(width: 8),
-            const _ActionPill(label: 'Export', icon: Icons.download_rounded),
+            const SizedBox(width: 12),
+            _ActionPill(
+              label: 'Export',
+              icon: Icons.download_rounded,
+              onTap: onExport,
+            ),
           ],
         ),
         const SizedBox(height: 8),
@@ -2908,11 +3145,17 @@ class _SignalsHeader extends StatelessWidget {
     required this.controller,
     required this.selectedFilter,
     required this.onFilterChange,
+    required this.totalCount,
+    required this.filteredCount,
+    required this.onExport,
   });
 
   final TextEditingController controller;
   final String selectedFilter;
   final ValueChanged<String> onFilterChange;
+  final int totalCount;
+  final int filteredCount;
+  final VoidCallback onExport;
 
   @override
   Widget build(BuildContext context) {
@@ -2930,7 +3173,16 @@ class _SignalsHeader extends StatelessWidget {
               child: Text('Live'),
             ),
             const Spacer(),
-            const _ActionPill(label: 'Export', icon: Icons.download_rounded),
+            _GlassPill(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              child: Text('$filteredCount / $totalCount'),
+            ),
+            const SizedBox(width: 12),
+            _ActionPill(
+              label: 'Export',
+              icon: Icons.download_rounded,
+              onTap: onExport,
+            ),
           ],
         ),
         const SizedBox(height: 8),
@@ -3320,9 +3572,15 @@ class _GlassInput extends StatelessWidget {
               controller: controller,
               decoration: InputDecoration(
                 hintText: hintText,
+                hintStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.5),
+                ),
                 border: InputBorder.none,
                 isDense: true,
               ),
+              style: Theme.of(context).textTheme.bodyMedium,
             ),
           ),
         ],
@@ -3460,6 +3718,7 @@ class _MetricTile extends StatelessWidget {
     required this.trend,
     required this.accent,
     required this.icon,
+    this.width,
   });
 
   final String label;
@@ -3467,12 +3726,13 @@ class _MetricTile extends StatelessWidget {
   final String trend;
   final Color accent;
   final IconData icon;
+  final double? width;
 
   @override
   Widget build(BuildContext context) {
     return _GlassCard(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-      width: 230,
+      width: width,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -3512,6 +3772,43 @@ class _MetricTile extends StatelessWidget {
           _Sparkline(color: accent),
         ],
       ),
+    );
+  }
+}
+
+class _AdaptiveWrap extends StatelessWidget {
+  const _AdaptiveWrap({
+    required this.children,
+    this.minItemWidth = 220,
+    this.maxColumns = 4,
+    this.spacing = 16,
+    this.runSpacing = 16,
+  });
+
+  final List<Widget> children;
+  final double minItemWidth;
+  final int maxColumns;
+  final double spacing;
+  final double runSpacing;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final available = constraints.maxWidth;
+        final rawColumns = (available / (minItemWidth + spacing)).floor();
+        final columns = rawColumns.clamp(1, maxColumns);
+        final width =
+            (available - (columns - 1) * spacing) / columns.toDouble();
+
+        return Wrap(
+          spacing: spacing,
+          runSpacing: runSpacing,
+          children: [
+            for (final child in children) SizedBox(width: width, child: child),
+          ],
+        );
+      },
     );
   }
 }
@@ -3612,7 +3909,19 @@ class _InsightRow extends StatelessWidget {
 }
 
 class _HealthCard extends StatelessWidget {
-  const _HealthCard();
+  const _HealthCard({
+    required this.activeNodes,
+    required this.totalNodes,
+    required this.watchedNodes,
+    required this.activityRate,
+    required this.activityProgress,
+  });
+
+  final int activeNodes;
+  final int totalNodes;
+  final int watchedNodes;
+  final int activityRate;
+  final double activityProgress;
 
   @override
   Widget build(BuildContext context) {
@@ -3631,24 +3940,24 @@ class _HealthCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          const _HealthBar(
-            label: 'Memory',
-            value: '68%',
-            progress: 0.68,
+          _HealthBar(
+            label: 'Active nodes',
+            value: totalNodes == 0 ? '—' : '$activeNodes / $totalNodes',
+            progress: totalNodes == 0 ? 0 : activeNodes / totalNodes,
             color: OrefPalette.teal,
           ),
           const SizedBox(height: 12),
-          const _HealthBar(
-            label: 'Listeners',
-            value: '42 active',
-            progress: 0.52,
+          _HealthBar(
+            label: 'Watched nodes',
+            value: totalNodes == 0 ? '—' : '$watchedNodes watched',
+            progress: totalNodes == 0 ? 0 : watchedNodes / totalNodes,
             color: OrefPalette.indigo,
           ),
           const SizedBox(height: 12),
-          const _HealthBar(
+          _HealthBar(
             label: 'Update rate',
-            value: '1.2k/min',
-            progress: 0.78,
+            value: activityRate == 0 ? '—' : '$activityRate/min',
+            progress: activityProgress,
             color: OrefPalette.coral,
           ),
         ],
@@ -3673,6 +3982,7 @@ class _HealthBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final subdued = Theme.of(context).colorScheme.onSurface.withOpacity(0.6);
+    final clamped = progress.clamp(0.0, 1.0);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -3698,7 +4008,7 @@ class _HealthBar extends StatelessWidget {
                 ),
                 Container(
                   height: 8,
-                  width: constraints.maxWidth * progress,
+                  width: constraints.maxWidth * clamped,
                   decoration: BoxDecoration(
                     color: color,
                     borderRadius: BorderRadius.circular(999),
@@ -3748,6 +4058,97 @@ class _ChartPlaceholder extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _MiniChart extends StatelessWidget {
+  const _MiniChart({
+    required this.values,
+    required this.icon,
+    required this.caption,
+    required this.color,
+  });
+
+  final List<int> values;
+  final IconData icon;
+  final String caption;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    if (values.isEmpty) {
+      return _ChartPlaceholder(icon: icon, caption: caption);
+    }
+    final maxValue = values.fold<int>(1, (max, value) {
+      return value > max ? value : max;
+    });
+
+    return Container(
+      height: 180,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        gradient: LinearGradient(
+          colors: [color.withOpacity(0.12), color.withOpacity(0.04)],
+        ),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+        child: Column(
+          children: [
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final barMaxHeight = constraints.maxHeight;
+                  final barCount = values.length;
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      for (var index = 0; index < barCount; index++) ...[
+                        Expanded(
+                          child: Align(
+                            alignment: Alignment.bottomCenter,
+                            child: Container(
+                              height: barMaxHeight * (values[index] / maxValue),
+                              decoration: BoxDecoration(
+                                color: color.withOpacity(0.75),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                            ),
+                          ),
+                        ),
+                        if (index != barCount - 1) const SizedBox(width: 6),
+                      ],
+                    ],
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Icon(icon, size: 14, color: color),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    caption,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.7),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -3949,33 +4350,45 @@ class _GlassPill extends StatelessWidget {
 }
 
 class _GradientButton extends StatelessWidget {
-  const _GradientButton({required this.label});
+  const _GradientButton({required this.label, this.onTap});
 
   final String label;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [OrefPalette.teal, OrefPalette.indigo],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x6622E3C4),
-            blurRadius: 16,
-            offset: Offset(0, 8),
+    final isEnabled = onTap != null;
+    return Opacity(
+      opacity: isEnabled ? 1 : 0.6,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onTap,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [OrefPalette.teal, OrefPalette.indigo],
+              ),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x6622E3C4),
+                  blurRadius: 16,
+                  offset: Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              child: Text(
+                label,
+                style: Theme.of(
+                  context,
+                ).textTheme.labelLarge?.copyWith(color: Colors.black),
+              ),
+            ),
           ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Text(
-          label,
-          style: Theme.of(
-            context,
-          ).textTheme.labelLarge?.copyWith(color: Colors.black),
         ),
       ),
     );
@@ -3983,21 +4396,37 @@ class _GradientButton extends StatelessWidget {
 }
 
 class _OutlineButton extends StatelessWidget {
-  const _OutlineButton({required this.label});
+  const _OutlineButton({required this.label, this.onTap});
 
   final String label;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+    final isEnabled = onTap != null;
+    final color = Theme.of(context).colorScheme.onSurface;
+    return Opacity(
+      opacity: isEnabled ? 1 : 0.6,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: color.withOpacity(0.2)),
+            ),
+            child: Text(
+              label,
+              style: Theme.of(
+                context,
+              ).textTheme.labelLarge?.copyWith(color: color),
+            ),
+          ),
         ),
       ),
-      child: Text(label),
     );
   }
 }
@@ -4022,8 +4451,8 @@ class _ConnectionGuard extends StatelessWidget {
         icon: Icons.extension_off_rounded,
         title: 'DevTools not enabled',
         message:
-            'Enable Oref DevTools by upgrading to the latest package and '
-            'running with debug instrumentation.',
+            'Call registerOrefDevToolsServiceExtensions() in main() and run '
+            'a debug build to expose diagnostics.',
       );
     }
     if (controller.isConnecting && controller.snapshot == null) {
@@ -4267,6 +4696,37 @@ String _formatDelta(int? value, {String suffix = ''}) {
   if (value == 0) return 'idle';
   final label = value > 0 ? '+$value' : value.toString();
   return suffix.isEmpty ? label : '$label $suffix';
+}
+
+Future<void> _exportData(
+  BuildContext context,
+  String label,
+  Object data,
+) async {
+  if (data is Iterable && data.isEmpty) {
+    _showToast(context, 'No $label data to export.');
+    return;
+  }
+  if (data is Map && data.isEmpty) {
+    _showToast(context, 'No $label data to export.');
+    return;
+  }
+  final payload = const JsonEncoder.withIndent('  ').convert(data);
+  await Clipboard.setData(ClipboardData(text: payload));
+  _showToast(context, 'Copied $label JSON to clipboard.');
+}
+
+void _showToast(BuildContext context, String message) {
+  final messenger = ScaffoldMessenger.maybeOf(context);
+  if (messenger == null) return;
+  messenger.hideCurrentSnackBar();
+  messenger.showSnackBar(
+    SnackBar(
+      content: Text(message),
+      behavior: SnackBarBehavior.floating,
+      duration: const Duration(seconds: 2),
+    ),
+  );
 }
 
 List<String> _buildFilterOptions(Iterable<String> values) {
