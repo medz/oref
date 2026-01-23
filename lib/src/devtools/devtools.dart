@@ -269,7 +269,7 @@ class OrefDevTools {
       label: debugLabel ?? 'signal#$id',
       owner: _describeOwner(debugOwner, context),
       scope: _describeScope(debugScope, context),
-      type: node.runtimeType.toString(),
+      type: _describeNodeType(node, fallback: 'Signal'),
       createdAt: _nowMs(),
       note: debugNote ?? '',
     );
@@ -336,7 +336,7 @@ class OrefDevTools {
       label: debugLabel ?? 'computed#$id',
       owner: _describeOwner(debugOwner, context),
       scope: _describeScope(debugScope, context),
-      type: node.runtimeType.toString(),
+      type: _describeNodeType(node, fallback: 'Computed'),
       createdAt: _nowMs(),
       note: debugNote ?? '',
     );
@@ -969,6 +969,21 @@ String _previewValue(Object? value) {
   }
   final limit = OrefDevTools._instance._settings.valuePreviewLength;
   return '${text.substring(0, limit)}...';
+}
+
+String _describeNodeType(
+  alien_system.ReactiveNode node, {
+  required String fallback,
+}) {
+  final raw = node.runtimeType.toString();
+  final genericStart = raw.indexOf('<');
+  final genericEnd = raw.lastIndexOf('>');
+  if (genericStart != -1 && genericEnd > genericStart) {
+    final generic = raw.substring(genericStart + 1, genericEnd).trim();
+    if (generic.isNotEmpty) return generic;
+  }
+  if (raw.startsWith('_')) return fallback;
+  return raw;
 }
 
 String _statusForNode(alien_system.ReactiveNode? node, bool disposed) {
