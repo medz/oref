@@ -19,6 +19,10 @@ class ReactiveMap<K, V> extends MapBase<K, V>
   /// Creates a widget scoped [ReactiveMap].
   factory ReactiveMap.scoped(BuildContext context, Map<K, V> source) {
     final map = useMemoized(context, () => ReactiveMap(source));
+    if (!map._devtoolsDisposerRegistered && map._devtools != null) {
+      map._devtools?.dispose();
+      map._devtools = null;
+    }
     if (map._devtools == null) {
       map._devtools = devtools.bindCollection(
         map,

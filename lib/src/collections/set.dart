@@ -19,6 +19,10 @@ class ReactiveSet<T> extends SetBase<T>
   /// Creates a new reactive set with the given elements, scoped to the given context.
   factory ReactiveSet.scoped(BuildContext context, Iterable<T> elements) {
     final set = useMemoized(context, () => ReactiveSet(elements));
+    if (!set._devtoolsDisposerRegistered && set._devtools != null) {
+      set._devtools?.dispose();
+      set._devtools = null;
+    }
     if (set._devtools == null) {
       set._devtools = devtools.bindCollection(
         set,

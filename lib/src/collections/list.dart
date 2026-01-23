@@ -19,6 +19,10 @@ class ReactiveList<T> extends ListBase<T>
   /// Created a widget scoped [ReactiveList] instance.
   factory ReactiveList.scoped(BuildContext context, Iterable<T> elements) {
     final list = useMemoized(context, () => ReactiveList(elements));
+    if (!list._devtoolsDisposerRegistered && list._devtools != null) {
+      list._devtools?.dispose();
+      list._devtools = null;
+    }
     if (list._devtools == null) {
       list._devtools = devtools.bindCollection(
         list,
