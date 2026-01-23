@@ -54,8 +54,8 @@ class OrefDevToolsScope extends InheritedNotifier<OrefDevToolsController> {
   const OrefDevToolsScope({
     super.key,
     required OrefDevToolsController controller,
-    required Widget child,
-  }) : super(notifier: controller, child: child);
+    required super.child,
+  }) : super(notifier: controller);
 
   static OrefDevToolsController of(BuildContext context) {
     final scope = context
@@ -80,8 +80,8 @@ class _ThemeController extends ChangeNotifier {
 class _ThemeScope extends InheritedNotifier<_ThemeController> {
   const _ThemeScope({
     required _ThemeController controller,
-    required Widget child,
-  }) : super(notifier: controller, child: child);
+    required super.child,
+  }) : super(notifier: controller);
 
   static _ThemeController of(BuildContext context) {
     final scope = context.dependOnInheritedWidgetOfExactType<_ThemeScope>();
@@ -95,8 +95,11 @@ class OrefTheme {
   static ThemeData dark() => _build(Brightness.dark);
 
   static ThemeData _build(Brightness brightness) {
-    final scheme = ColorScheme(
+    final baseScheme = ColorScheme.fromSeed(
+      seedColor: OrefPalette.teal,
       brightness: brightness,
+    );
+    final scheme = baseScheme.copyWith(
       primary: OrefPalette.teal,
       onPrimary: brightness == Brightness.dark ? Colors.black : Colors.white,
       secondary: OrefPalette.indigo,
@@ -107,12 +110,6 @@ class OrefTheme {
           ? const Color(0xFF141B22)
           : const Color(0xFFFFFFFF),
       onSurface: brightness == Brightness.dark
-          ? const Color(0xFFEAF2F8)
-          : const Color(0xFF11161D),
-      background: brightness == Brightness.dark
-          ? const Color(0xFF0B1117)
-          : const Color(0xFFF6F8FB),
-      onBackground: brightness == Brightness.dark
           ? const Color(0xFFEAF2F8)
           : const Color(0xFF11161D),
     );
@@ -500,7 +497,7 @@ class _StatusPill extends StatelessWidget {
     };
 
     return _GlassPill(
-      color: tone.withOpacity(0.22),
+      color: tone.withValues(alpha: 0.22),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -644,8 +641,8 @@ class _NavItem extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final activeGradient = LinearGradient(
       colors: [
-        OrefPalette.teal.withOpacity(0.9),
-        OrefPalette.indigo.withOpacity(0.9),
+        OrefPalette.teal.withValues(alpha: 0.9),
+        OrefPalette.indigo.withValues(alpha: 0.9),
       ],
     );
 
@@ -659,12 +656,14 @@ class _NavItem extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
             gradient: isActive ? activeGradient : null,
-            color: isActive ? null : colorScheme.surface.withOpacity(0.35),
+            color: isActive
+                ? null
+                : colorScheme.surface.withValues(alpha: 0.35),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isActive
                   ? Colors.transparent
-                  : colorScheme.onSurface.withOpacity(0.12),
+                  : colorScheme.onSurface.withValues(alpha: 0.12),
             ),
           ),
           child: Row(
@@ -1534,7 +1533,7 @@ class _ComputedTableHeader extends StatelessWidget {
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
-            color: Theme.of(context).dividerColor.withOpacity(0.4),
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.4),
           ),
         ),
       ),
@@ -1604,7 +1603,7 @@ class _ComputedRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final highlight = isSelected
-        ? OrefPalette.indigo.withOpacity(0.2)
+        ? OrefPalette.indigo.withValues(alpha: 0.2)
         : Colors.transparent;
 
     return Material(
@@ -1620,8 +1619,8 @@ class _ComputedRow extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isSelected
-                  ? OrefPalette.indigo.withOpacity(0.4)
-                  : colorScheme.onSurface.withOpacity(0.08),
+                  ? OrefPalette.indigo.withValues(alpha: 0.4)
+                  : colorScheme.onSurface.withValues(alpha: 0.08),
             ),
           ),
           child: isCompact
@@ -2031,7 +2030,7 @@ class _BatchHeaderRow extends StatelessWidget {
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
-            color: Theme.of(context).dividerColor.withOpacity(0.4),
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.4),
           ),
         ),
       ),
@@ -2975,7 +2974,7 @@ class _CollectionsHeaderRow extends StatelessWidget {
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
-            color: Theme.of(context).dividerColor.withOpacity(0.4),
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.4),
           ),
         ),
       ),
@@ -3068,7 +3067,7 @@ class _CollectionRow extends StatelessWidget {
                           horizontal: 10,
                           vertical: 6,
                         ),
-                        color: tone.withOpacity(0.22),
+                        color: tone.withValues(alpha: 0.22),
                         child: Text(entry.operation),
                       ),
                       _GlassPill(
@@ -3113,7 +3112,7 @@ class _CollectionRow extends StatelessWidget {
                           horizontal: 10,
                           vertical: 6,
                         ),
-                        color: tone.withOpacity(0.22),
+                        color: tone.withValues(alpha: 0.22),
                         child: Text(entry.operation),
                       ),
                     ),
@@ -3166,7 +3165,7 @@ class _DiffToken extends StatelessWidget {
 
     return _GlassPill(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      color: style.withOpacity(0.18),
+      color: style.withValues(alpha: 0.18),
       child: Text('$prefix ${delta.label}'),
     );
   }
@@ -3327,7 +3326,7 @@ class _EffectsTimeline extends StatelessWidget {
             bottom: 0,
             child: Container(
               width: 2,
-              color: Theme.of(context).dividerColor.withOpacity(0.5),
+              color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
             ),
           ),
           if (entries.isEmpty)
@@ -3376,7 +3375,7 @@ class _EffectRow extends StatelessWidget {
             color: tone,
             shape: BoxShape.circle,
             boxShadow: [
-              BoxShadow(color: tone.withOpacity(0.4), blurRadius: 10),
+              BoxShadow(color: tone.withValues(alpha: 0.4), blurRadius: 10),
             ],
           ),
         ),
@@ -3415,7 +3414,7 @@ class _EffectRow extends StatelessWidget {
                         horizontal: 10,
                         vertical: 6,
                       ),
-                      color: tone.withOpacity(0.2),
+                      color: tone.withValues(alpha: 0.2),
                       child: Text(entry.type),
                     ),
                     _GlassPill(
@@ -3438,8 +3437,8 @@ class _EffectRow extends StatelessWidget {
                         vertical: 6,
                       ),
                       color: entry.lastDurationMs > 16
-                          ? OrefPalette.coral.withOpacity(0.2)
-                          : OrefPalette.lime.withOpacity(0.2),
+                          ? OrefPalette.coral.withValues(alpha: 0.2)
+                          : OrefPalette.lime.withValues(alpha: 0.2),
                       child: Text('${entry.lastDurationMs}ms'),
                     ),
                   ],
@@ -3460,7 +3459,7 @@ class _HotBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     return _GlassPill(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      color: OrefPalette.coral.withOpacity(0.25),
+      color: OrefPalette.coral.withValues(alpha: 0.25),
       child: Text('HOT', style: Theme.of(context).textTheme.labelMedium),
     );
   }
@@ -3623,7 +3622,7 @@ class _SignalTableHeader extends StatelessWidget {
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
-            color: Theme.of(context).dividerColor.withOpacity(0.4),
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.4),
           ),
         ),
       ),
@@ -3693,7 +3692,7 @@ class _SignalRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final highlight = isSelected
-        ? OrefPalette.teal.withOpacity(0.2)
+        ? OrefPalette.teal.withValues(alpha: 0.2)
         : Colors.transparent;
 
     return Material(
@@ -3709,8 +3708,8 @@ class _SignalRow extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isSelected
-                  ? OrefPalette.teal.withOpacity(0.4)
-                  : colorScheme.onSurface.withOpacity(0.08),
+                  ? OrefPalette.teal.withValues(alpha: 0.4)
+                  : colorScheme.onSurface.withValues(alpha: 0.08),
             ),
           ),
           child: isCompact
@@ -3856,7 +3855,7 @@ class _StatusBadge extends StatelessWidget {
     final style = _statusStyles[status] ?? _statusStyles['Active']!;
     return _GlassPill(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      color: style.color.withOpacity(0.2),
+      color: style.color.withValues(alpha: 0.2),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -3891,8 +3890,8 @@ class _FilterChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final background = isSelected
-        ? OrefPalette.indigo.withOpacity(0.35)
-        : colorScheme.surface.withOpacity(0.35);
+        ? OrefPalette.indigo.withValues(alpha: 0.35)
+        : colorScheme.surface.withValues(alpha: 0.35);
 
     return Material(
       color: Colors.transparent,
@@ -3907,8 +3906,8 @@ class _FilterChip extends StatelessWidget {
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
               color: isSelected
-                  ? OrefPalette.indigo.withOpacity(0.7)
-                  : colorScheme.onSurface.withOpacity(0.1),
+                  ? OrefPalette.indigo.withValues(alpha: 0.7)
+                  : colorScheme.onSurface.withValues(alpha: 0.1),
             ),
           ),
           child: Text(label, style: Theme.of(context).textTheme.labelMedium),
@@ -4046,7 +4045,7 @@ class _PanelPlaceholder extends StatelessWidget {
                   horizontal: 12,
                   vertical: 6,
                 ),
-                color: OrefPalette.indigo.withOpacity(0.2),
+                color: OrefPalette.indigo.withValues(alpha: 0.2),
                 child: const Text('UI in progress'),
               ),
               const Spacer(),
@@ -4097,7 +4096,7 @@ class _PanelPlaceholder extends StatelessWidget {
                     border: Border.all(
                       color: Theme.of(
                         context,
-                      ).colorScheme.onSurface.withOpacity(0.1),
+                      ).colorScheme.onSurface.withValues(alpha: 0.1),
                     ),
                   ),
                   child: const Center(
@@ -4136,7 +4135,6 @@ class _MetricTile extends StatelessWidget {
     required this.trend,
     required this.accent,
     required this.icon,
-    this.width,
   });
 
   final String label;
@@ -4144,13 +4142,11 @@ class _MetricTile extends StatelessWidget {
   final String trend;
   final Color accent;
   final IconData icon;
-  final double? width;
 
   @override
   Widget build(BuildContext context) {
     return _GlassCard(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-      width: width,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -4160,7 +4156,7 @@ class _MetricTile extends StatelessWidget {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: accent.withOpacity(0.2),
+                  color: accent.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(icon, color: accent, size: 18),
@@ -4171,7 +4167,7 @@ class _MetricTile extends StatelessWidget {
                   horizontal: 10,
                   vertical: 6,
                 ),
-                color: accent.withOpacity(0.18),
+                color: accent.withValues(alpha: 0.18),
                 child: Text(trend),
               ),
             ],
@@ -4189,24 +4185,18 @@ class _MetricTile extends StatelessWidget {
 }
 
 class _AdaptiveWrap extends StatelessWidget {
-  const _AdaptiveWrap({
-    required this.children,
-    this.minItemWidth = 220,
-    this.maxColumns = 4,
-    this.spacing = 16,
-    this.runSpacing = 16,
-  });
+  const _AdaptiveWrap({required this.children});
 
   final List<Widget> children;
-  final double minItemWidth;
-  final int maxColumns;
-  final double spacing;
-  final double runSpacing;
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
+        const minItemWidth = 220.0;
+        const maxColumns = 4;
+        const spacing = 16.0;
+        const runSpacing = 16.0;
         final available = constraints.maxWidth;
         final rawColumns = (available / (minItemWidth + spacing)).floor();
         final columns = rawColumns.clamp(1, maxColumns);
@@ -4409,7 +4399,7 @@ class _HealthBar extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: Theme.of(
                       context,
-                    ).colorScheme.onSurface.withOpacity(0.08),
+                    ).colorScheme.onSurface.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(999),
                   ),
                 ),
@@ -4420,7 +4410,10 @@ class _HealthBar extends StatelessWidget {
                     color: color,
                     borderRadius: BorderRadius.circular(999),
                     boxShadow: [
-                      BoxShadow(color: color.withOpacity(0.35), blurRadius: 8),
+                      BoxShadow(
+                        color: color.withValues(alpha: 0.35),
+                        blurRadius: 8,
+                      ),
                     ],
                   ),
                 ),
@@ -4449,7 +4442,7 @@ class _ChartPlaceholder extends StatelessWidget {
           colors: [Color(0x3322E3C4), Color(0x226C5CFF)],
         ),
         border: Border.all(
-          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
         ),
       ),
       child: Stack(
@@ -4497,10 +4490,13 @@ class _MiniChart extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(18),
         gradient: LinearGradient(
-          colors: [color.withOpacity(0.12), color.withOpacity(0.04)],
+          colors: [
+            color.withValues(alpha: 0.12),
+            color.withValues(alpha: 0.04),
+          ],
         ),
         border: Border.all(
-          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
         ),
       ),
       child: Padding(
@@ -4522,7 +4518,7 @@ class _MiniChart extends StatelessWidget {
                             child: Container(
                               height: barMaxHeight * (values[index] / maxValue),
                               decoration: BoxDecoration(
-                                color: color.withOpacity(0.75),
+                                color: color.withValues(alpha: 0.75),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                             ),
@@ -4576,7 +4572,7 @@ class _Sparkline extends StatelessWidget {
               height: 28 * value,
               margin: const EdgeInsets.only(right: 4),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.4),
+                color: color.withValues(alpha: 0.4),
                 borderRadius: BorderRadius.circular(6),
               ),
             ),
@@ -4661,8 +4657,8 @@ class _GlassCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
     final tint = brightness == Brightness.dark
-        ? Colors.white.withOpacity(0.06)
-        : Colors.white.withOpacity(0.7);
+        ? Colors.white.withValues(alpha: 0.06)
+        : Colors.white.withValues(alpha: 0.7);
 
     return SizedBox(
       width: width,
@@ -4677,14 +4673,14 @@ class _GlassCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(22),
               border: Border.all(
                 color: brightness == Brightness.dark
-                    ? Colors.white.withOpacity(0.1)
-                    : Colors.white.withOpacity(0.4),
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : Colors.white.withValues(alpha: 0.4),
               ),
               boxShadow: [
                 BoxShadow(
                   color: brightness == Brightness.dark
-                      ? Colors.black.withOpacity(0.3)
-                      : Colors.black.withOpacity(0.08),
+                      ? Colors.black.withValues(alpha: 0.3)
+                      : Colors.black.withValues(alpha: 0.08),
                   blurRadius: 24,
                   offset: const Offset(0, 12),
                 ),
@@ -4711,8 +4707,8 @@ class _GlassPill extends StatelessWidget {
     final tint =
         color ??
         (brightness == Brightness.dark
-            ? Colors.white.withOpacity(0.08)
-            : Colors.white.withOpacity(0.9));
+            ? Colors.white.withValues(alpha: 0.08)
+            : Colors.white.withValues(alpha: 0.9));
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(999),
@@ -4727,8 +4723,8 @@ class _GlassPill extends StatelessWidget {
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
               color: brightness == Brightness.dark
-                  ? Colors.white.withOpacity(0.1)
-                  : Colors.white.withOpacity(0.5),
+                  ? Colors.white.withValues(alpha: 0.1)
+                  : Colors.white.withValues(alpha: 0.5),
             ),
           ),
           child: DefaultTextStyle.merge(
@@ -4803,7 +4799,7 @@ class _OutlineButton extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: color.withOpacity(0.2)),
+              border: Border.all(color: color.withValues(alpha: 0.2)),
             ),
             child: Text(label, style: Theme.of(context).textTheme.labelLarge),
           ),
@@ -5118,6 +5114,7 @@ Future<void> _exportData(
   }
   final payload = const JsonEncoder.withIndent('  ').convert(data);
   await Clipboard.setData(ClipboardData(text: payload));
+  if (!context.mounted) return;
   _showToast(context, 'Copied $label JSON to clipboard.');
 }
 
