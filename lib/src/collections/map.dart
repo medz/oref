@@ -12,9 +12,7 @@ class ReactiveMap<K, V> extends MapBase<K, V>
     with Reactive<ReactiveMap<K, V>>
     implements Map<K, V> {
   /// Creates a new [ReactiveMap]
-  ReactiveMap(Map<K, V> source) : _source = source {
-    _devtools = devtools.bindCollection(this, type: 'Map');
-  }
+  ReactiveMap(Map<K, V> source) : _source = source;
 
   /// Creates a widget scoped [ReactiveMap].
   factory ReactiveMap.scoped(BuildContext context, Map<K, V> source) {
