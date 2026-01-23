@@ -178,6 +178,29 @@ class _NoopCollectionHandle implements CollectionHandle {
   void dispose() {}
 }
 
+class _TimingToken {
+  const _TimingToken(this.stopwatch);
+
+  final Stopwatch? stopwatch;
+
+  static const _TimingToken noop = _TimingToken(null);
+}
+
+int? _finishTiming(Object? token) {
+  if (token == null) return null;
+  if (token is Stopwatch) {
+    token.stop();
+    return token.elapsedMicroseconds;
+  }
+  if (token is _TimingToken) {
+    final stopwatch = token.stopwatch;
+    if (stopwatch == null) return 0;
+    stopwatch.stop();
+    return stopwatch.elapsedMicroseconds;
+  }
+  return null;
+}
+
 class _SignalHandle implements SignalHandle {
   _SignalHandle(this._devtools, this._node, {required this.isNew});
 
@@ -212,9 +235,9 @@ class _ComputedHandle implements ComputedHandle {
 
   @override
   void finish(Object? token, Object? value) {
-    if (token is! Stopwatch) return;
-    token.stop();
-    _devtools._recordComputedRun(_node, value, token.elapsedMicroseconds);
+    final durationUs = _finishTiming(token);
+    if (durationUs == null) return;
+    _devtools._recordComputedRun(_node, value, durationUs);
   }
 
   @override
@@ -242,9 +265,9 @@ class _EffectHandle implements EffectHandle {
 
   @override
   void finish(Object? token) {
-    if (token is! Stopwatch) return;
-    token.stop();
-    _devtools._recordEffectRun(_node, token.elapsedMicroseconds);
+    final durationUs = _finishTiming(token);
+    if (durationUs == null) return;
+    _devtools._recordEffectRun(_node, durationUs);
   }
 
   @override
@@ -424,8 +447,9 @@ class _DevTools implements DevToolsBinding {
   }
 
   Object? _startTiming() {
-    if (!_shouldTrackEvents()) return null;
-    return Stopwatch()..start();
+    if (!_canRegister()) return null;
+    if (!_shouldTrackEvents()) return _TimingToken.noop;
+    return _TimingToken(Stopwatch()..start());
   }
 
   void _ensureInitialized() {

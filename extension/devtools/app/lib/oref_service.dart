@@ -86,7 +86,7 @@ class OrefDevToolsController extends ChangeNotifier {
     _handleConnection();
   }
 
-  final Duration _pollInterval;
+  Duration _pollInterval;
   late final VoidCallback _connectionListener;
 
   oref.Snapshot? snapshot;
@@ -115,6 +115,11 @@ class OrefDevToolsController extends ChangeNotifier {
         oref.Protocol.updateSettingsService,
         args: _encodeArgs(settings.toJson()),
       );
+      final nextInterval = Duration(milliseconds: settings.sampleIntervalMs);
+      if (_pollInterval != nextInterval) {
+        _pollInterval = nextInterval;
+        _startPolling();
+      }
       await _fetchSnapshot();
     } catch (error) {
       _setError(error);
@@ -193,10 +198,10 @@ class OrefDevToolsController extends ChangeNotifier {
       avgEffectDurationUs: totals.avgEffectDurationUs,
     );
 
-    final next = [...performance, sample];
+    final next = [sample, ...performance];
     final limit = snapshot.settings.performanceLimit;
     if (limit > 0 && next.length > limit) {
-      next.removeRange(0, next.length - limit);
+      next.removeRange(limit, next.length);
     }
     performance = next;
     _lastTotals = totals;

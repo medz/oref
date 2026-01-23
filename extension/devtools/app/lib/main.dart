@@ -748,7 +748,11 @@ class _OverviewPanel extends StatelessWidget {
     final computed = _samplesByKind(samples, 'computed');
     final effects = _samplesByKind(samples, 'effect');
     final collections = _samplesByKind(samples, 'collection');
-    final batches = snapshot?.batches ?? const <BatchSample>[];
+    final batches = snapshot?.batches.toList() ?? const <BatchSample>[];
+    batches.sort((a, b) => a.endedAt.compareTo(b.endedAt));
+    final timelineEvents =
+        snapshot?.timeline.toList() ?? const <TimelineEvent>[];
+    timelineEvents.sort((a, b) => b.timestamp.compareTo(a.timestamp));
     final performance = controller.performance;
     final settings = snapshot?.settings ?? const DevToolsSettings();
     final canInteract = controller.connected;
@@ -807,7 +811,7 @@ class _OverviewPanel extends StatelessWidget {
           sample.collectionMutations;
     }
 
-    final lastSample = performance.isNotEmpty ? performance.last : null;
+    final lastSample = performance.isNotEmpty ? performance.first : null;
     final lastActivity = lastSample == null ? 0 : activityScore(lastSample);
     final maxActivity = performance.isEmpty
         ? 0
@@ -822,7 +826,11 @@ class _OverviewPanel extends StatelessWidget {
         : (lastActivity * 60000 / settings.sampleIntervalMs).round();
 
     final signalPulseValues = tail(
-      performance.map((sample) => sample.signalWrites).toList(),
+      performance
+          .map((sample) => sample.signalWrites)
+          .toList()
+          .reversed
+          .toList(),
       12,
     );
     final batchPulseValues = tail(
@@ -1065,7 +1073,7 @@ class _OverviewPanel extends StatelessWidget {
                   children: [
                     Text('Recent Activity', style: textTheme.titleMedium),
                     const SizedBox(height: 12),
-                    if ((snapshot?.timeline ?? []).isEmpty)
+                    if (timelineEvents.isEmpty)
                       Text(
                         controller.isUnavailable
                             ? 'Enable Oref DevTools to capture activity.'
@@ -1073,7 +1081,7 @@ class _OverviewPanel extends StatelessWidget {
                         style: textTheme.bodyMedium,
                       )
                     else
-                      for (final event in snapshot!.timeline.reversed.take(6))
+                      for (final event in timelineEvents.take(6))
                         _TimelineRow(event: event),
                   ],
                 ),
@@ -1898,8 +1906,10 @@ class _BatchingPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = OrefDevToolsScope.of(context);
-    final batches = controller.snapshot?.batches ?? const <BatchSample>[];
-    final latest = batches.isNotEmpty ? batches.last : null;
+    final batches =
+        controller.snapshot?.batches.toList() ?? const <BatchSample>[];
+    batches.sort((a, b) => b.endedAt.compareTo(a.endedAt));
+    final latest = batches.isNotEmpty ? batches.first : null;
     final totalWrites = batches.fold<int>(
       0,
       (sum, batch) => sum + batch.writeCount,
@@ -2204,7 +2214,9 @@ class _TimelinePanelState extends State<_TimelinePanel> {
   @override
   Widget build(BuildContext context) {
     final controller = OrefDevToolsScope.of(context);
-    final events = controller.snapshot?.timeline ?? const <TimelineEvent>[];
+    final events =
+        controller.snapshot?.timeline.toList() ?? const <TimelineEvent>[];
+    events.sort((a, b) => b.timestamp.compareTo(a.timestamp));
     final typeFilters = _buildFilterOptions(events.map((event) => event.type));
     final severityFilters = _buildFilterOptions(
       events.map((event) => event.severity),
@@ -2383,7 +2395,7 @@ class _PerformancePanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = OrefDevToolsScope.of(context);
     final samples = controller.performance;
-    final latest = samples.isNotEmpty ? samples.last : null;
+    final latest = samples.isNotEmpty ? samples.first : null;
 
     return _ConnectionGuard(
       child: _PanelScrollView(
