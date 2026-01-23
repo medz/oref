@@ -1181,6 +1181,8 @@ class _SignalsPanelState extends State<_SignalsPanel> {
   final _searchController = TextEditingController();
   String _statusFilter = 'All';
   int? _selectedId;
+  _SortKey _sortKey = _SortKey.updated;
+  bool _sortAscending = false;
 
   @override
   void initState() {
@@ -1212,6 +1214,10 @@ class _SignalsPanelState extends State<_SignalsPanel> {
               entries: filtered,
               selectedId: selected?.id,
               isCompact: !isSplit,
+              sortKey: _sortKey,
+              sortAscending: _sortAscending,
+              onSortName: () => _toggleSort(_SortKey.name),
+              onSortUpdated: () => _toggleSort(_SortKey.updated),
               onSelect: (entry) => setState(() => _selectedId = entry.id),
             );
             final detail = _SignalDetail(entry: selected);
@@ -1256,13 +1262,37 @@ class _SignalsPanelState extends State<_SignalsPanel> {
 
   List<OrefSignal> _filterSignals(List<OrefSignal> entries) {
     final query = _searchController.text.trim().toLowerCase();
-    return entries.where((entry) {
+    final filtered = entries.where((entry) {
       final matchesQuery =
           query.isEmpty || entry.label.toLowerCase().contains(query);
       final matchesStatus =
           _statusFilter == 'All' || entry.status == _statusFilter;
       return matchesQuery && matchesStatus;
     }).toList();
+    filtered.sort(
+      (a, b) => _compareSort(
+        _sortKey,
+        _sortAscending,
+        a.label,
+        b.label,
+        a.updatedAt,
+        b.updatedAt,
+        a.id,
+        b.id,
+      ),
+    );
+    return filtered;
+  }
+
+  void _toggleSort(_SortKey key) {
+    setState(() {
+      if (_sortKey == key) {
+        _sortAscending = !_sortAscending;
+      } else {
+        _sortKey = key;
+        _sortAscending = key == _SortKey.name;
+      }
+    });
   }
 }
 
@@ -1277,6 +1307,8 @@ class _ComputedPanelState extends State<_ComputedPanel> {
   final _searchController = TextEditingController();
   String _statusFilter = 'All';
   int? _selectedId;
+  _SortKey _sortKey = _SortKey.updated;
+  bool _sortAscending = false;
 
   @override
   void initState() {
@@ -1308,6 +1340,10 @@ class _ComputedPanelState extends State<_ComputedPanel> {
               entries: filtered,
               selectedId: selected?.id,
               isCompact: !isSplit,
+              sortKey: _sortKey,
+              sortAscending: _sortAscending,
+              onSortName: () => _toggleSort(_SortKey.name),
+              onSortUpdated: () => _toggleSort(_SortKey.updated),
               onSelect: (entry) => setState(() => _selectedId = entry.id),
             );
             final detail = _ComputedDetail(entry: selected);
@@ -1352,13 +1388,37 @@ class _ComputedPanelState extends State<_ComputedPanel> {
 
   List<OrefComputed> _filterComputed(List<OrefComputed> entries) {
     final query = _searchController.text.trim().toLowerCase();
-    return entries.where((entry) {
+    final filtered = entries.where((entry) {
       final matchesQuery =
           query.isEmpty || entry.label.toLowerCase().contains(query);
       final matchesStatus =
           _statusFilter == 'All' || entry.status == _statusFilter;
       return matchesQuery && matchesStatus;
     }).toList();
+    filtered.sort(
+      (a, b) => _compareSort(
+        _sortKey,
+        _sortAscending,
+        a.label,
+        b.label,
+        a.updatedAt,
+        b.updatedAt,
+        a.id,
+        b.id,
+      ),
+    );
+    return filtered;
+  }
+
+  void _toggleSort(_SortKey key) {
+    setState(() {
+      if (_sortKey == key) {
+        _sortAscending = !_sortAscending;
+      } else {
+        _sortKey = key;
+        _sortAscending = key == _SortKey.name;
+      }
+    });
   }
 }
 
@@ -1442,12 +1502,20 @@ class _ComputedList extends StatelessWidget {
     required this.entries,
     required this.selectedId,
     required this.isCompact,
+    required this.sortKey,
+    required this.sortAscending,
+    required this.onSortName,
+    required this.onSortUpdated,
     required this.onSelect,
   });
 
   final List<OrefComputed> entries;
   final int? selectedId;
   final bool isCompact;
+  final _SortKey sortKey;
+  final bool sortAscending;
+  final VoidCallback onSortName;
+  final VoidCallback onSortUpdated;
   final ValueChanged<OrefComputed> onSelect;
 
   @override
@@ -1456,7 +1524,13 @@ class _ComputedList extends StatelessWidget {
       padding: const EdgeInsets.all(0),
       child: Column(
         children: [
-          if (!isCompact) const _ComputedTableHeader(),
+          if (!isCompact)
+            _ComputedTableHeader(
+              sortKey: sortKey,
+              sortAscending: sortAscending,
+              onSortName: onSortName,
+              onSortUpdated: onSortUpdated,
+            ),
           if (entries.isEmpty)
             Padding(
               padding: const EdgeInsets.all(16),
@@ -1489,7 +1563,17 @@ class _ComputedList extends StatelessWidget {
 }
 
 class _ComputedTableHeader extends StatelessWidget {
-  const _ComputedTableHeader();
+  const _ComputedTableHeader({
+    required this.sortKey,
+    required this.sortAscending,
+    required this.onSortName,
+    required this.onSortUpdated,
+  });
+
+  final _SortKey sortKey;
+  final bool sortAscending;
+  final VoidCallback onSortName;
+  final VoidCallback onSortUpdated;
 
   @override
   Widget build(BuildContext context) {
@@ -1509,11 +1593,29 @@ class _ComputedTableHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Expanded(flex: 3, child: Text('Name', style: labelStyle)),
+          Expanded(
+            flex: 3,
+            child: _SortHeaderCell(
+              label: 'Name',
+              isActive: sortKey == _SortKey.name,
+              ascending: sortAscending,
+              onTap: onSortName,
+              style: labelStyle,
+            ),
+          ),
           Expanded(flex: 2, child: Text('Value', style: labelStyle)),
           Expanded(flex: 2, child: Text('Status', style: labelStyle)),
           Expanded(flex: 2, child: Text('Runs', style: labelStyle)),
-          Expanded(flex: 2, child: Text('Updated', style: labelStyle)),
+          Expanded(
+            flex: 2,
+            child: _SortHeaderCell(
+              label: 'Updated',
+              isActive: sortKey == _SortKey.updated,
+              ascending: sortAscending,
+              onTap: onSortUpdated,
+              style: labelStyle,
+            ),
+          ),
         ],
       ),
     );
@@ -1714,6 +1816,8 @@ class _CollectionsPanelState extends State<_CollectionsPanel> {
   final _searchController = TextEditingController();
   String _typeFilter = 'All';
   String _opFilter = 'All';
+  _SortKey _sortKey = _SortKey.updated;
+  bool _sortAscending = false;
 
   @override
   void initState() {
@@ -1744,6 +1848,18 @@ class _CollectionsPanelState extends State<_CollectionsPanel> {
       final matchesOp = _opFilter == 'All' || entry.operation == _opFilter;
       return matchesQuery && matchesType && matchesOp;
     }).toList();
+    filtered.sort(
+      (a, b) => _compareSort(
+        _sortKey,
+        _sortAscending,
+        a.label,
+        b.label,
+        a.updatedAt,
+        b.updatedAt,
+        a.id,
+        b.id,
+      ),
+    );
 
     return _ConnectionGuard(
       child: _PanelScrollView(
@@ -1770,13 +1886,31 @@ class _CollectionsPanelState extends State<_CollectionsPanel> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                _CollectionsList(entries: filtered, isCompact: isCompact),
+                _CollectionsList(
+                  entries: filtered,
+                  isCompact: isCompact,
+                  sortKey: _sortKey,
+                  sortAscending: _sortAscending,
+                  onSortName: () => _toggleSort(_SortKey.name),
+                  onSortUpdated: () => _toggleSort(_SortKey.updated),
+                ),
               ],
             );
           },
         ),
       ),
     );
+  }
+
+  void _toggleSort(_SortKey key) {
+    setState(() {
+      if (_sortKey == key) {
+        _sortAscending = !_sortAscending;
+      } else {
+        _sortKey = key;
+        _sortAscending = key == _SortKey.name;
+      }
+    });
   }
 }
 
@@ -2715,10 +2849,21 @@ class _CollectionsHeader extends StatelessWidget {
 }
 
 class _CollectionsList extends StatelessWidget {
-  const _CollectionsList({required this.entries, required this.isCompact});
+  const _CollectionsList({
+    required this.entries,
+    required this.isCompact,
+    required this.sortKey,
+    required this.sortAscending,
+    required this.onSortName,
+    required this.onSortUpdated,
+  });
 
   final List<OrefCollection> entries;
   final bool isCompact;
+  final _SortKey sortKey;
+  final bool sortAscending;
+  final VoidCallback onSortName;
+  final VoidCallback onSortUpdated;
 
   @override
   Widget build(BuildContext context) {
@@ -2726,7 +2871,13 @@ class _CollectionsList extends StatelessWidget {
       padding: const EdgeInsets.all(0),
       child: Column(
         children: [
-          if (!isCompact) const _CollectionsHeaderRow(),
+          if (!isCompact)
+            _CollectionsHeaderRow(
+              sortKey: sortKey,
+              sortAscending: sortAscending,
+              onSortName: onSortName,
+              onSortUpdated: onSortUpdated,
+            ),
           if (entries.isEmpty)
             Padding(
               padding: const EdgeInsets.all(16),
@@ -2754,7 +2905,17 @@ class _CollectionsList extends StatelessWidget {
 }
 
 class _CollectionsHeaderRow extends StatelessWidget {
-  const _CollectionsHeaderRow();
+  const _CollectionsHeaderRow({
+    required this.sortKey,
+    required this.sortAscending,
+    required this.onSortName,
+    required this.onSortUpdated,
+  });
+
+  final _SortKey sortKey;
+  final bool sortAscending;
+  final VoidCallback onSortName;
+  final VoidCallback onSortUpdated;
 
   @override
   Widget build(BuildContext context) {
@@ -2774,11 +2935,29 @@ class _CollectionsHeaderRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Expanded(flex: 3, child: Text('Collection', style: labelStyle)),
+          Expanded(
+            flex: 3,
+            child: _SortHeaderCell(
+              label: 'Collection',
+              isActive: sortKey == _SortKey.name,
+              ascending: sortAscending,
+              onTap: onSortName,
+              style: labelStyle,
+            ),
+          ),
           Expanded(flex: 2, child: Text('Type', style: labelStyle)),
           Expanded(flex: 2, child: Text('Op', style: labelStyle)),
           Expanded(flex: 2, child: Text('Scope', style: labelStyle)),
-          Expanded(flex: 2, child: Text('Updated', style: labelStyle)),
+          Expanded(
+            flex: 2,
+            child: _SortHeaderCell(
+              label: 'Updated',
+              isActive: sortKey == _SortKey.updated,
+              ascending: sortAscending,
+              onTap: onSortUpdated,
+              style: labelStyle,
+            ),
+          ),
         ],
       ),
     );
@@ -3303,12 +3482,20 @@ class _SignalList extends StatelessWidget {
     required this.entries,
     required this.selectedId,
     required this.isCompact,
+    required this.sortKey,
+    required this.sortAscending,
+    required this.onSortName,
+    required this.onSortUpdated,
     required this.onSelect,
   });
 
   final List<OrefSignal> entries;
   final int? selectedId;
   final bool isCompact;
+  final _SortKey sortKey;
+  final bool sortAscending;
+  final VoidCallback onSortName;
+  final VoidCallback onSortUpdated;
   final ValueChanged<OrefSignal> onSelect;
 
   @override
@@ -3317,7 +3504,13 @@ class _SignalList extends StatelessWidget {
       padding: const EdgeInsets.all(0),
       child: Column(
         children: [
-          if (!isCompact) const _SignalTableHeader(),
+          if (!isCompact)
+            _SignalTableHeader(
+              sortKey: sortKey,
+              sortAscending: sortAscending,
+              onSortName: onSortName,
+              onSortUpdated: onSortUpdated,
+            ),
           if (entries.isEmpty)
             Padding(
               padding: const EdgeInsets.all(16),
@@ -3350,7 +3543,17 @@ class _SignalList extends StatelessWidget {
 }
 
 class _SignalTableHeader extends StatelessWidget {
-  const _SignalTableHeader();
+  const _SignalTableHeader({
+    required this.sortKey,
+    required this.sortAscending,
+    required this.onSortName,
+    required this.onSortUpdated,
+  });
+
+  final _SortKey sortKey;
+  final bool sortAscending;
+  final VoidCallback onSortName;
+  final VoidCallback onSortUpdated;
 
   @override
   Widget build(BuildContext context) {
@@ -3370,11 +3573,29 @@ class _SignalTableHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Expanded(flex: 3, child: Text('Name', style: labelStyle)),
+          Expanded(
+            flex: 3,
+            child: _SortHeaderCell(
+              label: 'Name',
+              isActive: sortKey == _SortKey.name,
+              ascending: sortAscending,
+              onTap: onSortName,
+              style: labelStyle,
+            ),
+          ),
           Expanded(flex: 2, child: Text('Value', style: labelStyle)),
           Expanded(flex: 2, child: Text('Type', style: labelStyle)),
           Expanded(flex: 2, child: Text('Status', style: labelStyle)),
-          Expanded(flex: 2, child: Text('Updated', style: labelStyle)),
+          Expanded(
+            flex: 2,
+            child: _SortHeaderCell(
+              label: 'Updated',
+              isActive: sortKey == _SortKey.updated,
+              ascending: sortAscending,
+              onTap: onSortUpdated,
+              style: labelStyle,
+            ),
+          ),
         ],
       ),
     );
@@ -3671,6 +3892,54 @@ class _GlassInput extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _SortHeaderCell extends StatelessWidget {
+  const _SortHeaderCell({
+    required this.label,
+    required this.isActive,
+    required this.ascending,
+    required this.onTap,
+    required this.style,
+  });
+
+  final String label;
+  final bool isActive;
+  final bool ascending;
+  final VoidCallback onTap;
+  final TextStyle? style;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isActive
+        ? Theme.of(context).colorScheme.onSurface
+        : Theme.of(context).colorScheme.onSurface.withOpacity(0.6);
+    final textStyle = style?.copyWith(
+      color: color,
+      fontWeight: isActive ? FontWeight.w600 : style?.fontWeight,
+    );
+    final icon = ascending ? Icons.arrow_drop_up : Icons.arrow_drop_down;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(6),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: SizedBox(
+            width: double.infinity,
+            child: Row(
+              children: [
+                Text(label, style: textStyle),
+                if (isActive) Icon(icon, size: 16, color: color),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -4733,6 +5002,8 @@ const _panelInfo = {
   ),
 };
 
+enum _SortKey { name, updated }
+
 class _StatusStyle {
   const _StatusStyle(this.color);
 
@@ -4803,6 +5074,28 @@ String _formatDelta(int? value, {String suffix = ''}) {
   if (value == 0) return 'idle';
   final label = value > 0 ? '+$value' : value.toString();
   return suffix.isEmpty ? label : '$label $suffix';
+}
+
+int _compareSort(
+  _SortKey key,
+  bool ascending,
+  String nameA,
+  String nameB,
+  int updatedA,
+  int updatedB,
+  int idA,
+  int idB,
+) {
+  int result;
+  if (key == _SortKey.name) {
+    result = nameA.toLowerCase().compareTo(nameB.toLowerCase());
+  } else {
+    result = updatedA.compareTo(updatedB);
+  }
+  if (result == 0) {
+    result = idA.compareTo(idB);
+  }
+  return ascending ? result : -result;
 }
 
 Future<void> _exportData(
