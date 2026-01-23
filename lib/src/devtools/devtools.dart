@@ -15,7 +15,7 @@ bool _isRunningInTest() {
       test_env.isFlutterTestEnv;
 }
 
-void configureOrefDevTools({
+void configure({
   bool? enabled,
   int? sampleIntervalMs,
   int? timelineLimit,
@@ -33,7 +33,7 @@ void configureOrefDevTools({
   );
 }
 
-DevToolsSettings get orefDevToolsSettings => OrefDevTools._instance._settings;
+DevToolsSettings get settings => OrefDevTools._instance._settings;
 
 class OrefDevTools {
   OrefDevTools._();
