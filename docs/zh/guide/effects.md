@@ -23,6 +23,51 @@ effect(context, () {
 });
 ```
 
+## Widget 生命周期钩子
+
+这些钩子用于把一次性的副作用和组件生命周期绑定在一起，
+底层基于记忆化与 Element 跟踪。
+
+### 何时使用
+- 首帧结束后展示一次提示（toast/snackbar）。
+- 启动一次性任务，并在组件移除时取消/释放。
+- 监听器的生命周期需要与组件一致。
+
+### 不适用场景
+- 需要响应式重跑：用 `effect`。
+- 需要清理 `effect`：用 `onEffectDispose`。
+- 需要每次 build 运行：直接放在 `build`。
+
+### 行为说明
+- `onMounted`：首帧结束后执行一次。
+- `onUnmounted`：组件从树中移除时执行一次（下一帧触发）。
+- 卸载再挂载会再次触发。
+
+### 常见坑
+- 必须在 `build`（或 `Builder`）里调用，避免跨异步调用。
+- 每次 build 的调用顺序必须一致且不可条件化。
+- `onUnmounted` 在下一帧触发，测试中需要 `pump()`。
+
+### 示例
+
+```dart
+Builder(
+  builder: (context) {
+    onMounted(context, () {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Mounted')));
+    });
+
+    final timer = Timer(const Duration(seconds: 5), () {
+      debugPrint('tick');
+    });
+    onUnmounted(context, timer.cancel);
+
+    return const SizedBox();
+  },
+);
+```
+
 ## EffectScope
 
 ```dart
