@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
-class OrefDevToolsProtocol {
+class Protocol {
   static const int version = 1;
 
   static const String servicePrefix = 'ext.oref';
@@ -30,15 +30,15 @@ class Snapshot {
 
   final int protocolVersion;
   final int timestamp;
-  final OrefDevToolsSettings settings;
-  final OrefStats stats;
-  final List<OrefSignal> signals;
-  final List<OrefComputed> computed;
-  final List<OrefEffect> effects;
-  final List<OrefCollection> collections;
-  final List<OrefBatch> batches;
-  final List<OrefTimelineEvent> timeline;
-  final List<OrefPerformanceSample> performance;
+  final DevToolsSettings settings;
+  final Stats stats;
+  final List<SignalSample> signals;
+  final List<ComputedSample> computed;
+  final List<EffectSample> effects;
+  final List<CollectionSample> collections;
+  final List<BatchSample> batches;
+  final List<TimelineEvent> timeline;
+  final List<PerformanceSample> performance;
 
   Map<String, Object?> toJson() {
     return {
@@ -60,26 +60,23 @@ class Snapshot {
     return Snapshot(
       protocolVersion: _readInt(json['protocolVersion'], fallback: 0),
       timestamp: _readInt(json['timestamp'], fallback: 0),
-      settings: OrefDevToolsSettings.fromJson(_readMap(json['settings'])),
-      stats: OrefStats.fromJson(_readMap(json['stats'])),
-      signals: _readList(json['signals'], OrefSignal.fromJson),
-      computed: _readList(json['computed'], OrefComputed.fromJson),
-      effects: _readList(json['effects'], OrefEffect.fromJson),
-      collections: _readList(json['collections'], OrefCollection.fromJson),
-      batches: _readList(json['batches'], OrefBatch.fromJson),
-      timeline: _readList(json['timeline'], OrefTimelineEvent.fromJson),
-      performance: _readList(
-        json['performance'],
-        OrefPerformanceSample.fromJson,
-      ),
+      settings: DevToolsSettings.fromJson(_readMap(json['settings'])),
+      stats: Stats.fromJson(_readMap(json['stats'])),
+      signals: _readList(json['signals'], SignalSample.fromJson),
+      computed: _readList(json['computed'], ComputedSample.fromJson),
+      effects: _readList(json['effects'], EffectSample.fromJson),
+      collections: _readList(json['collections'], CollectionSample.fromJson),
+      batches: _readList(json['batches'], BatchSample.fromJson),
+      timeline: _readList(json['timeline'], TimelineEvent.fromJson),
+      performance: _readList(json['performance'], PerformanceSample.fromJson),
     );
   }
 
   static Snapshot empty() => Snapshot(
-    protocolVersion: OrefDevToolsProtocol.version,
+    protocolVersion: Protocol.version,
     timestamp: 0,
-    settings: const OrefDevToolsSettings(),
-    stats: const OrefStats(),
+    settings: const DevToolsSettings(),
+    stats: const Stats(),
     signals: const [],
     computed: const [],
     effects: const [],
@@ -105,8 +102,8 @@ class Snapshot {
 }
 
 @immutable
-class OrefStats {
-  const OrefStats({
+class Stats {
+  const Stats({
     this.signals = 0,
     this.computed = 0,
     this.effects = 0,
@@ -145,8 +142,8 @@ class OrefStats {
     };
   }
 
-  factory OrefStats.fromJson(Map<String, dynamic> json) {
-    return OrefStats(
+  factory Stats.fromJson(Map<String, dynamic> json) {
+    return Stats(
       signals: _readInt(json['signals'], fallback: 0),
       computed: _readInt(json['computed'], fallback: 0),
       effects: _readInt(json['effects'], fallback: 0),
@@ -162,8 +159,8 @@ class OrefStats {
 }
 
 @immutable
-class OrefDevToolsSettings {
-  const OrefDevToolsSettings({
+class DevToolsSettings {
+  const DevToolsSettings({
     this.enabled = true,
     this.sampleIntervalMs = 1000,
     this.timelineLimit = 200,
@@ -179,7 +176,7 @@ class OrefDevToolsSettings {
   final int performanceLimit;
   final int valuePreviewLength;
 
-  OrefDevToolsSettings copyWith({
+  DevToolsSettings copyWith({
     bool? enabled,
     int? sampleIntervalMs,
     int? timelineLimit,
@@ -187,7 +184,7 @@ class OrefDevToolsSettings {
     int? performanceLimit,
     int? valuePreviewLength,
   }) {
-    return OrefDevToolsSettings(
+    return DevToolsSettings(
       enabled: enabled ?? this.enabled,
       sampleIntervalMs: sampleIntervalMs ?? this.sampleIntervalMs,
       timelineLimit: timelineLimit ?? this.timelineLimit,
@@ -208,8 +205,8 @@ class OrefDevToolsSettings {
     };
   }
 
-  factory OrefDevToolsSettings.fromJson(Map<String, dynamic> json) {
-    return OrefDevToolsSettings(
+  factory DevToolsSettings.fromJson(Map<String, dynamic> json) {
+    return DevToolsSettings(
       enabled: _readBool(json['enabled'], fallback: true),
       sampleIntervalMs: _readInt(json['sampleIntervalMs'], fallback: 1000),
       timelineLimit: _readInt(json['timelineLimit'], fallback: 200),
@@ -219,8 +216,8 @@ class OrefDevToolsSettings {
     );
   }
 
-  static OrefDevToolsSettings mergeArgs(
-    OrefDevToolsSettings current,
+  static DevToolsSettings mergeArgs(
+    DevToolsSettings current,
     Map<String, String> args,
   ) {
     return current.copyWith(
@@ -235,8 +232,8 @@ class OrefDevToolsSettings {
 }
 
 @immutable
-class OrefSignal {
-  const OrefSignal({
+class SignalSample {
+  const SignalSample({
     required this.id,
     required this.label,
     required this.value,
@@ -281,8 +278,8 @@ class OrefSignal {
     };
   }
 
-  factory OrefSignal.fromJson(Map<String, dynamic> json) {
-    return OrefSignal(
+  factory SignalSample.fromJson(Map<String, dynamic> json) {
+    return SignalSample(
       id: _readInt(json['id'], fallback: 0),
       label: _readString(json['label']),
       value: _readString(json['value']),
@@ -300,8 +297,8 @@ class OrefSignal {
 }
 
 @immutable
-class OrefComputed {
-  const OrefComputed({
+class ComputedSample {
+  const ComputedSample({
     required this.id,
     required this.label,
     required this.value,
@@ -349,8 +346,8 @@ class OrefComputed {
     };
   }
 
-  factory OrefComputed.fromJson(Map<String, dynamic> json) {
-    return OrefComputed(
+  factory ComputedSample.fromJson(Map<String, dynamic> json) {
+    return ComputedSample(
       id: _readInt(json['id'], fallback: 0),
       label: _readString(json['label']),
       value: _readString(json['value']),
@@ -369,8 +366,8 @@ class OrefComputed {
 }
 
 @immutable
-class OrefEffect {
-  const OrefEffect({
+class EffectSample {
+  const EffectSample({
     required this.id,
     required this.label,
     required this.type,
@@ -412,8 +409,8 @@ class OrefEffect {
     };
   }
 
-  factory OrefEffect.fromJson(Map<String, dynamic> json) {
-    return OrefEffect(
+  factory EffectSample.fromJson(Map<String, dynamic> json) {
+    return EffectSample(
       id: _readInt(json['id'], fallback: 0),
       label: _readString(json['label']),
       type: _readString(json['type'], fallback: 'Effect'),
@@ -430,8 +427,8 @@ class OrefEffect {
 }
 
 @immutable
-class OrefCollection {
-  const OrefCollection({
+class CollectionSample {
+  const CollectionSample({
     required this.id,
     required this.label,
     required this.type,
@@ -452,7 +449,7 @@ class OrefCollection {
   final String owner;
   final String scope;
   final int updatedAt;
-  final List<OrefCollectionDelta> deltas;
+  final List<CollectionDelta> deltas;
   final String note;
   final int mutations;
   final String status;
@@ -473,8 +470,8 @@ class OrefCollection {
     };
   }
 
-  factory OrefCollection.fromJson(Map<String, dynamic> json) {
-    return OrefCollection(
+  factory CollectionSample.fromJson(Map<String, dynamic> json) {
+    return CollectionSample(
       id: _readInt(json['id'], fallback: 0),
       label: _readString(json['label']),
       type: _readString(json['type'], fallback: 'Collection'),
@@ -482,7 +479,7 @@ class OrefCollection {
       owner: _readString(json['owner'], fallback: 'Global'),
       scope: _readString(json['scope'], fallback: 'Global'),
       updatedAt: _readInt(json['updatedAt'], fallback: 0),
-      deltas: _readList(json['deltas'], OrefCollectionDelta.fromJson),
+      deltas: _readList(json['deltas'], CollectionDelta.fromJson),
       note: _readString(json['note']),
       mutations: _readInt(json['mutations'], fallback: 0),
       status: _readString(json['status'], fallback: 'Active'),
@@ -491,16 +488,16 @@ class OrefCollection {
 }
 
 @immutable
-class OrefCollectionDelta {
-  const OrefCollectionDelta({required this.kind, required this.label});
+class CollectionDelta {
+  const CollectionDelta({required this.kind, required this.label});
 
   final String kind;
   final String label;
 
   Map<String, Object?> toJson() => {'kind': kind, 'label': label};
 
-  factory OrefCollectionDelta.fromJson(Map<String, dynamic> json) {
-    return OrefCollectionDelta(
+  factory CollectionDelta.fromJson(Map<String, dynamic> json) {
+    return CollectionDelta(
       kind: _readString(json['kind'], fallback: 'update'),
       label: _readString(json['label']),
     );
@@ -508,8 +505,8 @@ class OrefCollectionDelta {
 }
 
 @immutable
-class OrefBatch {
-  const OrefBatch({
+class BatchSample {
+  const BatchSample({
     required this.id,
     required this.depth,
     required this.startedAt,
@@ -536,8 +533,8 @@ class OrefBatch {
     };
   }
 
-  factory OrefBatch.fromJson(Map<String, dynamic> json) {
-    return OrefBatch(
+  factory BatchSample.fromJson(Map<String, dynamic> json) {
+    return BatchSample(
       id: _readInt(json['id'], fallback: 0),
       depth: _readInt(json['depth'], fallback: 0),
       startedAt: _readInt(json['startedAt'], fallback: 0),
@@ -549,8 +546,8 @@ class OrefBatch {
 }
 
 @immutable
-class OrefTimelineEvent {
-  const OrefTimelineEvent({
+class TimelineEvent {
+  const TimelineEvent({
     required this.id,
     required this.timestamp,
     required this.type,
@@ -577,8 +574,8 @@ class OrefTimelineEvent {
     };
   }
 
-  factory OrefTimelineEvent.fromJson(Map<String, dynamic> json) {
-    return OrefTimelineEvent(
+  factory TimelineEvent.fromJson(Map<String, dynamic> json) {
+    return TimelineEvent(
       id: _readInt(json['id'], fallback: 0),
       timestamp: _readInt(json['timestamp'], fallback: 0),
       type: _readString(json['type'], fallback: 'event'),
@@ -590,8 +587,8 @@ class OrefTimelineEvent {
 }
 
 @immutable
-class OrefPerformanceSample {
-  const OrefPerformanceSample({
+class PerformanceSample {
+  const PerformanceSample({
     required this.timestamp,
     required this.signalCount,
     required this.computedCount,
@@ -633,8 +630,8 @@ class OrefPerformanceSample {
     };
   }
 
-  factory OrefPerformanceSample.fromJson(Map<String, dynamic> json) {
-    return OrefPerformanceSample(
+  factory PerformanceSample.fromJson(Map<String, dynamic> json) {
+    return PerformanceSample(
       timestamp: _readInt(json['timestamp'], fallback: 0),
       signalCount: _readInt(json['signalCount'], fallback: 0),
       computedCount: _readInt(json['computedCount'], fallback: 0),

@@ -33,8 +33,7 @@ void configureOrefDevTools({
   );
 }
 
-OrefDevToolsSettings get orefDevToolsSettings =>
-    OrefDevTools._instance._settings;
+DevToolsSettings get orefDevToolsSettings => OrefDevTools._instance._settings;
 
 class OrefDevTools {
   OrefDevTools._();
@@ -152,7 +151,7 @@ class OrefDevTools {
   static void recordCollectionMutation(
     Object collection, {
     required String operation,
-    required List<OrefCollectionDelta> deltas,
+    required List<CollectionDelta> deltas,
     String? note,
   }) {
     _instance._recordCollectionMutation(
@@ -185,9 +184,9 @@ class OrefDevTools {
   final Map<int, _EffectRecord> _effects = {};
   final Map<int, _CollectionRecord> _collections = {};
 
-  final List<OrefTimelineEvent> _timeline = [];
-  final List<OrefBatch> _batches = [];
-  final List<OrefPerformanceSample> _performance = [];
+  final List<TimelineEvent> _timeline = [];
+  final List<BatchSample> _batches = [];
+  final List<PerformanceSample> _performance = [];
 
   final List<_BatchSession> _batchStack = [];
 
@@ -200,7 +199,7 @@ class OrefDevTools {
 
   bool _initialized = false;
   bool _extensionsRegistered = false;
-  OrefDevToolsSettings _settings = const OrefDevToolsSettings();
+  DevToolsSettings _settings = const DevToolsSettings();
   Timer? _samplingTimer;
 
   int _signalWrites = 0;
@@ -301,7 +300,7 @@ class OrefDevTools {
     _signalWrites++;
 
     _timeline.add(
-      OrefTimelineEvent(
+      TimelineEvent(
         id: _nextTimelineId++,
         timestamp: record.updatedAt,
         type: 'signal',
@@ -376,7 +375,7 @@ class OrefDevTools {
     _computedRuns++;
 
     _timeline.add(
-      OrefTimelineEvent(
+      TimelineEvent(
         id: _nextTimelineId++,
         timestamp: record.updatedAt,
         type: 'computed',
@@ -431,7 +430,7 @@ class OrefDevTools {
     _effectDurationCount++;
 
     _timeline.add(
-      OrefTimelineEvent(
+      TimelineEvent(
         id: _nextTimelineId++,
         timestamp: record.updatedAt,
         type: 'effect',
@@ -502,7 +501,7 @@ class OrefDevTools {
   void _recordCollectionMutation(
     Object collection, {
     required String operation,
-    required List<OrefCollectionDelta> deltas,
+    required List<CollectionDelta> deltas,
     String? note,
   }) {
     if (!_shouldTrack()) return;
@@ -518,7 +517,7 @@ class OrefDevTools {
     _collectionMutations++;
 
     _timeline.add(
-      OrefTimelineEvent(
+      TimelineEvent(
         id: _nextTimelineId++,
         timestamp: record.updatedAt,
         type: 'collection',
@@ -546,7 +545,7 @@ class OrefDevTools {
     final session = _batchStack.removeLast();
     session.endedAt = _nowMs();
     final endedAt = session.endedAt ?? session.startedAt;
-    final record = OrefBatch(
+    final record = BatchSample(
       id: session.id,
       depth: session.depth,
       startedAt: session.startedAt,
@@ -558,7 +557,7 @@ class OrefDevTools {
     _trimList(_batches, _settings.batchLimit);
 
     _timeline.add(
-      OrefTimelineEvent(
+      TimelineEvent(
         id: _nextTimelineId++,
         timestamp: record.endedAt,
         type: 'batch',
@@ -573,10 +572,10 @@ class OrefDevTools {
   Snapshot _snapshot() {
     if (!_initialized) {
       return Snapshot(
-        protocolVersion: OrefDevToolsProtocol.version,
+        protocolVersion: Protocol.version,
         timestamp: _nowMs(),
         settings: _settings,
-        stats: const OrefStats(),
+        stats: const Stats(),
         signals: const [],
         computed: const [],
         effects: const [],
@@ -589,7 +588,7 @@ class OrefDevTools {
 
     _purgeCollected();
     return Snapshot(
-      protocolVersion: OrefDevToolsProtocol.version,
+      protocolVersion: Protocol.version,
       timestamp: _nowMs(),
       settings: _settings,
       stats: _buildStats(),
@@ -597,9 +596,9 @@ class OrefDevTools {
       computed: _computed.values.map(_computedToProtocol).toList(),
       effects: _effects.values.map(_effectToProtocol).toList(),
       collections: _collections.values.map(_collectionToProtocol).toList(),
-      batches: List<OrefBatch>.from(_batches),
-      timeline: List<OrefTimelineEvent>.from(_timeline),
-      performance: List<OrefPerformanceSample>.from(_performance),
+      batches: List<BatchSample>.from(_batches),
+      timeline: List<TimelineEvent>.from(_timeline),
+      performance: List<PerformanceSample>.from(_performance),
     );
   }
 
@@ -621,25 +620,25 @@ class OrefDevTools {
     _extensionsRegistered = true;
 
     try {
-      developer.registerExtension(OrefDevToolsProtocol.snapshotService, (
+      developer.registerExtension(Protocol.snapshotService, (
         method,
         params,
       ) async {
         final payload = jsonEncode(_snapshot().toJson());
         return developer.ServiceExtensionResponse.result(payload);
       });
-      developer.registerExtension(OrefDevToolsProtocol.settingsService, (
+      developer.registerExtension(Protocol.settingsService, (
         method,
         params,
       ) async {
         final payload = jsonEncode(_settings.toJson());
         return developer.ServiceExtensionResponse.result(payload);
       });
-      developer.registerExtension(OrefDevToolsProtocol.updateSettingsService, (
+      developer.registerExtension(Protocol.updateSettingsService, (
         method,
         params,
       ) async {
-        final merged = OrefDevToolsSettings.mergeArgs(_settings, params);
+        final merged = DevToolsSettings.mergeArgs(_settings, params);
         _configure(
           enabled: merged.enabled,
           sampleIntervalMs: merged.sampleIntervalMs,
@@ -651,7 +650,7 @@ class OrefDevTools {
         final payload = jsonEncode(_settings.toJson());
         return developer.ServiceExtensionResponse.result(payload);
       });
-      developer.registerExtension(OrefDevToolsProtocol.clearService, (
+      developer.registerExtension(Protocol.clearService, (
         method,
         params,
       ) async {
@@ -679,7 +678,7 @@ class OrefDevTools {
     final avgEffect = _effectDurationCount == 0
         ? 0.0
         : _effectDurationTotalMs / _effectDurationCount;
-    final sample = OrefPerformanceSample(
+    final sample = PerformanceSample(
       timestamp: now,
       signalCount: _signals.length,
       computedCount: _computed.length,
@@ -704,8 +703,8 @@ class OrefDevTools {
     _effectDurationCount = 0;
   }
 
-  OrefStats _buildStats() {
-    return OrefStats(
+  Stats _buildStats() {
+    return Stats(
       signals: _signals.length,
       computed: _computed.length,
       effects: _effects.length,
@@ -719,12 +718,12 @@ class OrefDevTools {
     );
   }
 
-  OrefSignal _signalToProtocol(_SignalRecord record) {
+  SignalSample _signalToProtocol(_SignalRecord record) {
     final node = record.node.target;
     if (node == null) {
       record.disposed = true;
     }
-    return OrefSignal(
+    return SignalSample(
       id: record.id,
       label: record.label,
       owner: record.owner,
@@ -740,12 +739,12 @@ class OrefDevTools {
     );
   }
 
-  OrefComputed _computedToProtocol(_ComputedRecord record) {
+  ComputedSample _computedToProtocol(_ComputedRecord record) {
     final node = record.node.target;
     if (node == null) {
       record.disposed = true;
     }
-    return OrefComputed(
+    return ComputedSample(
       id: record.id,
       label: record.label,
       owner: record.owner,
@@ -762,12 +761,12 @@ class OrefDevTools {
     );
   }
 
-  OrefEffect _effectToProtocol(_EffectRecord record) {
+  EffectSample _effectToProtocol(_EffectRecord record) {
     final node = record.node.target;
     if (node == null) {
       record.disposed = true;
     }
-    return OrefEffect(
+    return EffectSample(
       id: record.id,
       label: record.label,
       owner: record.owner,
@@ -782,12 +781,12 @@ class OrefDevTools {
     );
   }
 
-  OrefCollection _collectionToProtocol(_CollectionRecord record) {
+  CollectionSample _collectionToProtocol(_CollectionRecord record) {
     final collection = record.collection.target;
     if (collection == null) {
       record.disposed = true;
     }
-    return OrefCollection(
+    return CollectionSample(
       id: record.id,
       label: record.label,
       owner: record.owner,
@@ -930,7 +929,7 @@ class _CollectionRecord {
   String scope;
   String type;
   String operation = 'Idle';
-  List<OrefCollectionDelta> deltas = const [];
+  List<CollectionDelta> deltas = const [];
   String note;
   int updatedAt = 0;
   int mutations = 0;

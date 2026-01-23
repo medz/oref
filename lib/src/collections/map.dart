@@ -55,7 +55,7 @@ class ReactiveMap<K, V> extends MapBase<K, V>
       this,
       operation: exists ? 'Replace' : 'Add',
       deltas: [
-        OrefCollectionDelta(
+        CollectionDelta(
           kind: exists ? 'update' : 'add',
           label: exists
               ? '$key: ${previous ?? 'null'} -> $value'
@@ -72,7 +72,7 @@ class ReactiveMap<K, V> extends MapBase<K, V>
     OrefDevTools.recordCollectionMutation(
       this,
       operation: 'Clear',
-      deltas: const [OrefCollectionDelta(kind: 'remove', label: 'all entries')],
+      deltas: const [CollectionDelta(kind: 'remove', label: 'all entries')],
     );
   }
 
@@ -85,7 +85,7 @@ class ReactiveMap<K, V> extends MapBase<K, V>
       OrefDevTools.recordCollectionMutation(
         this,
         operation: 'Remove',
-        deltas: [OrefCollectionDelta(kind: 'remove', label: '$key')],
+        deltas: [CollectionDelta(kind: 'remove', label: '$key')],
       );
     }
     return result;
@@ -104,7 +104,7 @@ class ReactiveMap<K, V> extends MapBase<K, V>
       OrefDevTools.recordCollectionMutation(
         this,
         operation: 'Add',
-        deltas: [OrefCollectionDelta(kind: 'add', label: '$key: $result')],
+        deltas: [CollectionDelta(kind: 'add', label: '$key: $result')],
       );
     }
     track();

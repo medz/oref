@@ -53,7 +53,7 @@ class ReactiveSet<T> extends SetBase<T>
       OrefDevTools.recordCollectionMutation(
         this,
         operation: 'Add',
-        deltas: [OrefCollectionDelta(kind: 'add', label: value.toString())],
+        deltas: [CollectionDelta(kind: 'add', label: value.toString())],
       );
     }
 
@@ -80,7 +80,7 @@ class ReactiveSet<T> extends SetBase<T>
       OrefDevTools.recordCollectionMutation(
         this,
         operation: 'Remove',
-        deltas: [OrefCollectionDelta(kind: 'remove', label: value.toString())],
+        deltas: [CollectionDelta(kind: 'remove', label: value.toString())],
       );
     }
 
@@ -104,7 +104,7 @@ class ReactiveSet<T> extends SetBase<T>
     OrefDevTools.recordCollectionMutation(
       this,
       operation: 'Add',
-      deltas: [OrefCollectionDelta(kind: 'add', label: deltaLabel)],
+      deltas: [CollectionDelta(kind: 'add', label: deltaLabel)],
       note: elements.length > preview.length
           ? 'Added ${elements.length} items'
           : null,
@@ -122,7 +122,7 @@ class ReactiveSet<T> extends SetBase<T>
     OrefDevTools.recordCollectionMutation(
       this,
       operation: 'Remove',
-      deltas: [OrefCollectionDelta(kind: 'remove', label: deltaLabel)],
+      deltas: [CollectionDelta(kind: 'remove', label: deltaLabel)],
       note: elements.length > preview.length
           ? 'Removed ${elements.length} items'
           : null,
@@ -136,7 +136,7 @@ class ReactiveSet<T> extends SetBase<T>
     OrefDevTools.recordCollectionMutation(
       this,
       operation: 'Clear',
-      deltas: const [OrefCollectionDelta(kind: 'remove', label: 'all items')],
+      deltas: const [CollectionDelta(kind: 'remove', label: 'all items')],
     );
   }
 }

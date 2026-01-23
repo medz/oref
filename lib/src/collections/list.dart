@@ -46,7 +46,7 @@ class ReactiveList<T> extends ListBase<T>
     OrefDevTools.recordCollectionMutation(
       this,
       operation: 'Resize',
-      deltas: [OrefCollectionDelta(kind: 'update', label: 'length -> $value')],
+      deltas: [CollectionDelta(kind: 'update', label: 'length -> $value')],
     );
   }
 
@@ -65,7 +65,7 @@ class ReactiveList<T> extends ListBase<T>
       this,
       operation: 'Replace',
       deltas: [
-        OrefCollectionDelta(
+        CollectionDelta(
           kind: 'update',
           label: '[$index] ${previous ?? 'null'} -> $value',
         ),
@@ -83,7 +83,7 @@ class ReactiveList<T> extends ListBase<T>
     OrefDevTools.recordCollectionMutation(
       this,
       operation: 'Add',
-      deltas: [OrefCollectionDelta(kind: 'add', label: element.toString())],
+      deltas: [CollectionDelta(kind: 'add', label: element.toString())],
     );
   }
 
@@ -96,7 +96,7 @@ class ReactiveList<T> extends ListBase<T>
     OrefDevTools.recordCollectionMutation(
       this,
       operation: 'Add',
-      deltas: [OrefCollectionDelta(kind: 'add', label: deltaLabel)],
+      deltas: [CollectionDelta(kind: 'add', label: deltaLabel)],
       note: iterable.length > preview.length
           ? 'Added ${iterable.length} items'
           : null,
@@ -110,7 +110,7 @@ class ReactiveList<T> extends ListBase<T>
     OrefDevTools.recordCollectionMutation(
       this,
       operation: 'Add',
-      deltas: [OrefCollectionDelta(kind: 'add', label: '[$index] $element')],
+      deltas: [CollectionDelta(kind: 'add', label: '[$index] $element')],
     );
   }
 
@@ -122,9 +122,7 @@ class ReactiveList<T> extends ListBase<T>
       OrefDevTools.recordCollectionMutation(
         this,
         operation: 'Remove',
-        deltas: [
-          OrefCollectionDelta(kind: 'remove', label: element.toString()),
-        ],
+        deltas: [CollectionDelta(kind: 'remove', label: element.toString())],
       );
     }
     return result;
@@ -137,7 +135,7 @@ class ReactiveList<T> extends ListBase<T>
     OrefDevTools.recordCollectionMutation(
       this,
       operation: 'Remove',
-      deltas: [OrefCollectionDelta(kind: 'remove', label: '[$index] $result')],
+      deltas: [CollectionDelta(kind: 'remove', label: '[$index] $result')],
     );
     return result;
   }
@@ -149,7 +147,7 @@ class ReactiveList<T> extends ListBase<T>
     OrefDevTools.recordCollectionMutation(
       this,
       operation: 'Clear',
-      deltas: const [OrefCollectionDelta(kind: 'remove', label: 'all items')],
+      deltas: const [CollectionDelta(kind: 'remove', label: 'all items')],
     );
   }
 }

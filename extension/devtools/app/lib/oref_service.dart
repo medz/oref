@@ -3,7 +3,7 @@ import 'dart:convert';
 
 import 'package:devtools_extensions/devtools_extensions.dart';
 import 'package:flutter/foundation.dart';
-import 'package:oref/devtools.dart';
+import 'package:oref/devtools.dart' as oref;
 import 'package:vm_service/vm_service.dart';
 
 enum OrefServiceStatus { disconnected, connecting, unavailable, ready, error }
@@ -19,7 +19,7 @@ class OrefDevToolsController extends ChangeNotifier {
   final Duration _pollInterval;
   late final VoidCallback _connectionListener;
 
-  Snapshot? snapshot;
+  oref.Snapshot? snapshot;
   OrefServiceStatus status = OrefServiceStatus.disconnected;
   String? errorMessage;
 
@@ -36,11 +36,11 @@ class OrefDevToolsController extends ChangeNotifier {
     await _fetchSnapshot();
   }
 
-  Future<void> updateSettings(OrefDevToolsSettings settings) async {
+  Future<void> updateSettings(oref.DevToolsSettings settings) async {
     if (!connected) return;
     try {
       await _callExtension(
-        OrefDevToolsProtocol.updateSettingsService,
+        oref.Protocol.updateSettingsService,
         args: _encodeArgs(settings.toJson()),
       );
       await _fetchSnapshot();
@@ -52,7 +52,7 @@ class OrefDevToolsController extends ChangeNotifier {
   Future<void> clearHistory() async {
     if (!connected) return;
     try {
-      await _callExtension(OrefDevToolsProtocol.clearService);
+      await _callExtension(oref.Protocol.clearService);
       await _fetchSnapshot();
     } catch (error) {
       _setError(error);
@@ -62,12 +62,10 @@ class OrefDevToolsController extends ChangeNotifier {
   Future<void> reloadSettings() async {
     if (!connected) return;
     try {
-      final payload = await _callExtension(
-        OrefDevToolsProtocol.settingsService,
-      );
-      final settings = OrefDevToolsSettings.fromJson(payload);
+      final payload = await _callExtension(oref.Protocol.settingsService);
+      final settings = oref.DevToolsSettings.fromJson(payload);
       if (snapshot != null) {
-        snapshot = Snapshot(
+        snapshot = oref.Snapshot(
           protocolVersion: snapshot!.protocolVersion,
           timestamp: snapshot!.timestamp,
           settings: settings,
@@ -119,10 +117,8 @@ class OrefDevToolsController extends ChangeNotifier {
   Future<void> _fetchSnapshot() async {
     if (!connected) return;
     try {
-      final payload = await _callExtension(
-        OrefDevToolsProtocol.snapshotService,
-      );
-      snapshot = Snapshot.fromJson(payload);
+      final payload = await _callExtension(oref.Protocol.snapshotService);
+      snapshot = oref.Snapshot.fromJson(payload);
       status = OrefServiceStatus.ready;
       errorMessage = null;
       notifyListeners();

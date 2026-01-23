@@ -740,14 +740,13 @@ class _OverviewPanel extends StatelessWidget {
     final controller = OrefDevToolsScope.of(context);
     final snapshot = controller.snapshot;
     final stats = snapshot?.stats;
-    final signals = snapshot?.signals ?? const <OrefSignal>[];
-    final computed = snapshot?.computed ?? const <OrefComputed>[];
-    final effects = snapshot?.effects ?? const <OrefEffect>[];
-    final collections = snapshot?.collections ?? const <OrefCollection>[];
-    final batches = snapshot?.batches ?? const <OrefBatch>[];
-    final performance =
-        snapshot?.performance ?? const <OrefPerformanceSample>[];
-    final settings = snapshot?.settings ?? const OrefDevToolsSettings();
+    final signals = snapshot?.signals ?? const <SignalSample>[];
+    final computed = snapshot?.computed ?? const <ComputedSample>[];
+    final effects = snapshot?.effects ?? const <EffectSample>[];
+    final collections = snapshot?.collections ?? const <CollectionSample>[];
+    final batches = snapshot?.batches ?? const <BatchSample>[];
+    final performance = snapshot?.performance ?? const <PerformanceSample>[];
+    final settings = snapshot?.settings ?? const DevToolsSettings();
     final canInteract = controller.connected;
 
     String summarizeTop<T>(
@@ -796,7 +795,7 @@ class _OverviewPanel extends StatelessWidget {
         signals.where((entry) => entry.listeners > 0).length +
         computed.where((entry) => entry.listeners > 0).length;
 
-    int activityScore(OrefPerformanceSample sample) {
+    int activityScore(PerformanceSample sample) {
       return sample.signalWrites +
           sample.computedRuns +
           sample.effectRuns +
@@ -1133,7 +1132,7 @@ class _SignalsPanelState extends State<_SignalsPanel> {
           builder: (context, constraints) {
             final controller = OrefDevToolsScope.of(context);
             final entries =
-                controller.snapshot?.signals ?? const <OrefSignal>[];
+                controller.snapshot?.signals ?? const <SignalSample>[];
             final isSplit = constraints.maxWidth >= 980;
             final filtered = _filterSignals(entries);
             final selected = entries.firstWhereOrNull(
@@ -1200,7 +1199,7 @@ class _SignalsPanelState extends State<_SignalsPanel> {
     );
   }
 
-  List<OrefSignal> _filterSignals(List<OrefSignal> entries) {
+  List<SignalSample> _filterSignals(List<SignalSample> entries) {
     final query = _searchController.text.trim().toLowerCase();
     final filtered = entries.where((entry) {
       final matchesQuery =
@@ -1270,7 +1269,7 @@ class _ComputedPanelState extends State<_ComputedPanel> {
           builder: (context, constraints) {
             final controller = OrefDevToolsScope.of(context);
             final entries =
-                controller.snapshot?.computed ?? const <OrefComputed>[];
+                controller.snapshot?.computed ?? const <ComputedSample>[];
             final isSplit = constraints.maxWidth >= 980;
             final filtered = _filterComputed(entries);
             final selected = entries.firstWhereOrNull(
@@ -1337,7 +1336,7 @@ class _ComputedPanelState extends State<_ComputedPanel> {
     );
   }
 
-  List<OrefComputed> _filterComputed(List<OrefComputed> entries) {
+  List<ComputedSample> _filterComputed(List<ComputedSample> entries) {
     final query = _searchController.text.trim().toLowerCase();
     final filtered = entries.where((entry) {
       final matchesQuery =
@@ -1458,14 +1457,14 @@ class _ComputedList extends StatelessWidget {
     required this.onSelect,
   });
 
-  final List<OrefComputed> entries;
+  final List<ComputedSample> entries;
   final int? selectedId;
   final bool isCompact;
   final _SortKey sortKey;
   final bool sortAscending;
   final VoidCallback onSortName;
   final VoidCallback onSortUpdated;
-  final ValueChanged<OrefComputed> onSelect;
+  final ValueChanged<ComputedSample> onSelect;
 
   @override
   Widget build(BuildContext context) {
@@ -1594,7 +1593,7 @@ class _ComputedRow extends StatelessWidget {
     required this.onTap,
   });
 
-  final OrefComputed entry;
+  final ComputedSample entry;
   final bool isSelected;
   final bool isCompact;
   final VoidCallback onTap;
@@ -1713,7 +1712,7 @@ class _ComputedRow extends StatelessWidget {
 class _ComputedDetail extends StatelessWidget {
   const _ComputedDetail({required this.entry});
 
-  final OrefComputed? entry;
+  final ComputedSample? entry;
 
   @override
   Widget build(BuildContext context) {
@@ -1796,7 +1795,7 @@ class _CollectionsPanelState extends State<_CollectionsPanel> {
   Widget build(BuildContext context) {
     final controller = OrefDevToolsScope.of(context);
     final entries =
-        controller.snapshot?.collections ?? const <OrefCollection>[];
+        controller.snapshot?.collections ?? const <CollectionSample>[];
     final typeFilters = _buildFilterOptions(entries.map((entry) => entry.type));
     final opFilters = _buildFilterOptions(
       entries.map((entry) => entry.operation),
@@ -1881,7 +1880,7 @@ class _BatchingPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = OrefDevToolsScope.of(context);
-    final batches = controller.snapshot?.batches ?? const <OrefBatch>[];
+    final batches = controller.snapshot?.batches ?? const <BatchSample>[];
     final latest = batches.isNotEmpty ? batches.last : null;
     final totalWrites = batches.fold<int>(
       0,
@@ -1982,7 +1981,7 @@ class _BatchingPanel extends StatelessWidget {
 class _BatchList extends StatelessWidget {
   const _BatchList({required this.batches, required this.isCompact});
 
-  final List<OrefBatch> batches;
+  final List<BatchSample> batches;
   final bool isCompact;
 
   @override
@@ -2080,7 +2079,7 @@ class _BatchHeaderRow extends StatelessWidget {
 class _BatchRow extends StatelessWidget {
   const _BatchRow({required this.batch, required this.isCompact});
 
-  final OrefBatch batch;
+  final BatchSample batch;
   final bool isCompact;
 
   @override
@@ -2187,7 +2186,7 @@ class _TimelinePanelState extends State<_TimelinePanel> {
   @override
   Widget build(BuildContext context) {
     final controller = OrefDevToolsScope.of(context);
-    final events = controller.snapshot?.timeline ?? const <OrefTimelineEvent>[];
+    final events = controller.snapshot?.timeline ?? const <TimelineEvent>[];
     final typeFilters = _buildFilterOptions(events.map((event) => event.type));
     final severityFilters = _buildFilterOptions(
       events.map((event) => event.severity),
@@ -2283,7 +2282,7 @@ class _TimelinePanelState extends State<_TimelinePanel> {
 class _TimelineList extends StatelessWidget {
   const _TimelineList({required this.events});
 
-  final List<OrefTimelineEvent> events;
+  final List<TimelineEvent> events;
 
   @override
   Widget build(BuildContext context) {
@@ -2315,7 +2314,7 @@ class _TimelineList extends StatelessWidget {
 class _TimelineEventRow extends StatelessWidget {
   const _TimelineEventRow({required this.event});
 
-  final OrefTimelineEvent event;
+  final TimelineEvent event;
 
   @override
   Widget build(BuildContext context) {
@@ -2366,7 +2365,7 @@ class _PerformancePanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = OrefDevToolsScope.of(context);
     final samples =
-        controller.snapshot?.performance ?? const <OrefPerformanceSample>[];
+        controller.snapshot?.performance ?? const <PerformanceSample>[];
     final latest = samples.isNotEmpty ? samples.last : null;
 
     return _ConnectionGuard(
@@ -2452,7 +2451,7 @@ class _PerformancePanel extends StatelessWidget {
 class _PerformanceList extends StatelessWidget {
   const _PerformanceList({required this.samples});
 
-  final List<OrefPerformanceSample> samples;
+  final List<PerformanceSample> samples;
 
   @override
   Widget build(BuildContext context) {
@@ -2484,7 +2483,7 @@ class _PerformanceList extends StatelessWidget {
 class _PerformanceRow extends StatelessWidget {
   const _PerformanceRow({required this.sample});
 
-  final OrefPerformanceSample sample;
+  final PerformanceSample sample;
 
   @override
   Widget build(BuildContext context) {
@@ -2546,14 +2545,13 @@ class _SettingsPanel extends StatefulWidget {
 
 class _SettingsPanelState extends State<_SettingsPanel> {
   bool _isEditing = false;
-  OrefDevToolsSettings _draft = const OrefDevToolsSettings();
+  DevToolsSettings _draft = const DevToolsSettings();
 
   @override
   Widget build(BuildContext context) {
     final controller = OrefDevToolsScope.of(context);
     final themeController = _ThemeScope.of(context);
-    final current =
-        controller.snapshot?.settings ?? const OrefDevToolsSettings();
+    final current = controller.snapshot?.settings ?? const DevToolsSettings();
     if (!_isEditing) {
       _draft = current;
     }
@@ -2906,7 +2904,7 @@ class _CollectionsList extends StatelessWidget {
     required this.onSortUpdated,
   });
 
-  final List<OrefCollection> entries;
+  final List<CollectionSample> entries;
   final bool isCompact;
   final _SortKey sortKey;
   final bool sortAscending;
@@ -3030,7 +3028,7 @@ class _CollectionsHeaderRow extends StatelessWidget {
 class _CollectionRow extends StatelessWidget {
   const _CollectionRow({required this.entry, required this.isCompact});
 
-  final OrefCollection entry;
+  final CollectionSample entry;
   final bool isCompact;
 
   @override
@@ -3152,7 +3150,7 @@ class _CollectionRow extends StatelessWidget {
 class _DiffToken extends StatelessWidget {
   const _DiffToken({required this.delta});
 
-  final OrefCollectionDelta delta;
+  final CollectionDelta delta;
 
   @override
   Widget build(BuildContext context) {
@@ -3178,7 +3176,7 @@ class _EffectsPanelState extends State<_EffectsPanel> {
   @override
   Widget build(BuildContext context) {
     final controller = OrefDevToolsScope.of(context);
-    final entries = controller.snapshot?.effects ?? const <OrefEffect>[];
+    final entries = controller.snapshot?.effects ?? const <EffectSample>[];
     final typeFilters = _buildFilterOptions(entries.map((entry) => entry.type));
     final scopeFilters = _buildFilterOptions(
       entries.map((entry) => entry.scope),
@@ -3312,7 +3310,7 @@ class _EffectsHeader extends StatelessWidget {
 class _EffectsTimeline extends StatelessWidget {
   const _EffectsTimeline({required this.entries});
 
-  final List<OrefEffect> entries;
+  final List<EffectSample> entries;
 
   @override
   Widget build(BuildContext context) {
@@ -3358,7 +3356,7 @@ class _EffectsTimeline extends StatelessWidget {
 class _EffectRow extends StatelessWidget {
   const _EffectRow({required this.entry});
 
-  final OrefEffect entry;
+  final EffectSample entry;
 
   @override
   Widget build(BuildContext context) {
@@ -3547,14 +3545,14 @@ class _SignalList extends StatelessWidget {
     required this.onSelect,
   });
 
-  final List<OrefSignal> entries;
+  final List<SignalSample> entries;
   final int? selectedId;
   final bool isCompact;
   final _SortKey sortKey;
   final bool sortAscending;
   final VoidCallback onSortName;
   final VoidCallback onSortUpdated;
-  final ValueChanged<OrefSignal> onSelect;
+  final ValueChanged<SignalSample> onSelect;
 
   @override
   Widget build(BuildContext context) {
@@ -3683,7 +3681,7 @@ class _SignalRow extends StatelessWidget {
     required this.onTap,
   });
 
-  final OrefSignal entry;
+  final SignalSample entry;
   final bool isSelected;
   final bool isCompact;
   final VoidCallback onTap;
@@ -3801,7 +3799,7 @@ class _SignalRow extends StatelessWidget {
 class _SignalDetail extends StatelessWidget {
   const _SignalDetail({required this.entry});
 
-  final OrefSignal? entry;
+  final SignalSample? entry;
 
   @override
   Widget build(BuildContext context) {
@@ -4585,7 +4583,7 @@ class _Sparkline extends StatelessWidget {
 class _TimelineRow extends StatelessWidget {
   const _TimelineRow({required this.event});
 
-  final OrefTimelineEvent event;
+  final TimelineEvent event;
 
   @override
   Widget build(BuildContext context) {
