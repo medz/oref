@@ -130,5 +130,4 @@ void main() {
       expect(secondCount, equals(2));
     });
   });
-
 }

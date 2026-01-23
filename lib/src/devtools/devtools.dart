@@ -1299,18 +1299,6 @@ int _countSubs(alien_system.ReactiveNode node) {
 
 int _nowMs() => DateTime.now().toUtc().millisecondsSinceEpoch;
 
-String _formatDurationUs(int durationUs) {
-  if (durationUs < 1000) return '${durationUs}us';
-  final ms = durationUs / 1000;
-  if (ms < 10) {
-    return '${ms.toStringAsFixed(2)}ms';
-  }
-  if (ms < 100) {
-    return '${ms.toStringAsFixed(1)}ms';
-  }
-  return '${ms.round()}ms';
-}
-
 void _trimList<T>(List<T> list, int limit) {
   if (list.length <= limit) return;
   list.removeRange(0, list.length - limit);

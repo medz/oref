@@ -1137,8 +1137,7 @@ class _SignalsPanel extends StatelessWidget {
                     _SignalsHeader(
                       controller: state.searchController,
                       selectedFilter: state.statusFilter(),
-                      onFilterChange: (value) =>
-                          state.statusFilter.set(value),
+                      onFilterChange: (value) => state.statusFilter.set(value),
                       totalCount: entries.length,
                       filteredCount: filtered.length,
                       onExport: () => _exportData(
@@ -1184,11 +1183,7 @@ class _SignalsPanel extends StatelessWidget {
 class _SignalsPanelStateData {
   _SignalsPanelStateData(BuildContext context)
     : searchController = TextEditingController(),
-      searchQuery = oref.signal(
-        context,
-        '',
-        debugLabel: 'signals.search',
-      ),
+      searchQuery = oref.signal(context, '', debugLabel: 'signals.search'),
       statusFilter = oref.signal(
         context,
         'All',
@@ -1307,8 +1302,7 @@ class _ComputedPanel extends StatelessWidget {
                     _ComputedHeader(
                       controller: state.searchController,
                       selectedFilter: state.statusFilter(),
-                      onFilterChange: (value) =>
-                          state.statusFilter.set(value),
+                      onFilterChange: (value) => state.statusFilter.set(value),
                       totalCount: entries.length,
                       filteredCount: filtered.length,
                       onExport: () => _exportData(
@@ -1354,11 +1348,7 @@ class _ComputedPanel extends StatelessWidget {
 class _ComputedPanelStateData {
   _ComputedPanelStateData(BuildContext context)
     : searchController = TextEditingController(),
-      searchQuery = oref.signal(
-        context,
-        '',
-        debugLabel: 'computed.search',
-      ),
+      searchQuery = oref.signal(context, '', debugLabel: 'computed.search'),
       statusFilter = oref.signal(
         context,
         'All',
@@ -1851,7 +1841,8 @@ class _EffectsPanel extends StatelessWidget {
         final filtered = entries.where((entry) {
           final matchesType =
               state.typeFilter() == 'All' || entry.type == state.typeFilter();
-          final matchesScope = state.scopeFilter() == 'All' ||
+          final matchesScope =
+              state.scopeFilter() == 'All' ||
               entry.scope == state.scopeFilter();
           return matchesType && matchesScope;
         }).toList();
@@ -1959,11 +1950,7 @@ class _CollectionsPanel extends StatelessWidget {
 class _CollectionsPanelStateData {
   _CollectionsPanelStateData(BuildContext context)
     : searchController = TextEditingController(),
-      searchQuery = oref.signal(
-        context,
-        '',
-        debugLabel: 'collections.search',
-      ),
+      searchQuery = oref.signal(context, '', debugLabel: 'collections.search'),
       typeFilter = oref.signal(
         context,
         'All',
@@ -2361,7 +2348,8 @@ class _TimelinePanel extends StatelessWidget {
         final filtered = events.where((event) {
           final matchesType =
               state.typeFilter() == 'All' || event.type == state.typeFilter();
-          final matchesSeverity = state.severityFilter() == 'All' ||
+          final matchesSeverity =
+              state.severityFilter() == 'All' ||
               event.severity == state.severityFilter();
           return matchesType && matchesSeverity;
         }).toList();
@@ -2379,8 +2367,10 @@ class _TimelinePanel extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     const _GlassPill(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       child: Text('Live'),
                     ),
                     const Spacer(),
@@ -2413,7 +2403,10 @@ class _TimelinePanel extends StatelessWidget {
                   spacing: 8,
                   runSpacing: 8,
                   children: [
-                    Text('Type', style: Theme.of(context).textTheme.labelMedium),
+                    Text(
+                      'Type',
+                      style: Theme.of(context).textTheme.labelMedium,
+                    ),
                     for (final filter in typeFilters)
                       _FilterChip(
                         label: filter,
@@ -2738,7 +2731,8 @@ class _SettingsPanel extends StatelessWidget {
         final controller = OrefDevToolsScope.of(context);
         final uiState = _UiScope.of(context);
         final themeMode = uiState.themeMode();
-        final current = controller.snapshot?.settings ?? const DevToolsSettings();
+        final current =
+            controller.snapshot?.settings ?? const DevToolsSettings();
         var draft = state.draft();
         if (!state.isEditing() && draft != current) {
           state.draft.set(current);
@@ -2989,11 +2983,7 @@ class _SettingsPanel extends StatelessWidget {
 
 class _SettingsPanelStateData {
   _SettingsPanelStateData(BuildContext context)
-    : isEditing = oref.signal(
-        context,
-        false,
-        debugLabel: 'settings.editing',
-      ),
+    : isEditing = oref.signal(context, false, debugLabel: 'settings.editing'),
       draft = oref.signal(
         context,
         const DevToolsSettings(),
