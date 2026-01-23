@@ -20,7 +20,7 @@ class UiPerformanceSample {
     required this.effectRuns,
     required this.collectionMutations,
     required this.batchWrites,
-    required this.avgEffectDurationMs,
+    required this.avgEffectDurationUs,
   });
 
   final int timestamp;
@@ -33,7 +33,7 @@ class UiPerformanceSample {
   final int effectRuns;
   final int collectionMutations;
   final int batchWrites;
-  final double avgEffectDurationMs;
+  final double avgEffectDurationUs;
 
   Map<String, Object?> toJson() {
     return {
@@ -47,7 +47,7 @@ class UiPerformanceSample {
       'effectRuns': effectRuns,
       'collectionMutations': collectionMutations,
       'batchWrites': batchWrites,
-      'avgEffectDurationMs': avgEffectDurationMs,
+      'avgEffectDurationUs': avgEffectDurationUs,
     };
   }
 }
@@ -63,7 +63,7 @@ class _SnapshotTotals {
     required this.effectRuns,
     required this.collectionMutations,
     required this.batchWrites,
-    required this.avgEffectDurationMs,
+    required this.avgEffectDurationUs,
   });
 
   final int signalCount;
@@ -75,7 +75,7 @@ class _SnapshotTotals {
   final int effectRuns;
   final int collectionMutations;
   final int batchWrites;
-  final double avgEffectDurationMs;
+  final double avgEffectDurationUs;
 }
 
 class OrefDevToolsController extends ChangeNotifier {
@@ -185,7 +185,7 @@ class OrefDevToolsController extends ChangeNotifier {
         previous?.collectionMutations,
       ),
       batchWrites: delta(totals.batchWrites, previous?.batchWrites),
-      avgEffectDurationMs: totals.avgEffectDurationMs,
+      avgEffectDurationUs: totals.avgEffectDurationUs,
     );
 
     final next = [...performance, sample];
@@ -223,7 +223,7 @@ class OrefDevToolsController extends ChangeNotifier {
         case 'effect':
           effectCount++;
           effectRuns += sample.runs ?? 0;
-          final duration = sample.lastDurationMs;
+          final duration = sample.lastDurationUs;
           if (duration != null && duration > 0) {
             effectDurationSum += duration;
             effectDurationCount++;
@@ -242,7 +242,7 @@ class OrefDevToolsController extends ChangeNotifier {
       batchWrites += batch.writeCount;
     }
 
-    final avgEffectDurationMs = effectDurationCount == 0
+    final avgEffectDurationUs = effectDurationCount == 0
         ? 0.0
         : effectDurationSum / effectDurationCount;
 
@@ -256,7 +256,7 @@ class OrefDevToolsController extends ChangeNotifier {
       effectRuns: effectRuns,
       collectionMutations: collectionMutations,
       batchWrites: batchWrites,
-      avgEffectDurationMs: avgEffectDurationMs,
+      avgEffectDurationUs: avgEffectDurationUs,
     );
   }
 

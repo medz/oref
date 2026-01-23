@@ -81,7 +81,7 @@ abstract class ComputedHandle {
   bool get isNew;
   Object? start();
   void finish(Object? token, Object? value);
-  void run(Object? value, int durationMs);
+  void run(Object? value, int durationUs);
   void dispose();
 }
 
@@ -89,7 +89,7 @@ abstract class EffectHandle {
   bool get isNew;
   Object? start();
   void finish(Object? token);
-  void run(int durationMs);
+  void run(int durationUs);
   void dispose();
 }
 
@@ -136,7 +136,7 @@ class _NoopComputedHandle implements ComputedHandle {
   void finish(Object? token, Object? value) {}
 
   @override
-  void run(Object? value, int durationMs) {}
+  void run(Object? value, int durationUs) {}
 
   @override
   void dispose() {}
@@ -155,7 +155,7 @@ class _NoopEffectHandle implements EffectHandle {
   void finish(Object? token) {}
 
   @override
-  void run(int durationMs) {}
+  void run(int durationUs) {}
 
   @override
   void dispose() {}
@@ -214,12 +214,12 @@ class _ComputedHandle implements ComputedHandle {
   void finish(Object? token, Object? value) {
     if (token is! Stopwatch) return;
     token.stop();
-    _devtools._recordComputedRun(_node, value, token.elapsedMilliseconds);
+    _devtools._recordComputedRun(_node, value, token.elapsedMicroseconds);
   }
 
   @override
-  void run(Object? value, int durationMs) {
-    _devtools._recordComputedRun(_node, value, durationMs);
+  void run(Object? value, int durationUs) {
+    _devtools._recordComputedRun(_node, value, durationUs);
   }
 
   @override
@@ -244,12 +244,12 @@ class _EffectHandle implements EffectHandle {
   void finish(Object? token) {
     if (token is! Stopwatch) return;
     token.stop();
-    _devtools._recordEffectRun(_node, token.elapsedMilliseconds);
+    _devtools._recordEffectRun(_node, token.elapsedMicroseconds);
   }
 
   @override
-  void run(int durationMs) {
-    _devtools._recordEffectRun(_node, durationMs);
+  void run(int durationUs) {
+    _devtools._recordEffectRun(_node, durationUs);
   }
 
   @override
@@ -576,7 +576,7 @@ class _DevTools implements DevToolsBinding {
   void _recordComputedRun(
     alien_preset.ComputedNode node,
     Object? value,
-    int durationMs,
+    int durationUs,
   ) {
     if (!_shouldTrack()) return;
     final id = _computedIds[node] ?? _ensureComputedRecord(node);
@@ -586,7 +586,7 @@ class _DevTools implements DevToolsBinding {
     record.value = _previewValue(value);
     record.updatedAt = _nowMs();
     record.runs++;
-    record.lastDurationMs = durationMs;
+    record.lastDurationUs = durationUs;
 
     _timeline.add(
       TimelineEvent(
@@ -594,8 +594,8 @@ class _DevTools implements DevToolsBinding {
         timestamp: record.updatedAt,
         type: 'computed',
         title: record.label,
-        detail: 'Recomputed in ${durationMs}ms',
-        severity: durationMs > 16 ? 'warn' : 'info',
+        detail: 'Recomputed in ${_formatDurationUs(durationUs)}',
+        severity: durationUs > 16000 ? 'warn' : 'info',
       ),
     );
     _trimList(_timeline, _settings.timelineLimit);
@@ -645,7 +645,7 @@ class _DevTools implements DevToolsBinding {
     return _EffectHandle(this, node, isNew: true);
   }
 
-  void _recordEffectRun(alien_preset.EffectNode node, int durationMs) {
+  void _recordEffectRun(alien_preset.EffectNode node, int durationUs) {
     if (!_shouldTrack()) return;
     final id = _effectIds[node] ?? _ensureEffectRecord(node);
     if (id == -1) return;
@@ -653,7 +653,7 @@ class _DevTools implements DevToolsBinding {
     if (record == null) return;
     record.updatedAt = _nowMs();
     record.runs++;
-    record.lastDurationMs = durationMs;
+    record.lastDurationUs = durationUs;
 
     _timeline.add(
       TimelineEvent(
@@ -661,8 +661,8 @@ class _DevTools implements DevToolsBinding {
         timestamp: record.updatedAt,
         type: 'effect',
         title: record.label,
-        detail: 'Ran in ${durationMs}ms',
-        severity: durationMs > 16 ? 'warn' : 'info',
+        detail: 'Ran in ${_formatDurationUs(durationUs)}',
+        severity: durationUs > 16000 ? 'warn' : 'info',
       ),
     );
     _trimList(_timeline, _settings.timelineLimit);
@@ -915,7 +915,7 @@ class _DevTools implements DevToolsBinding {
       status: _statusForNode(node, record.disposed),
       updatedAt: record.updatedAt,
       runs: record.runs,
-      lastDurationMs: record.lastDurationMs,
+      lastDurationUs: record.lastDurationUs,
       listeners: node == null ? 0 : _countSubs(node),
       dependencies: node == null ? 0 : _countDeps(node),
       note: record.note,
@@ -936,7 +936,7 @@ class _DevTools implements DevToolsBinding {
       type: record.type,
       updatedAt: record.updatedAt,
       runs: record.runs,
-      lastDurationMs: record.lastDurationMs,
+      lastDurationUs: record.lastDurationUs,
       status: record.disposed ? 'Disposed' : 'Active',
       note: record.note,
     );
@@ -1109,7 +1109,7 @@ class _ComputedRecord {
   String note;
   int updatedAt = 0;
   int runs = 0;
-  int lastDurationMs = 0;
+  int lastDurationUs = 0;
   bool disposed = false;
 }
 
@@ -1135,7 +1135,7 @@ class _EffectRecord {
   String note;
   int updatedAt = 0;
   int runs = 0;
-  int lastDurationMs = 0;
+  int lastDurationUs = 0;
   bool disposed = false;
 }
 
@@ -1248,6 +1248,18 @@ int _countSubs(alien_system.ReactiveNode node) {
 }
 
 int _nowMs() => DateTime.now().toUtc().millisecondsSinceEpoch;
+
+String _formatDurationUs(int durationUs) {
+  if (durationUs < 1000) return '${durationUs}us';
+  final ms = durationUs / 1000;
+  if (ms < 10) {
+    return '${ms.toStringAsFixed(2)}ms';
+  }
+  if (ms < 100) {
+    return '${ms.toStringAsFixed(1)}ms';
+  }
+  return '${ms.round()}ms';
+}
 
 void _trimList<T>(List<T> list, int limit) {
   if (list.length <= limit) return;

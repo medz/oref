@@ -781,8 +781,9 @@ class _OverviewPanel extends StatelessWidget {
     );
     final hotEffects = summarizeTop(
       effects,
-      (entry) => entry.lastDurationMs ?? 0,
-      (entry) => '${entry.label} (${entry.lastDurationMs ?? 0}ms)',
+      (entry) => entry.lastDurationUs ?? 0,
+      (entry) =>
+          '${entry.label} (${_formatDurationUs(entry.lastDurationUs ?? 0)})',
     );
     final busyCollections = summarizeTop(
       collections,
@@ -1756,7 +1757,10 @@ class _ComputedDetail extends StatelessWidget {
           _InfoRow(label: 'Value', value: entry!.value ?? ''),
           _InfoRow(label: 'Updated', value: _formatAge(entry!.updatedAt)),
           _InfoRow(label: 'Runs', value: '${entry!.runs ?? 0}'),
-          _InfoRow(label: 'Last run', value: '${entry!.lastDurationMs ?? 0}ms'),
+          _InfoRow(
+            label: 'Last run',
+            value: _formatDurationUs(entry!.lastDurationUs ?? 0),
+          ),
           _InfoRow(label: 'Listeners', value: '${entry!.listeners ?? 0}'),
           _InfoRow(label: 'Deps', value: '${entry!.dependencies ?? 0}'),
           if (entry!.note.isNotEmpty) ...[
@@ -2429,7 +2433,7 @@ class _PerformancePanel extends StatelessWidget {
                   label: 'Effect avg',
                   value: latest == null
                       ? '—'
-                      : '${latest.avgEffectDurationMs.toStringAsFixed(1)}ms',
+                      : _formatDurationUs(latest.avgEffectDurationUs.round()),
                   trend: latest == null ? '—' : '${latest.effectRuns} runs',
                   accent: OrefPalette.pink,
                   icon: Icons.speed_rounded,
@@ -2531,7 +2535,7 @@ class _PerformanceRow extends StatelessWidget {
             Expanded(
               flex: 2,
               child: Text(
-                '${sample.avgEffectDurationMs.toStringAsFixed(1)}ms',
+                _formatDurationUs(sample.avgEffectDurationUs.round()),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -3380,8 +3384,8 @@ class _EffectRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final tone = _effectColors[entry.type] ?? OrefPalette.teal;
     final runs = entry.runs ?? 0;
-    final duration = entry.lastDurationMs ?? 0;
-    final isHot = duration > 16 || runs >= 8;
+    final durationUs = entry.lastDurationUs ?? 0;
+    final isHot = durationUs > 16000 || runs >= 8;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -3455,10 +3459,10 @@ class _EffectRow extends StatelessWidget {
                         horizontal: 10,
                         vertical: 6,
                       ),
-                      color: duration > 16
+                      color: durationUs > 16000
                           ? OrefPalette.coral.withValues(alpha: 0.2)
                           : OrefPalette.lime.withValues(alpha: 0.2),
-                      child: Text('${duration}ms'),
+                      child: Text(_formatDurationUs(durationUs)),
                     ),
                   ],
                 ),
@@ -5082,6 +5086,18 @@ String _formatAge(int? timestamp) {
   if (hours < 24) return '${hours}h ago';
   final days = hours ~/ 24;
   return '${days}d ago';
+}
+
+String _formatDurationUs(int durationUs) {
+  if (durationUs < 1000) return '${durationUs}us';
+  final ms = durationUs / 1000;
+  if (ms < 10) {
+    return '${ms.toStringAsFixed(2)}ms';
+  }
+  if (ms < 100) {
+    return '${ms.toStringAsFixed(1)}ms';
+  }
+  return '${ms.round()}ms';
 }
 
 String _formatCount(int? value) {

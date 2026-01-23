@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 
 class Protocol {
-  static const int version = 2;
+  static const int version = 3;
 
   static const String servicePrefix = 'ext.oref';
   static const String snapshotService = '$servicePrefix.snapshot';
@@ -166,7 +166,7 @@ class Sample {
     this.dependencies,
     this.writes,
     this.runs,
-    this.lastDurationMs,
+    this.lastDurationUs,
     this.operation,
     this.deltas,
     this.mutations,
@@ -186,7 +186,7 @@ class Sample {
   final int? dependencies;
   final int? writes;
   final int? runs;
-  final int? lastDurationMs;
+  final int? lastDurationUs;
   final String? operation;
   final List<CollectionDelta>? deltas;
   final int? mutations;
@@ -208,7 +208,7 @@ class Sample {
     if (dependencies != null) data['dependencies'] = dependencies;
     if (writes != null) data['writes'] = writes;
     if (runs != null) data['runs'] = runs;
-    if (lastDurationMs != null) data['lastDurationMs'] = lastDurationMs;
+    if (lastDurationUs != null) data['lastDurationUs'] = lastDurationUs;
     if (operation != null) data['operation'] = operation;
     if (deltas != null) {
       data['deltas'] = deltas!.map((delta) => delta.toJson()).toList();
@@ -234,7 +234,7 @@ class Sample {
       dependencies: _readOptionalInt(json, 'dependencies'),
       writes: _readOptionalInt(json, 'writes'),
       runs: _readOptionalInt(json, 'runs'),
-      lastDurationMs: _readOptionalInt(json, 'lastDurationMs'),
+      lastDurationUs: _readOptionalInt(json, 'lastDurationUs'),
       operation: _readOptionalString(json, 'operation'),
       deltas: deltasValue == null
           ? null
