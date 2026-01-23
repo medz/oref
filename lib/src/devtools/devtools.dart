@@ -10,7 +10,7 @@ import 'package:flutter/widgets.dart';
 import 'protocol.dart';
 
 void registerOrefDevToolsServiceExtensions() {
-  OrefDevTools._instance._ensureInitialized();
+  OrefDevTools._instance._enable();
 }
 
 void configureOrefDevTools({
@@ -198,6 +198,7 @@ class OrefDevTools {
 
   bool _initialized = false;
   bool _extensionsRegistered = false;
+  bool _enabledByUser = false;
   OrefDevToolsSettings _settings = const OrefDevToolsSettings();
   Timer? _samplingTimer;
 
@@ -210,14 +211,21 @@ class OrefDevTools {
   int _effectDurationCount = 0;
 
   bool _shouldTrack() {
+    if (!_enabledByUser) return false;
     if (!_initialized) {
       _ensureInitialized();
     }
     return _initialized && _settings.enabled;
   }
 
+  void _enable() {
+    _enabledByUser = true;
+    _ensureInitialized();
+  }
+
   void _ensureInitialized() {
     if (_initialized) return;
+    if (!_enabledByUser) return;
     if (kReleaseMode) return;
     _initialized = true;
     _registerExtensions();
@@ -241,7 +249,7 @@ class OrefDevTools {
       valuePreviewLength: valuePreviewLength,
     );
     _settings = updated;
-    if (_settings.enabled) {
+    if (_settings.enabled && _enabledByUser) {
       _startSampling();
     } else {
       _samplingTimer?.cancel();
@@ -662,7 +670,7 @@ class OrefDevTools {
 
   void _startSampling() {
     _samplingTimer?.cancel();
-    if (!_settings.enabled) return;
+    if (!_settings.enabled || !_enabledByUser) return;
     _samplingTimer = Timer.periodic(
       Duration(milliseconds: _settings.sampleIntervalMs),
       (_) => _recordPerformanceSample(),
