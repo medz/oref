@@ -12,9 +12,7 @@ class ReactiveSet<T> extends SetBase<T>
     with Reactive<ReactiveSet<T>>
     implements Set<T> {
   /// Creates a new reactive set with the given elements.
-  ReactiveSet(Iterable<T> elements) : _source = Set.from(elements) {
-    _devtools = devtools.bindCollection(this, type: 'Set');
-  }
+  ReactiveSet(Iterable<T> elements) : _source = Set.from(elements);
 
   /// Creates a new reactive set with the given elements, scoped to the given context.
   factory ReactiveSet.scoped(BuildContext context, Iterable<T> elements) {
