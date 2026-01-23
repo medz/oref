@@ -2,8 +2,12 @@
 
 ### Features
 
+- Add Oref DevTools diagnostics protocol and service extensions.
+- Ship a dedicated DevTools extension UI with Computed, Batching, Timeline, Performance, and Settings panels.
+- Wire live signal/effect/collection data and sampling controls into the extension.
 - Add `onMounted` widget lifecycle hook to run once after the first frame.
 - Add `onUnmounted` widget lifecycle hook to run once when a widget unmounts.
+
 
 ## 2.6.1
 

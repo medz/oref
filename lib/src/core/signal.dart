@@ -5,6 +5,8 @@ import "package:flutter/widgets.dart";
 import "context.dart";
 import "memoized.dart";
 import "watch.dart";
+import "../devtools/devtools.dart";
+import "_element_disposer.dart";
 
 /// Creates a reactive signal with an initial value.
 ///
@@ -19,12 +21,41 @@ import "watch.dart";
 /// count(); // get value
 /// count.set(1); // set value
 /// ```
-alien.WritableSignal<T> signal<T>(BuildContext? context, T initialValue) {
+alien.WritableSignal<T> signal<T>(
+  BuildContext? context,
+  T initialValue, {
+  String? debugLabel,
+  Object? debugOwner,
+  String? debugScope,
+  String? debugNote,
+}) {
   if (context == null) {
-    return _SignalImpl(initialValue);
+    final signal = _SignalImpl(initialValue);
+    final handle = devtools.bindSignal(
+      signal,
+      debugLabel: debugLabel,
+      debugOwner: debugOwner,
+      debugScope: debugScope,
+      debugNote: debugNote,
+    );
+    signal.attachDevTools(handle);
+    return signal;
   }
 
-  return useMemoized(context, () => _SignalImpl(initialValue));
+  final signal = useMemoized(context, () => _SignalImpl(initialValue));
+  final handle = devtools.bindSignal(
+    signal,
+    context: context,
+    debugLabel: debugLabel,
+    debugOwner: debugOwner,
+    debugScope: debugScope,
+    debugNote: debugNote,
+  );
+  signal.attachDevTools(handle);
+  if (handle.isNew) {
+    registerElementDisposer(context, handle.dispose);
+  }
+  return signal;
 }
 
 class _SignalImpl<T> extends alien.SignalNode<T>
@@ -35,6 +66,18 @@ class _SignalImpl<T> extends alien.SignalNode<T>
         pendingValue: initialValue,
         currentValue: initialValue,
       );
+
+  SignalHandle? _devtools;
+
+  void attachDevTools(SignalHandle handle) {
+    _devtools = handle;
+  }
+
+  @override
+  void set(T newValue) {
+    _devtools?.write(newValue);
+    super.set(newValue);
+  }
 
   @override
   T call() {

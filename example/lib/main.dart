@@ -404,9 +404,7 @@ class WalkthroughSection extends StatelessWidget {
     final nextId = signal<int>(context, 1);
     final controller = useMemoized(context, () => TextEditingController());
 
-    effect(context, () {
-      onEffectDispose(controller.dispose);
-    });
+    onUnmounted(context, controller.dispose);
 
     final filtered = computed<List<String>>(context, (_) {
       final q = query().trim().toLowerCase();
@@ -575,11 +573,9 @@ class FormWorkflowSection extends StatelessWidget {
 
     final nameController = useMemoized(context, () => TextEditingController());
     final emailController = useMemoized(context, () => TextEditingController());
-    effect(context, () {
-      onEffectDispose(() {
-        nameController.dispose();
-        emailController.dispose();
-      });
+    onUnmounted(context, () {
+      nameController.dispose();
+      emailController.dispose();
     });
 
     return Column(

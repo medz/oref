@@ -7,6 +7,7 @@ import '_warn.dart';
 import '_element_disposer.dart';
 import 'memoized.dart';
 import 'widget_scope.dart';
+import '../devtools/devtools.dart';
 
 /// Creates a reactive effect that automatically tracks its dependencies and re-runs when they change.
 ///
@@ -35,9 +36,22 @@ alien.Effect effect(
   BuildContext? context,
   void Function() callback, {
   bool detach = false,
+  String? debugLabel,
+  Object? debugOwner,
+  String? debugScope,
+  String? debugType,
+  String? debugNote,
 }) {
   if (context == null) {
-    return _createEffect(callback: callback, detach: detach);
+    return _createEffect(
+      callback: callback,
+      detach: detach,
+      debugLabel: debugLabel,
+      debugOwner: debugOwner,
+      debugScope: debugScope,
+      debugType: debugType,
+      debugNote: debugNote,
+    );
   }
 
   final e = useMemoized(context, () {
@@ -46,24 +60,34 @@ alien.Effect effect(
         context: context,
         callback: callback,
         detach: detach,
+        debugLabel: debugLabel,
+        debugOwner: debugOwner,
+        debugScope: debugScope,
+        debugType: debugType,
+        debugNote: debugNote,
       );
     }
 
     final scope = useWidgetScope(context);
     final prevSub = alien.setActiveSub(scope as alien.ReactiveNode);
     try {
-      return _createEffect(context: context, callback: callback, detach: false);
+      return _createEffect(
+        context: context,
+        callback: callback,
+        detach: false,
+        debugLabel: debugLabel,
+        debugOwner: debugOwner,
+        debugScope: debugScope,
+        debugType: debugType,
+        debugNote: debugNote,
+      );
     } finally {
       alien.setActiveSub(prevSub);
     }
   });
 
   assert(() {
-    e.callback = () {
-      e.cleanup?.call();
-      e.cleanup = null;
-      callback();
-    };
+    e.callback = _wrapEffectCallback(() => e, callback);
     return true;
   }());
 
@@ -96,17 +120,31 @@ _OrefEffect _createEffect({
   BuildContext? context,
   required void Function() callback,
   required bool detach,
+  String? debugLabel,
+  Object? debugOwner,
+  String? debugScope,
+  String? debugType,
+  String? debugNote,
 }) {
   late final _OrefEffect effect;
-  effect = _OrefEffect(() {
-    effect.cleanup?.call();
-    effect.cleanup = null;
-    callback();
-  });
+  late final VoidCallback run;
+  run = _wrapEffectCallback(() => effect, callback);
+  effect = _OrefEffect(run);
   if (context != null) {
     _OrefEffect.finalizer.attach(context, effect, detach: effect);
     registerElementDisposer(context, effect.call);
   }
+
+  final handle = devtools.bindEffect(
+    effect,
+    context: context,
+    debugLabel: debugLabel,
+    debugOwner: debugOwner,
+    debugScope: debugScope,
+    debugType: debugType,
+    debugNote: debugNote,
+  );
+  effect.attachDevTools(handle);
 
   final prevSub = alien.setActiveSub(effect);
   if (prevSub != null && !detach) {
@@ -114,7 +152,7 @@ _OrefEffect _createEffect({
   }
 
   try {
-    callback();
+    run();
     return effect;
   } finally {
     alien.setActiveSub(prevSub);
@@ -134,12 +172,18 @@ class _OrefEffect extends alien.EffectNode implements alien.Effect {
   VoidCallback callback;
   void Function()? onDispose;
   void Function()? cleanup;
+  EffectHandle? _devtools;
+
+  void attachDevTools(EffectHandle handle) {
+    _devtools = handle;
+  }
 
   @override
   VoidCallback get fn => callback;
 
   @override
   void call() {
+    _devtools?.dispose();
     onDispose?.call();
     onDispose = null;
     for (alien.Link? link = deps; link != null; link = link.nextDep) {
@@ -159,4 +203,22 @@ class _OrefEffect extends alien.EffectNode implements alien.Effect {
     alien.stop(this);
     finalizer.detach(this);
   }
+}
+
+VoidCallback _wrapEffectCallback(
+  _OrefEffect Function() effectGetter,
+  VoidCallback callback,
+) {
+  return () {
+    final effect = effectGetter();
+    effect.cleanup?.call();
+    effect.cleanup = null;
+    final handle = effect._devtools;
+    final token = handle?.start();
+    try {
+      callback();
+    } finally {
+      handle?.finish(token);
+    }
+  };
 }

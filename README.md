@@ -46,6 +46,28 @@ Or install by running this command:
 flutter pub add oref
 ```
 
+## DevTools Extension
+
+Oref ships with a DevTools extension to inspect signals, effects, computed values,
+collections, and performance snapshots.
+
+1) Run your app in **debug** mode and open Flutter DevTools.
+
+2) In DevTools → Extensions, enable **Oref**.
+If you want it enabled by default, add a `devtools_options.yaml` next to your
+app’s `pubspec.yaml`:
+```yaml
+extensions:
+  - oref: true
+```
+
+Notes:
+- The service extensions register automatically once a signal/computed/effect is
+  created in debug mode.
+- The extension relies on DevTools’ VM Service connection, so it only works when
+  DevTools is connected to a running app.
+- Web debug is supported; release builds are intentionally disabled.
+
 ## Documentation
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/medz/oref)

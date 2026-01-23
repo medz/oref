@@ -1,0 +1,5371 @@
+import 'dart:convert';
+import 'dart:ui';
+
+import 'package:devtools_extensions/devtools_extensions.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:oref/devtools.dart';
+import 'package:oref/oref.dart' as oref;
+
+import 'oref_service.dart';
+
+List<Sample> _samplesByKind(List<Sample> samples, String kind) {
+  return samples.where((sample) => sample.kind == kind).toList();
+}
+
+void main() {
+  runApp(const DevToolsExtension(child: OrefDevToolsApp()));
+}
+
+class OrefDevToolsApp extends StatelessWidget {
+  const OrefDevToolsApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final uiState = oref.useMemoized(context, () => _UiState(context));
+    return _UiScope(
+      state: uiState,
+      child: oref.SignalBuilder(
+        builder: (context) {
+          final mode = uiState.themeMode();
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            title: 'Oref DevTools',
+            theme: OrefTheme.light(),
+            darkTheme: OrefTheme.dark(),
+            themeMode: mode,
+            home: const _DevToolsShell(),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class OrefDevToolsScope extends InheritedNotifier<OrefDevToolsController> {
+  const OrefDevToolsScope({
+    super.key,
+    required OrefDevToolsController controller,
+    required super.child,
+  }) : super(notifier: controller);
+
+  static OrefDevToolsController of(BuildContext context) {
+    final scope = context
+        .dependOnInheritedWidgetOfExactType<OrefDevToolsScope>();
+    assert(scope != null, 'OrefDevToolsScope not found in widget tree.');
+    return scope!.notifier!;
+  }
+}
+
+class _UiState {
+  _UiState(BuildContext context)
+    : themeMode = oref.signal(
+        context,
+        ThemeMode.system,
+        debugLabel: 'ui.themeMode',
+      ),
+      selectedNavLabel = oref.signal(
+        context,
+        _navItems.first.label,
+        debugLabel: 'ui.nav.selected',
+      );
+
+  final oref.WritableSignal<ThemeMode> themeMode;
+  final oref.WritableSignal<String> selectedNavLabel;
+}
+
+class _UiScope extends InheritedWidget {
+  const _UiScope({required this.state, required super.child});
+
+  final _UiState state;
+
+  static _UiState of(BuildContext context) {
+    final scope = context.dependOnInheritedWidgetOfExactType<_UiScope>();
+    assert(scope != null, '_UiScope not found in widget tree.');
+    return scope!.state;
+  }
+
+  @override
+  bool updateShouldNotify(_UiScope oldWidget) => state != oldWidget.state;
+}
+
+class OrefTheme {
+  static ThemeData light() => _build(Brightness.light);
+  static ThemeData dark() => _build(Brightness.dark);
+
+  static ThemeData _build(Brightness brightness) {
+    final baseScheme = ColorScheme.fromSeed(
+      seedColor: OrefPalette.teal,
+      brightness: brightness,
+    );
+    final scheme = baseScheme.copyWith(
+      primary: OrefPalette.teal,
+      onPrimary: brightness == Brightness.dark ? Colors.black : Colors.white,
+      secondary: OrefPalette.indigo,
+      onSecondary: Colors.white,
+      error: const Color(0xFFFF6B6B),
+      onError: Colors.white,
+      surface: brightness == Brightness.dark
+          ? const Color(0xFF141B22)
+          : const Color(0xFFFFFFFF),
+      onSurface: brightness == Brightness.dark
+          ? const Color(0xFFEAF2F8)
+          : const Color(0xFF11161D),
+    );
+
+    final baseTextTheme = brightness == Brightness.dark
+        ? ThemeData.dark().textTheme
+        : ThemeData.light().textTheme;
+    final textTheme = GoogleFonts.spaceGroteskTextTheme(baseTextTheme).copyWith(
+      headlineSmall: baseTextTheme.headlineSmall?.copyWith(
+        fontWeight: FontWeight.w600,
+        letterSpacing: -0.2,
+      ),
+      titleLarge: baseTextTheme.titleLarge?.copyWith(
+        fontWeight: FontWeight.w600,
+        letterSpacing: -0.2,
+      ),
+      titleMedium: baseTextTheme.titleMedium?.copyWith(
+        fontWeight: FontWeight.w600,
+        letterSpacing: -0.1,
+      ),
+      titleSmall: baseTextTheme.titleSmall?.copyWith(
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.0,
+      ),
+      bodyLarge: baseTextTheme.bodyLarge?.copyWith(height: 1.4),
+      bodyMedium: baseTextTheme.bodyMedium?.copyWith(height: 1.4),
+      bodySmall: baseTextTheme.bodySmall?.copyWith(height: 1.3),
+      labelLarge: baseTextTheme.labelLarge?.copyWith(
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.2,
+      ),
+      labelMedium: baseTextTheme.labelMedium?.copyWith(
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.2,
+      ),
+      labelSmall: baseTextTheme.labelSmall?.copyWith(
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.4,
+      ),
+    );
+
+    return ThemeData(
+      brightness: brightness,
+      colorScheme: scheme,
+      textTheme: textTheme,
+      scaffoldBackgroundColor: Colors.transparent,
+      useMaterial3: true,
+      dividerColor: brightness == Brightness.dark
+          ? const Color(0xFF24313B)
+          : const Color(0xFFE1E6EC),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+      ),
+      cardTheme: const CardThemeData(color: Colors.transparent, elevation: 0),
+    );
+  }
+}
+
+class OrefPalette {
+  static const Color teal = Color(0xFF22E3C4);
+  static const Color tealDark = Color(0xFF14B6A1);
+  static const Color indigo = Color(0xFF6C5CFF);
+  static const Color coral = Color(0xFFFF8C6B);
+  static const Color lime = Color(0xFFB5FF6D);
+  static const Color pink = Color(0xFFFF71C6);
+  static const Color deepBlue = Color(0xFF0C141C);
+  static const Color lightBlue = Color(0xFFE7F3FF);
+}
+
+class _DevToolsShell extends StatelessWidget {
+  const _DevToolsShell();
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = oref.useMemoized(context, () {
+      final controller = OrefDevToolsController();
+      oref.onUnmounted(context, controller.dispose);
+      return controller;
+    });
+    final uiState = _UiScope.of(context);
+
+    return oref.SignalBuilder(
+      builder: (context) {
+        final selectedLabel = uiState.selectedNavLabel();
+        final selectedItem = _allNavItems.firstWhere(
+          (item) => item.label == selectedLabel,
+          orElse: () => _navItems.first,
+        );
+
+        void handleSelect(_NavItemData item) {
+          if (item.label == selectedLabel) return;
+          uiState.selectedNavLabel.set(item.label);
+        }
+
+        void openSettings() => handleSelect(_settingsItem);
+
+        return OrefDevToolsScope(
+          controller: controller,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isWide = constraints.maxWidth >= 1100;
+              final padding = EdgeInsets.symmetric(
+                horizontal: isWide ? 28 : 20,
+                vertical: 20,
+              );
+
+              return Stack(
+                children: [
+                  const _BackgroundLayer(),
+                  SafeArea(
+                    child: Padding(
+                      padding: padding,
+                      child: Column(
+                        children: [
+                          _TopBar(onOpenSettings: openSettings),
+                          const SizedBox(height: 20),
+                          Expanded(
+                            child: isWide
+                                ? Row(
+                                    children: [
+                                      SizedBox(
+                                        width: 240,
+                                        child: _SideNav(
+                                          selectedLabel: selectedLabel,
+                                          onSelect: handleSelect,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 20),
+                                      Expanded(
+                                        child: _MainPanel(
+                                          selectedItem: selectedItem,
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                : _CompactLayout(
+                                    selectedLabel: selectedLabel,
+                                    onSelect: handleSelect,
+                                    selectedItem: selectedItem,
+                                  ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _CompactLayout extends StatelessWidget {
+  const _CompactLayout({
+    required this.selectedLabel,
+    required this.onSelect,
+    required this.selectedItem,
+  });
+
+  final String selectedLabel;
+  final ValueChanged<_NavItemData> onSelect;
+  final _NavItemData selectedItem;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        _CompactNav(selectedLabel: selectedLabel, onSelect: onSelect),
+        const SizedBox(height: 16),
+        Expanded(child: _MainPanel(selectedItem: selectedItem)),
+      ],
+    );
+  }
+}
+
+class _BackgroundLayer extends StatelessWidget {
+  const _BackgroundLayer();
+
+  @override
+  Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    final gradient = brightness == Brightness.dark
+        ? const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF0B1117), Color(0xFF111C24), Color(0xFF0B1117)],
+          )
+        : const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFFF6F8FB), Color(0xFFFDF7F4), Color(0xFFF1F5FB)],
+          );
+
+    return Container(
+      decoration: BoxDecoration(gradient: gradient),
+      child: Stack(
+        children: const [
+          _GlowBlob(
+            alignment: Alignment.topLeft,
+            size: 360,
+            colors: [OrefPalette.teal, Colors.transparent],
+          ),
+          _GlowBlob(
+            alignment: Alignment.topRight,
+            size: 420,
+            colors: [OrefPalette.indigo, Colors.transparent],
+          ),
+          _GlowBlob(
+            alignment: Alignment.bottomCenter,
+            size: 520,
+            colors: [OrefPalette.coral, Colors.transparent],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GlowBlob extends StatelessWidget {
+  const _GlowBlob({
+    required this.alignment,
+    required this.size,
+    required this.colors,
+  });
+
+  final Alignment alignment;
+  final double size;
+  final List<Color> colors;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: alignment,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(gradient: RadialGradient(colors: colors)),
+      ),
+    );
+  }
+}
+
+class _TopBar extends StatelessWidget {
+  const _TopBar({required this.onOpenSettings});
+
+  final VoidCallback onOpenSettings;
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = OrefDevToolsScope.of(context);
+    final isCompact = MediaQuery.of(context).size.width < 900;
+    final canInteract = controller.connected;
+    final actions = <Widget>[
+      _ActionPill(
+        label: 'Refresh',
+        icon: Icons.refresh_rounded,
+        iconOnly: true,
+        onTap: canInteract ? controller.refresh : null,
+      ),
+      _ActionPill(
+        label: 'Clear',
+        icon: Icons.delete_sweep_rounded,
+        iconOnly: true,
+        onTap: canInteract ? controller.clearHistory : null,
+      ),
+      _ActionPill(
+        label: 'Settings',
+        icon: Icons.tune_rounded,
+        iconOnly: true,
+        onTap: onOpenSettings,
+      ),
+    ];
+
+    return _GlassCard(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: isCompact
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const _BrandMark(),
+                    const Spacer(),
+                    _StatusPill(status: controller.status),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Wrap(spacing: 12, runSpacing: 12, children: actions),
+              ],
+            )
+          : Row(
+              children: [
+                const _BrandMark(),
+                const SizedBox(width: 16),
+                _StatusPill(status: controller.status),
+                const Spacer(),
+                for (var index = 0; index < actions.length; index++) ...[
+                  actions[index],
+                  if (index != actions.length - 1) const SizedBox(width: 12),
+                ],
+              ],
+            ),
+    );
+  }
+}
+
+class _BrandMark extends StatelessWidget {
+  const _BrandMark();
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Row(
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [OrefPalette.teal, OrefPalette.indigo],
+            ),
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x6622E3C4),
+                blurRadius: 14,
+                offset: Offset(0, 6),
+              ),
+            ],
+          ),
+          child: const Icon(Icons.auto_awesome, color: Colors.black),
+        ),
+        const SizedBox(width: 12),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Oref DevTools', style: textTheme.titleMedium),
+            Text('Signals • Effects • Collections', style: textTheme.bodySmall),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _StatusPill extends StatelessWidget {
+  const _StatusPill({required this.status});
+
+  final OrefServiceStatus status;
+
+  @override
+  Widget build(BuildContext context) {
+    final tone = switch (status) {
+      OrefServiceStatus.ready => OrefPalette.lime,
+      OrefServiceStatus.connecting => OrefPalette.teal,
+      OrefServiceStatus.unavailable => OrefPalette.coral,
+      OrefServiceStatus.error => OrefPalette.pink,
+      OrefServiceStatus.disconnected => const Color(0xFF8B97A8),
+    };
+    final label = switch (status) {
+      OrefServiceStatus.ready => 'Connected',
+      OrefServiceStatus.connecting => 'Connecting',
+      OrefServiceStatus.unavailable => 'Inactive',
+      OrefServiceStatus.error => 'Connection error',
+      OrefServiceStatus.disconnected => 'Disconnected',
+    };
+
+    return _GlassPill(
+      color: tone.withValues(alpha: 0.22),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(shape: BoxShape.circle, color: tone),
+          ),
+          const SizedBox(width: 8),
+          Text(label, style: Theme.of(context).textTheme.labelMedium),
+        ],
+      ),
+    );
+  }
+}
+
+class _ActionPill extends StatelessWidget {
+  const _ActionPill({
+    required this.label,
+    required this.icon,
+    this.iconOnly = false,
+    this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool iconOnly;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final isEnabled = onTap != null;
+    final content = _GlassPill(
+      padding: iconOnly ? const EdgeInsets.all(10) : null,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16),
+          if (!iconOnly) ...[
+            const SizedBox(width: 8),
+            Text(label, style: Theme.of(context).textTheme.labelMedium),
+          ],
+        ],
+      ),
+    );
+
+    return Opacity(
+      opacity: isEnabled ? 1 : 0.6,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(999),
+        onTap: onTap,
+        child: iconOnly ? Tooltip(message: label, child: content) : content,
+      ),
+    );
+  }
+}
+
+class _SideNav extends StatelessWidget {
+  const _SideNav({required this.selectedLabel, required this.onSelect});
+
+  final String selectedLabel;
+  final ValueChanged<_NavItemData> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox.expand(
+      child: _GlassCard(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Navigation', style: Theme.of(context).textTheme.titleSmall),
+            const SizedBox(height: 12),
+            Expanded(
+              child: Scrollbar(
+                thumbVisibility: false,
+                interactive: true,
+                child: ListView.builder(
+                  padding: const EdgeInsets.only(right: 6),
+                  itemCount: _navDisplayItems.length,
+                  itemBuilder: (context, index) {
+                    final item = _navDisplayItems[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: _NavItem(
+                        item: item,
+                        isActive: item.label == selectedLabel,
+                        onTap: () => onSelect(item),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CompactNav extends StatelessWidget {
+  const _CompactNav({required this.selectedLabel, required this.onSelect});
+
+  final String selectedLabel;
+  final ValueChanged<_NavItemData> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    return _GlassCard(
+      padding: const EdgeInsets.all(12),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            for (final item in _navDisplayItems)
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: _NavItem(
+                  item: item,
+                  isActive: item.label == selectedLabel,
+                  onTap: () => onSelect(item),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NavItem extends StatelessWidget {
+  const _NavItem({required this.item, required this.isActive, this.onTap});
+
+  final _NavItemData item;
+  final bool isActive;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final activeGradient = LinearGradient(
+      colors: [
+        OrefPalette.teal.withValues(alpha: 0.9),
+        OrefPalette.indigo.withValues(alpha: 0.9),
+      ],
+    );
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            gradient: isActive ? activeGradient : null,
+            color: isActive
+                ? null
+                : colorScheme.surface.withValues(alpha: 0.35),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isActive
+                  ? Colors.transparent
+                  : colorScheme.onSurface.withValues(alpha: 0.12),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(item.icon, size: 18),
+              const SizedBox(width: 8),
+              Text(item.label, style: Theme.of(context).textTheme.labelLarge),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MainPanel extends StatelessWidget {
+  const _MainPanel({required this.selectedItem});
+
+  final _NavItemData selectedItem;
+
+  @override
+  Widget build(BuildContext context) {
+    if (selectedItem.label == 'Overview') {
+      return const _OverviewPanel();
+    }
+    if (selectedItem.label == 'Signals') {
+      return const _SignalsPanel();
+    }
+    if (selectedItem.label == 'Computed') {
+      return const _ComputedPanel();
+    }
+    if (selectedItem.label == 'Effects') {
+      return const _EffectsPanel();
+    }
+    if (selectedItem.label == 'Collections') {
+      return const _CollectionsPanel();
+    }
+    if (selectedItem.label == 'Batching') {
+      return const _BatchingPanel();
+    }
+    if (selectedItem.label == 'Timeline') {
+      return const _TimelinePanel();
+    }
+    if (selectedItem.label == 'Performance') {
+      return const _PerformancePanel();
+    }
+    if (selectedItem.label == 'Settings') {
+      return const _SettingsPanel();
+    }
+
+    final info =
+        _panelInfo[selectedItem.label] ??
+        _PanelInfo(
+          title: selectedItem.label,
+          description: 'This panel will be wired to live Oref diagnostics.',
+          bullets: const [
+            'Live data stream',
+            'Filters + search',
+            'Batch insights',
+          ],
+        );
+
+    return _PanelPlaceholder(info: info, icon: selectedItem.icon);
+  }
+}
+
+class _OverviewPanel extends StatelessWidget {
+  const _OverviewPanel();
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final controller = OrefDevToolsScope.of(context);
+    final snapshot = controller.snapshot;
+    final samples = snapshot?.samples ?? const <Sample>[];
+    final signals = _samplesByKind(samples, 'signal');
+    final computed = _samplesByKind(samples, 'computed');
+    final effects = _samplesByKind(samples, 'effect');
+    final collections = _samplesByKind(samples, 'collection');
+    final batches = snapshot?.batches.toList() ?? const <BatchSample>[];
+    batches.sort((a, b) => a.endedAt.compareTo(b.endedAt));
+    final timelineEvents =
+        snapshot?.timeline.toList() ?? const <TimelineEvent>[];
+    timelineEvents.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    final performance = controller.performance;
+    final settings = snapshot?.settings ?? const DevToolsSettings();
+    final canInteract = controller.connected;
+
+    String summarizeTop<T>(
+      List<T> entries,
+      int Function(T entry) score,
+      String Function(T entry) label,
+    ) {
+      final active = entries.where((entry) => score(entry) > 0).toList();
+      if (active.isEmpty) return '—';
+      active.sort((a, b) => score(b).compareTo(score(a)));
+      return active.take(2).map(label).join(' · ');
+    }
+
+    List<int> tail(List<int> values, int count) {
+      if (values.length <= count) return values;
+      return values.sublist(values.length - count);
+    }
+
+    final topSignals = summarizeTop(
+      signals,
+      (entry) => entry.writes ?? 0,
+      (entry) => '${entry.label} (${entry.writes ?? 0})',
+    );
+    final topComputed = summarizeTop(
+      computed,
+      (entry) => entry.runs ?? 0,
+      (entry) => '${entry.label} (${entry.runs ?? 0})',
+    );
+    final hotEffects = summarizeTop(
+      effects,
+      (entry) => entry.lastDurationUs ?? 0,
+      (entry) =>
+          '${entry.label} (${_formatDurationUs(entry.lastDurationUs ?? 0)})',
+    );
+    final busyCollections = summarizeTop(
+      collections,
+      (entry) => entry.mutations ?? 0,
+      (entry) => '${entry.label} (${entry.mutations ?? 0})',
+    );
+
+    final totalNodes = signals.length + computed.length + effects.length;
+    final activeNodes =
+        signals.where((entry) => entry.status != 'Disposed').length +
+        computed.where((entry) => entry.status != 'Disposed').length +
+        effects.where((entry) => entry.status != 'Disposed').length;
+    final watchedNodes =
+        signals.where((entry) => (entry.listeners ?? 0) > 0).length +
+        computed.where((entry) => (entry.listeners ?? 0) > 0).length;
+
+    int activityScore(UiPerformanceSample sample) {
+      return sample.signalWrites +
+          sample.computedRuns +
+          sample.effectRuns +
+          sample.collectionMutations;
+    }
+
+    final lastSample = performance.isNotEmpty ? performance.first : null;
+    final lastActivity = lastSample == null ? 0 : activityScore(lastSample);
+    final maxActivity = performance.isEmpty
+        ? 0
+        : performance
+              .map(activityScore)
+              .reduce((value, element) => value > element ? value : element);
+    final activityProgress = maxActivity == 0
+        ? 0.0
+        : lastActivity / maxActivity;
+    final activityRate = settings.sampleIntervalMs == 0
+        ? 0
+        : (lastActivity * 60000 / settings.sampleIntervalMs).round();
+
+    final signalPulseValues = tail(
+      performance
+          .map((sample) => sample.signalWrites)
+          .toList()
+          .reversed
+          .toList(),
+      12,
+    );
+    final batchPulseValues = tail(
+      batches.map((batch) => batch.writeCount).toList(),
+      12,
+    );
+
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Overview', style: textTheme.headlineSmall),
+          const SizedBox(height: 12),
+          Text(
+            'Signal diagnostics, activity, and collection health in one place.',
+            style: textTheme.bodyLarge,
+          ),
+          const SizedBox(height: 20),
+          _AdaptiveWrap(
+            children: [
+              _MetricTile(
+                label: 'Signals',
+                value: _formatCount(signals.length),
+                trend: _formatDelta(lastSample?.signalWrites, suffix: 'upd'),
+                accent: OrefPalette.teal,
+                icon: Icons.bubble_chart_rounded,
+              ),
+              _MetricTile(
+                label: 'Computed',
+                value: _formatCount(computed.length),
+                trend: _formatDelta(lastSample?.computedRuns, suffix: 'runs'),
+                accent: OrefPalette.indigo,
+                icon: Icons.schema_rounded,
+              ),
+              _MetricTile(
+                label: 'Effects',
+                value: _formatCount(effects.length),
+                trend: _formatDelta(lastSample?.effectRuns, suffix: 'runs'),
+                accent: OrefPalette.pink,
+                icon: Icons.auto_awesome_motion_rounded,
+              ),
+              _MetricTile(
+                label: 'Batches',
+                value: _formatCount(batches.length),
+                trend: _formatDelta(lastSample?.batchWrites, suffix: 'writes'),
+                accent: OrefPalette.coral,
+                icon: Icons.layers_rounded,
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isStacked = constraints.maxWidth < 980;
+              final insightCard = _InsightCard(
+                title: 'Insights',
+                subtitle: 'Highlights from the latest signal activity.',
+                primary: [
+                  _InsightRow('Most updated', topSignals),
+                  _InsightRow('Hot effects', hotEffects),
+                  _InsightRow('Busy collections', busyCollections),
+                ],
+                secondary: [
+                  _InsightRow('Computed churn', topComputed),
+                  _InsightRow(
+                    'Active nodes',
+                    totalNodes == 0 ? '—' : '$activeNodes / $totalNodes',
+                  ),
+                  _InsightRow('Last update', _formatAge(snapshot?.timestamp)),
+                ],
+              );
+              final healthCard = _HealthCard(
+                activeNodes: activeNodes,
+                totalNodes: totalNodes,
+                watchedNodes: watchedNodes,
+                activityRate: activityRate,
+                activityProgress: activityProgress,
+              );
+
+              return isStacked
+                  ? Column(
+                      children: [
+                        insightCard,
+                        const SizedBox(height: 20),
+                        healthCard,
+                      ],
+                    )
+                  : Row(
+                      children: [
+                        Expanded(child: insightCard),
+                        const SizedBox(width: 20),
+                        Expanded(child: healthCard),
+                      ],
+                    );
+            },
+          ),
+          const SizedBox(height: 20),
+          _GlassCard(
+            padding: const EdgeInsets.all(20),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final isStacked = constraints.maxWidth < 860;
+                final connectionInfo = Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Connection', style: textTheme.titleMedium),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Streaming updates from the active Flutter isolate. '
+                      'Refresh to sync the latest snapshot or clear the '
+                      'history for a new pass.',
+                      style: textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 16),
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      children: [
+                        _GradientButton(
+                          label: 'Refresh data',
+                          onTap: canInteract ? controller.refresh : null,
+                        ),
+                        _OutlineButton(
+                          label: 'Clear history',
+                          onTap: canInteract ? controller.clearHistory : null,
+                        ),
+                      ],
+                    ),
+                  ],
+                );
+
+                final sessionCard = _GlassCard(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Session', style: textTheme.labelLarge),
+                      const SizedBox(height: 12),
+                      _InfoRow(
+                        label: 'Status',
+                        value: controller.connected ? 'Connected' : 'Offline',
+                      ),
+                      _InfoRow(
+                        label: 'Signals',
+                        value: _formatCount(signals.length),
+                      ),
+                      _InfoRow(
+                        label: 'Effects',
+                        value: _formatCount(effects.length),
+                      ),
+                      _InfoRow(
+                        label: 'Last update',
+                        value: _formatAge(snapshot?.timestamp),
+                      ),
+                    ],
+                  ),
+                );
+
+                return isStacked
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          connectionInfo,
+                          const SizedBox(height: 20),
+                          sessionCard,
+                        ],
+                      )
+                    : Row(
+                        children: [
+                          Expanded(flex: 3, child: connectionInfo),
+                          const SizedBox(width: 20),
+                          Expanded(flex: 2, child: sessionCard),
+                        ],
+                      );
+              },
+            ),
+          ),
+          const SizedBox(height: 20),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isStacked = constraints.maxWidth < 980;
+              final leftColumn = Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _GlassCard(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Signal Pulse', style: textTheme.titleMedium),
+                        const SizedBox(height: 12),
+                        _MiniChart(
+                          values: signalPulseValues,
+                          icon: Icons.stacked_line_chart_rounded,
+                          caption: signalPulseValues.isEmpty
+                              ? 'Awaiting samples'
+                              : '${signalPulseValues.last} writes / sample',
+                          color: OrefPalette.teal,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Track how signals refresh across the frame '
+                          'timeline and spot hot paths early.',
+                          style: textTheme.bodyMedium,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  _GlassCard(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Batch Heatmap', style: textTheme.titleMedium),
+                        const SizedBox(height: 12),
+                        _MiniChart(
+                          values: batchPulseValues,
+                          icon: Icons.grid_view_rounded,
+                          caption: batchPulseValues.isEmpty
+                              ? 'No batches recorded'
+                              : '${batchPulseValues.last} writes last batch',
+                          color: OrefPalette.indigo,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Spot dense write bursts and their scopes.',
+                          style: textTheme.bodyMedium,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+
+              final activityCard = _GlassCard(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Recent Activity', style: textTheme.titleMedium),
+                    const SizedBox(height: 12),
+                    if (timelineEvents.isEmpty)
+                      Text(
+                        controller.isUnavailable
+                            ? 'Enable Oref DevTools to capture activity.'
+                            : 'No recent activity yet.',
+                        style: textTheme.bodyMedium,
+                      )
+                    else
+                      for (final event in timelineEvents.take(6))
+                        _TimelineRow(event: event),
+                  ],
+                ),
+              );
+
+              return isStacked
+                  ? Column(
+                      children: [
+                        leftColumn,
+                        const SizedBox(height: 20),
+                        activityCard,
+                      ],
+                    )
+                  : Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(flex: 3, child: leftColumn),
+                        const SizedBox(width: 20),
+                        Expanded(flex: 2, child: activityCard),
+                      ],
+                    );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SignalsPanel extends StatelessWidget {
+  const _SignalsPanel();
+
+  @override
+  Widget build(BuildContext context) {
+    final state = oref.useMemoized(
+      context,
+      () => _SignalsPanelStateData(context),
+    );
+
+    return oref.SignalBuilder(
+      builder: (context) {
+        return _ConnectionGuard(
+          child: _PanelScrollView(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final controller = OrefDevToolsScope.of(context);
+                final entries = _samplesByKind(
+                  controller.snapshot?.samples ?? const <Sample>[],
+                  'signal',
+                );
+                final isSplit = constraints.maxWidth >= 980;
+                final filtered = state.filter(entries);
+                final selected = entries.firstWhereOrNull(
+                  (entry) => entry.id == state.selectedId(),
+                );
+                final list = _SignalList(
+                  entries: filtered,
+                  selectedId: selected?.id,
+                  isCompact: !isSplit,
+                  sortKey: state.sortKey(),
+                  sortAscending: state.sortAscending(),
+                  onSortName: () => state.toggleSort(_SortKey.name),
+                  onSortUpdated: () => state.toggleSort(_SortKey.updated),
+                  onSelect: (entry) => state.toggleSelection(entry.id),
+                );
+                final detail = _SignalDetail(entry: selected);
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _SignalsHeader(
+                      controller: state.searchController,
+                      selectedFilter: state.statusFilter(),
+                      onFilterChange: (value) => state.statusFilter.set(value),
+                      totalCount: entries.length,
+                      filteredCount: filtered.length,
+                      onExport: () => _exportData(
+                        context,
+                        'signals',
+                        filtered.map((entry) => entry.toJson()).toList(),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    if (isSplit)
+                      selected == null
+                          ? list
+                          : Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(flex: 3, child: list),
+                                const SizedBox(width: 20),
+                                SizedBox(width: 320, child: detail),
+                              ],
+                            )
+                    else
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          list,
+                          if (selected != null) ...[
+                            const SizedBox(height: 16),
+                            detail,
+                          ],
+                        ],
+                      ),
+                  ],
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _SignalsPanelStateData {
+  _SignalsPanelStateData(BuildContext context)
+    : searchController = TextEditingController(),
+      searchQuery = oref.signal(context, '', debugLabel: 'signals.search'),
+      statusFilter = oref.signal(
+        context,
+        'All',
+        debugLabel: 'signals.statusFilter',
+      ),
+      selectedId = oref.signal<int?>(
+        context,
+        null,
+        debugLabel: 'signals.selected',
+      ),
+      sortKey = oref.signal(
+        context,
+        _SortKey.updated,
+        debugLabel: 'signals.sortKey',
+      ),
+      sortAscending = oref.signal(
+        context,
+        false,
+        debugLabel: 'signals.sortAscending',
+      ) {
+    searchController.addListener(() {
+      searchQuery.set(searchController.text);
+    });
+    oref.onUnmounted(context, searchController.dispose);
+  }
+
+  final TextEditingController searchController;
+  final oref.WritableSignal<String> searchQuery;
+  final oref.WritableSignal<String> statusFilter;
+  final oref.WritableSignal<int?> selectedId;
+  final oref.WritableSignal<_SortKey> sortKey;
+  final oref.WritableSignal<bool> sortAscending;
+
+  void toggleSelection(int id) {
+    selectedId.set(selectedId() == id ? null : id);
+  }
+
+  void toggleSort(_SortKey key) {
+    if (sortKey() == key) {
+      sortAscending.set(!sortAscending());
+    } else {
+      sortKey.set(key);
+      sortAscending.set(key == _SortKey.name);
+    }
+  }
+
+  List<Sample> filter(List<Sample> entries) {
+    final query = searchQuery().trim().toLowerCase();
+    final currentStatus = statusFilter();
+    final currentSortKey = sortKey();
+    final ascending = sortAscending();
+    final filtered = entries.where((entry) {
+      final matchesQuery =
+          query.isEmpty || entry.label.toLowerCase().contains(query);
+      final status = entry.status ?? 'Active';
+      final matchesStatus = currentStatus == 'All' || status == currentStatus;
+      return matchesQuery && matchesStatus;
+    }).toList();
+    filtered.sort(
+      (a, b) => _compareSort(
+        currentSortKey,
+        ascending,
+        a.label,
+        b.label,
+        a.updatedAt,
+        b.updatedAt,
+        a.id,
+        b.id,
+      ),
+    );
+    return filtered;
+  }
+}
+
+class _ComputedPanel extends StatelessWidget {
+  const _ComputedPanel();
+
+  @override
+  Widget build(BuildContext context) {
+    final state = oref.useMemoized(
+      context,
+      () => _ComputedPanelStateData(context),
+    );
+
+    return oref.SignalBuilder(
+      builder: (context) {
+        return _ConnectionGuard(
+          child: _PanelScrollView(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final controller = OrefDevToolsScope.of(context);
+                final entries = _samplesByKind(
+                  controller.snapshot?.samples ?? const <Sample>[],
+                  'computed',
+                );
+                final isSplit = constraints.maxWidth >= 980;
+                final filtered = state.filter(entries);
+                final selected = entries.firstWhereOrNull(
+                  (entry) => entry.id == state.selectedId(),
+                );
+                final list = _ComputedList(
+                  entries: filtered,
+                  selectedId: selected?.id,
+                  isCompact: !isSplit,
+                  sortKey: state.sortKey(),
+                  sortAscending: state.sortAscending(),
+                  onSortName: () => state.toggleSort(_SortKey.name),
+                  onSortUpdated: () => state.toggleSort(_SortKey.updated),
+                  onSelect: (entry) => state.toggleSelection(entry.id),
+                );
+                final detail = _ComputedDetail(entry: selected);
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _ComputedHeader(
+                      controller: state.searchController,
+                      selectedFilter: state.statusFilter(),
+                      onFilterChange: (value) => state.statusFilter.set(value),
+                      totalCount: entries.length,
+                      filteredCount: filtered.length,
+                      onExport: () => _exportData(
+                        context,
+                        'computed',
+                        filtered.map((entry) => entry.toJson()).toList(),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    if (isSplit)
+                      selected == null
+                          ? list
+                          : Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(flex: 3, child: list),
+                                const SizedBox(width: 20),
+                                SizedBox(width: 320, child: detail),
+                              ],
+                            )
+                    else
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          list,
+                          if (selected != null) ...[
+                            const SizedBox(height: 16),
+                            detail,
+                          ],
+                        ],
+                      ),
+                  ],
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ComputedPanelStateData {
+  _ComputedPanelStateData(BuildContext context)
+    : searchController = TextEditingController(),
+      searchQuery = oref.signal(context, '', debugLabel: 'computed.search'),
+      statusFilter = oref.signal(
+        context,
+        'All',
+        debugLabel: 'computed.statusFilter',
+      ),
+      selectedId = oref.signal<int?>(
+        context,
+        null,
+        debugLabel: 'computed.selected',
+      ),
+      sortKey = oref.signal(
+        context,
+        _SortKey.updated,
+        debugLabel: 'computed.sortKey',
+      ),
+      sortAscending = oref.signal(
+        context,
+        false,
+        debugLabel: 'computed.sortAscending',
+      ) {
+    searchController.addListener(() {
+      searchQuery.set(searchController.text);
+    });
+    oref.onUnmounted(context, searchController.dispose);
+  }
+
+  final TextEditingController searchController;
+  final oref.WritableSignal<String> searchQuery;
+  final oref.WritableSignal<String> statusFilter;
+  final oref.WritableSignal<int?> selectedId;
+  final oref.WritableSignal<_SortKey> sortKey;
+  final oref.WritableSignal<bool> sortAscending;
+
+  void toggleSelection(int id) {
+    selectedId.set(selectedId() == id ? null : id);
+  }
+
+  void toggleSort(_SortKey key) {
+    if (sortKey() == key) {
+      sortAscending.set(!sortAscending());
+    } else {
+      sortKey.set(key);
+      sortAscending.set(key == _SortKey.name);
+    }
+  }
+
+  List<Sample> filter(List<Sample> entries) {
+    final query = searchQuery().trim().toLowerCase();
+    final currentStatus = statusFilter();
+    final currentSortKey = sortKey();
+    final ascending = sortAscending();
+    final filtered = entries.where((entry) {
+      final matchesQuery =
+          query.isEmpty || entry.label.toLowerCase().contains(query);
+      final status = entry.status ?? 'Active';
+      final matchesStatus = currentStatus == 'All' || status == currentStatus;
+      return matchesQuery && matchesStatus;
+    }).toList();
+    filtered.sort(
+      (a, b) => _compareSort(
+        currentSortKey,
+        ascending,
+        a.label,
+        b.label,
+        a.updatedAt,
+        b.updatedAt,
+        a.id,
+        b.id,
+      ),
+    );
+    return filtered;
+  }
+}
+
+class _ComputedHeader extends StatelessWidget {
+  const _ComputedHeader({
+    required this.controller,
+    required this.selectedFilter,
+    required this.onFilterChange,
+    required this.totalCount,
+    required this.filteredCount,
+    required this.onExport,
+  });
+
+  final TextEditingController controller;
+  final String selectedFilter;
+  final ValueChanged<String> onFilterChange;
+  final int totalCount;
+  final int filteredCount;
+  final VoidCallback onExport;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text('Computed', style: textTheme.headlineSmall),
+            const SizedBox(width: 12),
+            const _GlassPill(
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              child: Text('Live'),
+            ),
+            const Spacer(),
+            _GlassPill(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              child: Text('$filteredCount / $totalCount'),
+            ),
+            const SizedBox(width: 12),
+            _ActionPill(
+              label: 'Export',
+              icon: Icons.download_rounded,
+              onTap: onExport,
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Inspect derived state, cache hits, and dependency churn.',
+          style: textTheme.bodyMedium,
+        ),
+        const SizedBox(height: 16),
+        _GlassInput(
+          controller: controller,
+          hintText: 'Search computed values...',
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final filter in _signalFilters)
+              _FilterChip(
+                label: filter,
+                isSelected: filter == selectedFilter,
+                onTap: () => onFilterChange(filter),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _ComputedList extends StatelessWidget {
+  const _ComputedList({
+    required this.entries,
+    required this.selectedId,
+    required this.isCompact,
+    required this.sortKey,
+    required this.sortAscending,
+    required this.onSortName,
+    required this.onSortUpdated,
+    required this.onSelect,
+  });
+
+  final List<Sample> entries;
+  final int? selectedId;
+  final bool isCompact;
+  final _SortKey sortKey;
+  final bool sortAscending;
+  final VoidCallback onSortName;
+  final VoidCallback onSortUpdated;
+  final ValueChanged<Sample> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    return _GlassCard(
+      padding: const EdgeInsets.all(0),
+      child: Column(
+        children: [
+          if (!isCompact)
+            _ComputedTableHeader(
+              sortKey: sortKey,
+              sortAscending: sortAscending,
+              onSortName: onSortName,
+              onSortUpdated: onSortUpdated,
+            ),
+          if (entries.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'No computed values match the current filter.',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                children: [
+                  for (var index = 0; index < entries.length; index++) ...[
+                    _ComputedRow(
+                      entry: entries[index],
+                      isSelected: selectedId == entries[index].id,
+                      isCompact: isCompact,
+                      onTap: () => onSelect(entries[index]),
+                    ),
+                    if (index != entries.length - 1) const SizedBox(height: 8),
+                  ],
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ComputedTableHeader extends StatelessWidget {
+  const _ComputedTableHeader({
+    required this.sortKey,
+    required this.sortAscending,
+    required this.onSortName,
+    required this.onSortUpdated,
+  });
+
+  final _SortKey sortKey;
+  final bool sortAscending;
+  final VoidCallback onSortName;
+  final VoidCallback onSortUpdated;
+
+  @override
+  Widget build(BuildContext context) {
+    final labelStyle = Theme.of(context).textTheme.labelSmall;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.4),
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 3,
+            child: _SortHeaderCell(
+              label: 'Name',
+              isActive: sortKey == _SortKey.name,
+              ascending: sortAscending,
+              onTap: onSortName,
+              style: labelStyle,
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Align(
+              alignment: Alignment.center,
+              child: Text('Value', style: labelStyle),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Align(
+              alignment: Alignment.center,
+              child: Text('Status', style: labelStyle),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Align(
+              alignment: Alignment.center,
+              child: Text('Runs', style: labelStyle),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: _SortHeaderCell(
+              label: 'Updated',
+              isActive: sortKey == _SortKey.updated,
+              ascending: sortAscending,
+              onTap: onSortUpdated,
+              style: labelStyle,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ComputedRow extends StatelessWidget {
+  const _ComputedRow({
+    required this.entry,
+    required this.isSelected,
+    required this.isCompact,
+    required this.onTap,
+  });
+
+  final Sample entry;
+  final bool isSelected;
+  final bool isCompact;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final highlight = isSelected
+        ? OrefPalette.indigo.withValues(alpha: 0.2)
+        : Colors.transparent;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          decoration: BoxDecoration(
+            color: highlight,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isSelected
+                  ? OrefPalette.indigo.withValues(alpha: 0.4)
+                  : colorScheme.onSurface.withValues(alpha: 0.08),
+            ),
+          ),
+          child: isCompact
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(entry.label),
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
+                      children: [
+                        _StatusBadge(status: entry.status ?? 'Active'),
+                        _GlassPill(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          child: Text('${entry.runs ?? 0} runs'),
+                        ),
+                        _GlassPill(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          child: Text(_formatAge(entry.updatedAt)),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      entry.value ?? '',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                )
+              : Row(
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text(entry.label, textAlign: TextAlign.center),
+                          const SizedBox(height: 4),
+                          Text(
+                            entry.owner,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        entry.value ?? '',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: Align(
+                        alignment: Alignment.center,
+                        child: _StatusBadge(status: entry.status ?? 'Active'),
+                      ),
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        '${entry.runs ?? 0}',
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        _formatAge(entry.updatedAt),
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
+                  ],
+                ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ComputedDetail extends StatelessWidget {
+  const _ComputedDetail({required this.entry});
+
+  final Sample? entry;
+
+  @override
+  Widget build(BuildContext context) {
+    if (entry == null) {
+      return _GlassCard(
+        padding: const EdgeInsets.all(20),
+        child: Center(
+          child: Text(
+            'Select a computed value to view details.',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ),
+      );
+    }
+
+    final textTheme = Theme.of(context).textTheme;
+
+    return _GlassCard(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(entry!.label, style: textTheme.titleMedium),
+          const SizedBox(height: 8),
+          _StatusBadge(status: entry!.status ?? 'Active'),
+          const SizedBox(height: 16),
+          _InfoRow(label: 'Owner', value: entry!.owner),
+          _InfoRow(label: 'Scope', value: entry!.scope),
+          _InfoRow(label: 'Type', value: entry!.type),
+          _InfoRow(label: 'Value', value: entry!.value ?? ''),
+          _InfoRow(label: 'Updated', value: _formatAge(entry!.updatedAt)),
+          _InfoRow(label: 'Runs', value: '${entry!.runs ?? 0}'),
+          _InfoRow(
+            label: 'Last run',
+            value: _formatDurationUs(entry!.lastDurationUs ?? 0),
+          ),
+          _InfoRow(label: 'Listeners', value: '${entry!.listeners ?? 0}'),
+          _InfoRow(label: 'Deps', value: '${entry!.dependencies ?? 0}'),
+          if (entry!.note.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(entry!.note, style: textTheme.bodySmall),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _EffectsPanel extends StatelessWidget {
+  const _EffectsPanel();
+
+  @override
+  Widget build(BuildContext context) {
+    final state = oref.useMemoized(
+      context,
+      () => _EffectsPanelStateData(context),
+    );
+
+    return oref.SignalBuilder(
+      builder: (context) {
+        final controller = OrefDevToolsScope.of(context);
+        final entries = _samplesByKind(
+          controller.snapshot?.samples ?? const <Sample>[],
+          'effect',
+        );
+        final typeFilters = _buildFilterOptions(
+          entries.map((entry) => entry.type),
+        );
+        final scopeFilters = _buildFilterOptions(
+          entries.map((entry) => entry.scope),
+        );
+        final filtered = entries.where((entry) {
+          final matchesType =
+              state.typeFilter() == 'All' || entry.type == state.typeFilter();
+          final matchesScope =
+              state.scopeFilter() == 'All' ||
+              entry.scope == state.scopeFilter();
+          return matchesType && matchesScope;
+        }).toList();
+
+        return _ConnectionGuard(
+          child: _PanelScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _EffectsHeader(
+                  typeFilter: state.typeFilter(),
+                  scopeFilter: state.scopeFilter(),
+                  typeFilters: typeFilters,
+                  scopeFilters: scopeFilters,
+                  onTypeChange: (value) => state.typeFilter.set(value),
+                  onScopeChange: (value) => state.scopeFilter.set(value),
+                  totalCount: entries.length,
+                  filteredCount: filtered.length,
+                  onExport: () => _exportData(
+                    context,
+                    'effects',
+                    filtered.map((entry) => entry.toJson()).toList(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _EffectsTimeline(entries: filtered),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _CollectionsPanel extends StatelessWidget {
+  const _CollectionsPanel();
+
+  @override
+  Widget build(BuildContext context) {
+    final state = oref.useMemoized(
+      context,
+      () => _CollectionsPanelStateData(context),
+    );
+
+    return oref.SignalBuilder(
+      builder: (context) {
+        final controller = OrefDevToolsScope.of(context);
+        final entries = _samplesByKind(
+          controller.snapshot?.samples ?? const <Sample>[],
+          'collection',
+        );
+        final typeFilters = _buildFilterOptions(
+          entries.map((entry) => entry.type),
+        );
+        final opFilters = _buildFilterOptions(
+          entries.map((entry) => entry.operation ?? 'Idle'),
+        );
+        final filtered = state.filter(entries);
+
+        return _ConnectionGuard(
+          child: _PanelScrollView(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final isCompact = constraints.maxWidth < 860;
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _CollectionsHeader(
+                      controller: state.searchController,
+                      typeFilter: state.typeFilter(),
+                      opFilter: state.opFilter(),
+                      typeFilters: typeFilters,
+                      opFilters: opFilters,
+                      onTypeChange: (value) => state.typeFilter.set(value),
+                      onOpChange: (value) => state.opFilter.set(value),
+                      totalCount: entries.length,
+                      filteredCount: filtered.length,
+                      onExport: () => _exportData(
+                        context,
+                        'collections',
+                        filtered.map((entry) => entry.toJson()).toList(),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _CollectionsList(
+                      entries: filtered,
+                      isCompact: isCompact,
+                      sortKey: state.sortKey(),
+                      sortAscending: state.sortAscending(),
+                      onSortName: () => state.toggleSort(_SortKey.name),
+                      onSortUpdated: () => state.toggleSort(_SortKey.updated),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _CollectionsPanelStateData {
+  _CollectionsPanelStateData(BuildContext context)
+    : searchController = TextEditingController(),
+      searchQuery = oref.signal(context, '', debugLabel: 'collections.search'),
+      typeFilter = oref.signal(
+        context,
+        'All',
+        debugLabel: 'collections.typeFilter',
+      ),
+      opFilter = oref.signal(
+        context,
+        'All',
+        debugLabel: 'collections.opFilter',
+      ),
+      sortKey = oref.signal(
+        context,
+        _SortKey.updated,
+        debugLabel: 'collections.sortKey',
+      ),
+      sortAscending = oref.signal(
+        context,
+        false,
+        debugLabel: 'collections.sortAscending',
+      ) {
+    searchController.addListener(() {
+      searchQuery.set(searchController.text);
+    });
+    oref.onUnmounted(context, searchController.dispose);
+  }
+
+  final TextEditingController searchController;
+  final oref.WritableSignal<String> searchQuery;
+  final oref.WritableSignal<String> typeFilter;
+  final oref.WritableSignal<String> opFilter;
+  final oref.WritableSignal<_SortKey> sortKey;
+  final oref.WritableSignal<bool> sortAscending;
+
+  void toggleSort(_SortKey key) {
+    if (sortKey() == key) {
+      sortAscending.set(!sortAscending());
+    } else {
+      sortKey.set(key);
+      sortAscending.set(key == _SortKey.name);
+    }
+  }
+
+  List<Sample> filter(List<Sample> entries) {
+    final query = searchQuery().trim().toLowerCase();
+    final typeValue = typeFilter();
+    final opValue = opFilter();
+    final currentSortKey = sortKey();
+    final ascending = sortAscending();
+    final filtered = entries.where((entry) {
+      final matchesQuery =
+          query.isEmpty || entry.label.toLowerCase().contains(query);
+      final matchesType = typeValue == 'All' || entry.type == typeValue;
+      final operation = entry.operation ?? 'Idle';
+      final matchesOp = opValue == 'All' || operation == opValue;
+      return matchesQuery && matchesType && matchesOp;
+    }).toList();
+    filtered.sort(
+      (a, b) => _compareSort(
+        currentSortKey,
+        ascending,
+        a.label,
+        b.label,
+        a.updatedAt,
+        b.updatedAt,
+        a.id,
+        b.id,
+      ),
+    );
+    return filtered;
+  }
+}
+
+class _BatchingPanel extends StatelessWidget {
+  const _BatchingPanel();
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = OrefDevToolsScope.of(context);
+    final batches =
+        controller.snapshot?.batches.toList() ?? const <BatchSample>[];
+    batches.sort((a, b) => b.endedAt.compareTo(a.endedAt));
+    final latest = batches.isNotEmpty ? batches.first : null;
+    final totalWrites = batches.fold<int>(
+      0,
+      (sum, batch) => sum + batch.writeCount,
+    );
+    final avgDuration = batches.isEmpty
+        ? 0
+        : (batches.fold<int>(0, (sum, batch) => sum + batch.durationMs) /
+                  batches.length)
+              .round();
+
+    return _ConnectionGuard(
+      child: _PanelScrollView(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isCompact = constraints.maxWidth < 860;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'Batching',
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                    const SizedBox(width: 12),
+                    const _GlassPill(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      child: Text('Live'),
+                    ),
+                    const Spacer(),
+                    _GlassPill(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      child: Text('${batches.length} batches'),
+                    ),
+                    const SizedBox(width: 12),
+                    _ActionPill(
+                      label: 'Export',
+                      icon: Icons.download_rounded,
+                      onTap: () => _exportData(
+                        context,
+                        'batches',
+                        batches.map((batch) => batch.toJson()).toList(),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Inspect batched writes and flush timing.',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 16),
+                _AdaptiveWrap(
+                  children: [
+                    _MetricTile(
+                      label: 'Batches',
+                      value: _formatCount(batches.length),
+                      trend: _formatDelta(totalWrites, suffix: 'writes'),
+                      accent: OrefPalette.coral,
+                      icon: Icons.layers_rounded,
+                    ),
+                    _MetricTile(
+                      label: 'Avg duration',
+                      value: '${avgDuration}ms',
+                      trend: latest == null ? '—' : _formatAge(latest.endedAt),
+                      accent: OrefPalette.indigo,
+                      icon: Icons.timer_rounded,
+                    ),
+                    _MetricTile(
+                      label: 'Last batch',
+                      value: latest == null ? '—' : '${latest.durationMs}ms',
+                      trend: latest == null
+                          ? '—'
+                          : '${latest.writeCount} writes',
+                      accent: OrefPalette.teal,
+                      icon: Icons.bolt_rounded,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _BatchList(batches: batches, isCompact: isCompact),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _BatchList extends StatelessWidget {
+  const _BatchList({required this.batches, required this.isCompact});
+
+  final List<BatchSample> batches;
+  final bool isCompact;
+
+  @override
+  Widget build(BuildContext context) {
+    return _GlassCard(
+      padding: const EdgeInsets.all(0),
+      child: Column(
+        children: [
+          if (!isCompact) const _BatchHeaderRow(),
+          if (batches.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'No batches recorded yet.',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                children: [
+                  for (var index = 0; index < batches.length; index++) ...[
+                    _BatchRow(batch: batches[index], isCompact: isCompact),
+                    if (index != batches.length - 1) const SizedBox(height: 10),
+                  ],
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BatchHeaderRow extends StatelessWidget {
+  const _BatchHeaderRow();
+
+  @override
+  Widget build(BuildContext context) {
+    final labelStyle = Theme.of(context).textTheme.labelSmall;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.4),
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 2,
+            child: Align(
+              alignment: Alignment.center,
+              child: Text('Batch', style: labelStyle),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Align(
+              alignment: Alignment.center,
+              child: Text('Depth', style: labelStyle),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Align(
+              alignment: Alignment.center,
+              child: Text('Writes', style: labelStyle),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Align(
+              alignment: Alignment.center,
+              child: Text('Duration', style: labelStyle),
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Align(
+              alignment: Alignment.center,
+              child: Text('Ended', style: labelStyle),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BatchRow extends StatelessWidget {
+  const _BatchRow({required this.batch, required this.isCompact});
+
+  final BatchSample batch;
+  final bool isCompact;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return _GlassCard(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      child: DefaultTextStyle.merge(
+        style: textTheme.bodyMedium,
+        child: isCompact
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Batch #${batch.id}'),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _GlassPill(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        child: Text('Depth ${batch.depth}'),
+                      ),
+                      _GlassPill(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        child: Text('${batch.writeCount} writes'),
+                      ),
+                      _GlassPill(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        child: Text('${batch.durationMs}ms'),
+                      ),
+                      _GlassPill(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        child: Text(_formatAge(batch.endedAt)),
+                      ),
+                    ],
+                  ),
+                ],
+              )
+            : Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      'Batch #${batch.id}',
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: Text('${batch.depth}', textAlign: TextAlign.center),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      '${batch.writeCount}',
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      '${batch.durationMs}ms',
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  Expanded(
+                    flex: 3,
+                    child: Text(
+                      _formatAge(batch.endedAt),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+}
+
+class _TimelinePanel extends StatelessWidget {
+  const _TimelinePanel();
+
+  @override
+  Widget build(BuildContext context) {
+    final state = oref.useMemoized(
+      context,
+      () => _TimelinePanelStateData(context),
+    );
+
+    return oref.SignalBuilder(
+      builder: (context) {
+        final controller = OrefDevToolsScope.of(context);
+        final events =
+            controller.snapshot?.timeline.toList() ?? const <TimelineEvent>[];
+        events.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+        final typeFilters = _buildFilterOptions(
+          events.map((event) => event.type),
+        );
+        final severityFilters = _buildFilterOptions(
+          events.map((event) => event.severity),
+        );
+        final filtered = events.where((event) {
+          final matchesType =
+              state.typeFilter() == 'All' || event.type == state.typeFilter();
+          final matchesSeverity =
+              state.severityFilter() == 'All' ||
+              event.severity == state.severityFilter();
+          return matchesType && matchesSeverity;
+        }).toList();
+
+        return _ConnectionGuard(
+          child: _PanelScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'Timeline',
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                    const SizedBox(width: 12),
+                    const _GlassPill(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      child: Text('Live'),
+                    ),
+                    const Spacer(),
+                    _GlassPill(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      child: Text('${filtered.length} events'),
+                    ),
+                    const SizedBox(width: 12),
+                    _ActionPill(
+                      label: 'Export',
+                      icon: Icons.download_rounded,
+                      onTap: () => _exportData(
+                        context,
+                        'timeline',
+                        filtered.map((event) => event.toJson()).toList(),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Correlate signal updates with effects, batches, and collections.',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    Text(
+                      'Type',
+                      style: Theme.of(context).textTheme.labelMedium,
+                    ),
+                    for (final filter in typeFilters)
+                      _FilterChip(
+                        label: filter,
+                        isSelected: filter == state.typeFilter(),
+                        onTap: () => state.typeFilter.set(filter),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    Text(
+                      'Severity',
+                      style: Theme.of(context).textTheme.labelMedium,
+                    ),
+                    for (final filter in severityFilters)
+                      _FilterChip(
+                        label: filter,
+                        isSelected: filter == state.severityFilter(),
+                        onTap: () => state.severityFilter.set(filter),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _TimelineList(events: filtered),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _TimelinePanelStateData {
+  _TimelinePanelStateData(BuildContext context)
+    : typeFilter = oref.signal(
+        context,
+        'All',
+        debugLabel: 'timeline.typeFilter',
+      ),
+      severityFilter = oref.signal(
+        context,
+        'All',
+        debugLabel: 'timeline.severityFilter',
+      );
+
+  final oref.WritableSignal<String> typeFilter;
+  final oref.WritableSignal<String> severityFilter;
+}
+
+class _TimelineList extends StatelessWidget {
+  const _TimelineList({required this.events});
+
+  final List<TimelineEvent> events;
+
+  @override
+  Widget build(BuildContext context) {
+    return _GlassCard(
+      padding: const EdgeInsets.all(0),
+      child: events.isEmpty
+          ? Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'No timeline events yet.',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            )
+          : Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  for (var index = 0; index < events.length; index++) ...[
+                    _TimelineEventRow(event: events[index]),
+                    if (index != events.length - 1) const SizedBox(height: 12),
+                  ],
+                ],
+              ),
+            ),
+    );
+  }
+}
+
+class _TimelineEventRow extends StatelessWidget {
+  const _TimelineEventRow({required this.event});
+
+  final TimelineEvent event;
+
+  @override
+  Widget build(BuildContext context) {
+    final tone = _timelineColors[event.type] ?? OrefPalette.teal;
+    return _GlassCard(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 10,
+            height: 10,
+            margin: const EdgeInsets.only(top: 6),
+            decoration: BoxDecoration(color: tone, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  event.title,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _formatTimelineDetail(event),
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            _formatAge(event.timestamp),
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PerformancePanel extends StatelessWidget {
+  const _PerformancePanel();
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = OrefDevToolsScope.of(context);
+    final samples = controller.performance;
+    final latest = samples.isNotEmpty ? samples.first : null;
+
+    return _ConnectionGuard(
+      child: _PanelScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  'Performance',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                const SizedBox(width: 12),
+                const _GlassPill(
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  child: Text('Live'),
+                ),
+                const Spacer(),
+                _GlassPill(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  child: Text('${samples.length} samples'),
+                ),
+                const SizedBox(width: 12),
+                _ActionPill(
+                  label: 'Export',
+                  icon: Icons.download_rounded,
+                  onTap: () => _exportData(
+                    context,
+                    'performance',
+                    samples.map((sample) => sample.toJson()).toList(),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Sampled signal throughput and effect costs.',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 16),
+            _AdaptiveWrap(
+              children: [
+                _MetricTile(
+                  label: 'Effect avg',
+                  value: latest == null
+                      ? '—'
+                      : _formatDurationUs(latest.avgEffectDurationUs.round()),
+                  trend: latest == null ? '—' : '${latest.effectRuns} runs',
+                  accent: OrefPalette.pink,
+                  icon: Icons.speed_rounded,
+                ),
+                _MetricTile(
+                  label: 'Signal writes',
+                  value: latest == null ? '—' : '${latest.signalWrites}',
+                  trend: latest == null
+                      ? '—'
+                      : '${latest.collectionMutations} mutations',
+                  accent: OrefPalette.teal,
+                  icon: Icons.bolt_rounded,
+                ),
+                _MetricTile(
+                  label: 'Collections',
+                  value: latest == null ? '—' : '${latest.collectionCount}',
+                  trend: latest == null ? '—' : '${latest.batchWrites} batched',
+                  accent: OrefPalette.indigo,
+                  icon: Icons.grid_view_rounded,
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _PerformanceList(samples: samples),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PerformanceList extends StatelessWidget {
+  const _PerformanceList({required this.samples});
+
+  final List<UiPerformanceSample> samples;
+
+  @override
+  Widget build(BuildContext context) {
+    return _GlassCard(
+      padding: const EdgeInsets.all(0),
+      child: samples.isEmpty
+          ? Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'No performance samples yet.',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            )
+          : Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  for (var index = 0; index < samples.length; index++) ...[
+                    _PerformanceRow(sample: samples[index]),
+                    if (index != samples.length - 1) const SizedBox(height: 12),
+                  ],
+                ],
+              ),
+            ),
+    );
+  }
+}
+
+class _PerformanceRow extends StatelessWidget {
+  const _PerformanceRow({required this.sample});
+
+  final UiPerformanceSample sample;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return _GlassCard(
+      padding: const EdgeInsets.all(16),
+      child: DefaultTextStyle.merge(
+        style: textTheme.bodyMedium,
+        child: Row(
+          children: [
+            Expanded(
+              flex: 2,
+              child: Text(
+                _formatAge(sample.timestamp),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            Expanded(
+              flex: 2,
+              child: Text(
+                '${sample.signalWrites} writes',
+                textAlign: TextAlign.center,
+              ),
+            ),
+            Expanded(
+              flex: 2,
+              child: Text(
+                '${sample.effectRuns} runs',
+                textAlign: TextAlign.center,
+              ),
+            ),
+            Expanded(
+              flex: 2,
+              child: Text(
+                _formatDurationUs(sample.avgEffectDurationUs.round()),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            Expanded(
+              flex: 2,
+              child: Text(
+                '${sample.collectionMutations} mutations',
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingsPanel extends StatelessWidget {
+  const _SettingsPanel();
+
+  @override
+  Widget build(BuildContext context) {
+    final state = oref.useMemoized(
+      context,
+      () => _SettingsPanelStateData(context),
+    );
+
+    return oref.SignalBuilder(
+      builder: (context) {
+        final controller = OrefDevToolsScope.of(context);
+        final uiState = _UiScope.of(context);
+        final themeMode = uiState.themeMode();
+        final current =
+            controller.snapshot?.settings ?? const DevToolsSettings();
+        var draft = state.draft();
+        if (!state.isEditing() && draft != current) {
+          state.draft.set(current);
+          draft = current;
+        }
+
+        return _ConnectionGuard(
+          child: _PanelScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'Settings',
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                    const Spacer(),
+                    _ActionPill(
+                      label: 'Refresh',
+                      icon: Icons.refresh_rounded,
+                      onTap: controller.refresh,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Tune how diagnostics are collected.',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 16),
+                _GlassCard(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Appearance',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 12),
+                      SegmentedButton<ThemeMode>(
+                        segments: const [
+                          ButtonSegment<ThemeMode>(
+                            value: ThemeMode.system,
+                            label: Text('System'),
+                            icon: Icon(Icons.brightness_auto_rounded),
+                          ),
+                          ButtonSegment<ThemeMode>(
+                            value: ThemeMode.light,
+                            label: Text('Light'),
+                            icon: Icon(Icons.light_mode_rounded),
+                          ),
+                          ButtonSegment<ThemeMode>(
+                            value: ThemeMode.dark,
+                            label: Text('Dark'),
+                            icon: Icon(Icons.dark_mode_rounded),
+                          ),
+                        ],
+                        selected: {themeMode},
+                        onSelectionChanged: (selection) {
+                          uiState.themeMode.set(selection.first);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _GlassCard(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Sampling',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 12),
+                      SwitchListTile.adaptive(
+                        value: draft.enabled,
+                        onChanged: (value) {
+                          state.isEditing.set(true);
+                          state.draft.set(draft.copyWith(enabled: value));
+                          controller.updateSettings(state.draft());
+                          state.isEditing.set(false);
+                        },
+                        title: const Text('Enable sampling'),
+                        subtitle: Text(
+                          'Collect timeline and performance samples.',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Sample interval (${draft.sampleIntervalMs}ms)',
+                        style: Theme.of(context).textTheme.labelLarge,
+                      ),
+                      Slider(
+                        value: draft.sampleIntervalMs.toDouble(),
+                        min: 250,
+                        max: 5000,
+                        divisions: 19,
+                        label: '${draft.sampleIntervalMs}ms',
+                        onChanged: (value) {
+                          state.isEditing.set(true);
+                          state.draft.set(
+                            draft.copyWith(sampleIntervalMs: value.round()),
+                          );
+                        },
+                        onChangeEnd: (_) async {
+                          await controller.updateSettings(state.draft());
+                          if (!context.mounted) return;
+                          state.isEditing.set(false);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _GlassCard(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Retention',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Timeline limit (${draft.timelineLimit})',
+                        style: Theme.of(context).textTheme.labelLarge,
+                      ),
+                      Slider(
+                        value: draft.timelineLimit.toDouble(),
+                        min: 50,
+                        max: 500,
+                        divisions: 9,
+                        label: draft.timelineLimit.toString(),
+                        onChanged: (value) {
+                          state.isEditing.set(true);
+                          state.draft.set(
+                            draft.copyWith(timelineLimit: value.round()),
+                          );
+                        },
+                        onChangeEnd: (_) async {
+                          await controller.updateSettings(state.draft());
+                          if (!context.mounted) return;
+                          state.isEditing.set(false);
+                        },
+                      ),
+                      Text(
+                        'Batch limit (${draft.batchLimit})',
+                        style: Theme.of(context).textTheme.labelLarge,
+                      ),
+                      Slider(
+                        value: draft.batchLimit.toDouble(),
+                        min: 20,
+                        max: 300,
+                        divisions: 14,
+                        label: draft.batchLimit.toString(),
+                        onChanged: (value) {
+                          state.isEditing.set(true);
+                          state.draft.set(
+                            draft.copyWith(batchLimit: value.round()),
+                          );
+                        },
+                        onChangeEnd: (_) async {
+                          await controller.updateSettings(state.draft());
+                          if (!context.mounted) return;
+                          state.isEditing.set(false);
+                        },
+                      ),
+                      Text(
+                        'Performance samples (${draft.performanceLimit})',
+                        style: Theme.of(context).textTheme.labelLarge,
+                      ),
+                      Slider(
+                        value: draft.performanceLimit.toDouble(),
+                        min: 30,
+                        max: 300,
+                        divisions: 9,
+                        label: draft.performanceLimit.toString(),
+                        onChanged: (value) {
+                          state.isEditing.set(true);
+                          state.draft.set(
+                            draft.copyWith(performanceLimit: value.round()),
+                          );
+                        },
+                        onChangeEnd: (_) async {
+                          await controller.updateSettings(state.draft());
+                          if (!context.mounted) return;
+                          state.isEditing.set(false);
+                        },
+                      ),
+                      Text(
+                        'Value preview (${draft.valuePreviewLength} chars)',
+                        style: Theme.of(context).textTheme.labelLarge,
+                      ),
+                      Slider(
+                        value: draft.valuePreviewLength.toDouble(),
+                        min: 40,
+                        max: 240,
+                        divisions: 10,
+                        label: draft.valuePreviewLength.toString(),
+                        onChanged: (value) {
+                          state.isEditing.set(true);
+                          state.draft.set(
+                            draft.copyWith(valuePreviewLength: value.round()),
+                          );
+                        },
+                        onChangeEnd: (_) async {
+                          await controller.updateSettings(state.draft());
+                          if (!context.mounted) return;
+                          state.isEditing.set(false);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _GlassCard(
+                  padding: const EdgeInsets.all(20),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Clear cached diagnostics and restart sampling.',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ),
+                      _ActionPill(
+                        label: 'Clear history',
+                        icon: Icons.delete_sweep_rounded,
+                        onTap: controller.clearHistory,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _SettingsPanelStateData {
+  _SettingsPanelStateData(BuildContext context)
+    : isEditing = oref.signal(context, false, debugLabel: 'settings.editing'),
+      draft = oref.signal(
+        context,
+        const DevToolsSettings(),
+        debugLabel: 'settings.draft',
+      );
+
+  final oref.WritableSignal<bool> isEditing;
+  final oref.WritableSignal<DevToolsSettings> draft;
+}
+
+class _CollectionsHeader extends StatelessWidget {
+  const _CollectionsHeader({
+    required this.controller,
+    required this.typeFilter,
+    required this.opFilter,
+    required this.typeFilters,
+    required this.opFilters,
+    required this.onTypeChange,
+    required this.onOpChange,
+    required this.totalCount,
+    required this.filteredCount,
+    required this.onExport,
+  });
+
+  final TextEditingController controller;
+  final String typeFilter;
+  final String opFilter;
+  final List<String> typeFilters;
+  final List<String> opFilters;
+  final ValueChanged<String> onTypeChange;
+  final ValueChanged<String> onOpChange;
+  final int totalCount;
+  final int filteredCount;
+  final VoidCallback onExport;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text('Collections', style: textTheme.headlineSmall),
+            const SizedBox(width: 12),
+            const _GlassPill(
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              child: Text('Live'),
+            ),
+            const Spacer(),
+            _GlassPill(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              child: Text('$filteredCount / $totalCount'),
+            ),
+            const SizedBox(width: 12),
+            _ActionPill(
+              label: 'Export',
+              icon: Icons.download_rounded,
+              onTap: onExport,
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Inspect reactive list, map, and set mutations.',
+          style: textTheme.bodyMedium,
+        ),
+        const SizedBox(height: 12),
+        _GlassInput(controller: controller, hintText: 'Search collections...'),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            Text('Type', style: textTheme.labelMedium),
+            for (final filter in typeFilters)
+              _FilterChip(
+                label: filter,
+                isSelected: filter == typeFilter,
+                onTap: () => onTypeChange(filter),
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            Text('Op', style: textTheme.labelMedium),
+            for (final filter in opFilters)
+              _FilterChip(
+                label: filter,
+                isSelected: filter == opFilter,
+                onTap: () => onOpChange(filter),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _CollectionsList extends StatelessWidget {
+  const _CollectionsList({
+    required this.entries,
+    required this.isCompact,
+    required this.sortKey,
+    required this.sortAscending,
+    required this.onSortName,
+    required this.onSortUpdated,
+  });
+
+  final List<Sample> entries;
+  final bool isCompact;
+  final _SortKey sortKey;
+  final bool sortAscending;
+  final VoidCallback onSortName;
+  final VoidCallback onSortUpdated;
+
+  @override
+  Widget build(BuildContext context) {
+    return _GlassCard(
+      padding: const EdgeInsets.all(0),
+      child: Column(
+        children: [
+          if (!isCompact)
+            _CollectionsHeaderRow(
+              sortKey: sortKey,
+              sortAscending: sortAscending,
+              onSortName: onSortName,
+              onSortUpdated: onSortUpdated,
+            ),
+          if (entries.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'No collection mutations match the current filters.',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                children: [
+                  for (var index = 0; index < entries.length; index++) ...[
+                    _CollectionRow(entry: entries[index], isCompact: isCompact),
+                    if (index != entries.length - 1) const SizedBox(height: 10),
+                  ],
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CollectionsHeaderRow extends StatelessWidget {
+  const _CollectionsHeaderRow({
+    required this.sortKey,
+    required this.sortAscending,
+    required this.onSortName,
+    required this.onSortUpdated,
+  });
+
+  final _SortKey sortKey;
+  final bool sortAscending;
+  final VoidCallback onSortName;
+  final VoidCallback onSortUpdated;
+
+  @override
+  Widget build(BuildContext context) {
+    final labelStyle = Theme.of(context).textTheme.labelSmall;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.4),
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 3,
+            child: _SortHeaderCell(
+              label: 'Collection',
+              isActive: sortKey == _SortKey.name,
+              ascending: sortAscending,
+              onTap: onSortName,
+              style: labelStyle,
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Align(
+              alignment: Alignment.center,
+              child: Text('Type', style: labelStyle),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Align(
+              alignment: Alignment.center,
+              child: Text('Op', style: labelStyle),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Align(
+              alignment: Alignment.center,
+              child: Text('Scope', style: labelStyle),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: _SortHeaderCell(
+              label: 'Updated',
+              isActive: sortKey == _SortKey.updated,
+              ascending: sortAscending,
+              onTap: onSortUpdated,
+              style: labelStyle,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CollectionRow extends StatelessWidget {
+  const _CollectionRow({required this.entry, required this.isCompact});
+
+  final Sample entry;
+  final bool isCompact;
+
+  @override
+  Widget build(BuildContext context) {
+    final tone =
+        _collectionOpColors[entry.operation ?? 'Idle'] ?? OrefPalette.teal;
+    final textTheme = Theme.of(context).textTheme;
+
+    return _GlassCard(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      child: DefaultTextStyle.merge(
+        style: textTheme.bodyMedium,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (isCompact)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(entry.label),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _GlassPill(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        child: Text(entry.type),
+                      ),
+                      _GlassPill(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        color: tone.withValues(alpha: 0.22),
+                        child: Text(entry.operation ?? 'Idle'),
+                      ),
+                      _GlassPill(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        child: Text(_formatAge(entry.updatedAt)),
+                      ),
+                    ],
+                  ),
+                ],
+              )
+            else
+              Row(
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text(entry.label, textAlign: TextAlign.center),
+                        const SizedBox(height: 4),
+                        Text(
+                          entry.owner,
+                          textAlign: TextAlign.center,
+                          style: textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: Text(entry.type, textAlign: TextAlign.center),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: Align(
+                      alignment: Alignment.center,
+                      child: _GlassPill(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        color: tone.withValues(alpha: 0.22),
+                        child: Text(entry.operation ?? 'Idle'),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: Text(entry.scope, textAlign: TextAlign.center),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      _formatAge(entry.updatedAt),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
+              ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final delta in entry.deltas ?? const [])
+                  _DiffToken(delta: delta),
+              ],
+            ),
+            if (entry.note.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(entry.note, style: textTheme.bodySmall),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DiffToken extends StatelessWidget {
+  const _DiffToken({required this.delta});
+
+  final CollectionDelta delta;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = _deltaStyles[delta.kind] ?? OrefPalette.indigo;
+    final prefix = switch (delta.kind) {
+      'add' => '+',
+      'remove' => '-',
+      _ => '±',
+    };
+
+    return _GlassPill(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      color: style.withValues(alpha: 0.18),
+      child: Text('$prefix ${delta.label}'),
+    );
+  }
+}
+
+class _EffectsPanelStateData {
+  _EffectsPanelStateData(BuildContext context)
+    : typeFilter = oref.signal(
+        context,
+        'All',
+        debugLabel: 'effects.typeFilter',
+      ),
+      scopeFilter = oref.signal(
+        context,
+        'All',
+        debugLabel: 'effects.scopeFilter',
+      );
+
+  final oref.WritableSignal<String> typeFilter;
+  final oref.WritableSignal<String> scopeFilter;
+}
+
+class _EffectsHeader extends StatelessWidget {
+  const _EffectsHeader({
+    required this.typeFilter,
+    required this.scopeFilter,
+    required this.typeFilters,
+    required this.scopeFilters,
+    required this.onTypeChange,
+    required this.onScopeChange,
+    required this.totalCount,
+    required this.filteredCount,
+    required this.onExport,
+  });
+
+  final String typeFilter;
+  final String scopeFilter;
+  final List<String> typeFilters;
+  final List<String> scopeFilters;
+  final ValueChanged<String> onTypeChange;
+  final ValueChanged<String> onScopeChange;
+  final int totalCount;
+  final int filteredCount;
+  final VoidCallback onExport;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text('Effects', style: textTheme.headlineSmall),
+            const SizedBox(width: 12),
+            const _GlassPill(
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              child: Text('Live'),
+            ),
+            const Spacer(),
+            _GlassPill(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              child: Text('$filteredCount / $totalCount'),
+            ),
+            const SizedBox(width: 12),
+            _ActionPill(
+              label: 'Export',
+              icon: Icons.download_rounded,
+              onTap: onExport,
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Monitor effect lifecycle, timings, and hot paths.',
+          style: textTheme.bodyMedium,
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            Text('Type', style: textTheme.labelMedium),
+            for (final filter in typeFilters)
+              _FilterChip(
+                label: filter,
+                isSelected: filter == typeFilter,
+                onTap: () => onTypeChange(filter),
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            Text('Scope', style: textTheme.labelMedium),
+            for (final filter in scopeFilters)
+              _FilterChip(
+                label: filter,
+                isSelected: filter == scopeFilter,
+                onTap: () => onScopeChange(filter),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+const double _effectsTimelineDotSize = 14;
+const double _effectsTimelineLineWidth = 2;
+const double _effectsTimelineHorizontalPadding = 16;
+const double _effectsTimelineLineLeft =
+    _effectsTimelineHorizontalPadding +
+    _effectsTimelineDotSize / 2 -
+    _effectsTimelineLineWidth / 2;
+
+class _EffectsTimeline extends StatelessWidget {
+  const _EffectsTimeline({required this.entries});
+
+  final List<Sample> entries;
+
+  @override
+  Widget build(BuildContext context) {
+    return _GlassCard(
+      padding: const EdgeInsets.all(0),
+      child: Stack(
+        children: [
+          Positioned(
+            left: _effectsTimelineLineLeft,
+            top: 0,
+            bottom: 0,
+            child: Container(
+              width: _effectsTimelineLineWidth,
+              color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
+            ),
+          ),
+          if (entries.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'No effects match the current filters.',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: _effectsTimelineHorizontalPadding,
+                vertical: 16,
+              ),
+              child: Column(
+                children: [
+                  for (var index = 0; index < entries.length; index++) ...[
+                    _EffectRow(entry: entries[index]),
+                    if (index != entries.length - 1) const SizedBox(height: 12),
+                  ],
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EffectRow extends StatelessWidget {
+  const _EffectRow({required this.entry});
+
+  final Sample entry;
+
+  @override
+  Widget build(BuildContext context) {
+    final tone = _effectColors[entry.type] ?? OrefPalette.teal;
+    final runs = entry.runs ?? 0;
+    final durationUs = entry.lastDurationUs ?? 0;
+    final isHot = durationUs > 16000 || runs >= 8;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: _effectsTimelineDotSize,
+          height: _effectsTimelineDotSize,
+          margin: const EdgeInsets.only(top: 18),
+          decoration: BoxDecoration(
+            color: tone,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(color: tone.withValues(alpha: 0.4), blurRadius: 10),
+            ],
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: _GlassCard(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        entry.label,
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                    ),
+                    if (isHot) const _HotBadge(),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  entry.note.isEmpty
+                      ? 'Last run ${_formatAge(entry.updatedAt)}'
+                      : entry.note,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 8,
+                  children: [
+                    _GlassPill(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      color: tone.withValues(alpha: 0.2),
+                      child: Text(entry.type),
+                    ),
+                    _GlassPill(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      child: Text(entry.scope),
+                    ),
+                    _GlassPill(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      child: Text('Runs $runs'),
+                    ),
+                    _GlassPill(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      color: durationUs > 16000
+                          ? OrefPalette.coral.withValues(alpha: 0.2)
+                          : OrefPalette.lime.withValues(alpha: 0.2),
+                      child: Text(_formatDurationUs(durationUs)),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _HotBadge extends StatelessWidget {
+  const _HotBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return _GlassPill(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      color: OrefPalette.coral.withValues(alpha: 0.25),
+      child: Text('HOT', style: Theme.of(context).textTheme.labelMedium),
+    );
+  }
+}
+
+class _SignalsHeader extends StatelessWidget {
+  const _SignalsHeader({
+    required this.controller,
+    required this.selectedFilter,
+    required this.onFilterChange,
+    required this.totalCount,
+    required this.filteredCount,
+    required this.onExport,
+  });
+
+  final TextEditingController controller;
+  final String selectedFilter;
+  final ValueChanged<String> onFilterChange;
+  final int totalCount;
+  final int filteredCount;
+  final VoidCallback onExport;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text('Signals', style: textTheme.headlineSmall),
+            const SizedBox(width: 12),
+            const _GlassPill(
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              child: Text('Live'),
+            ),
+            const Spacer(),
+            _GlassPill(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              child: Text('$filteredCount / $totalCount'),
+            ),
+            const SizedBox(width: 12),
+            _ActionPill(
+              label: 'Export',
+              icon: Icons.download_rounded,
+              onTap: onExport,
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Inspect live signal values, owners, and update cadence.',
+          style: textTheme.bodyMedium,
+        ),
+        const SizedBox(height: 16),
+        _GlassInput(controller: controller, hintText: 'Search signals...'),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final filter in _signalFilters)
+              _FilterChip(
+                label: filter,
+                isSelected: filter == selectedFilter,
+                onTap: () => onFilterChange(filter),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _SignalList extends StatelessWidget {
+  const _SignalList({
+    required this.entries,
+    required this.selectedId,
+    required this.isCompact,
+    required this.sortKey,
+    required this.sortAscending,
+    required this.onSortName,
+    required this.onSortUpdated,
+    required this.onSelect,
+  });
+
+  final List<Sample> entries;
+  final int? selectedId;
+  final bool isCompact;
+  final _SortKey sortKey;
+  final bool sortAscending;
+  final VoidCallback onSortName;
+  final VoidCallback onSortUpdated;
+  final ValueChanged<Sample> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    return _GlassCard(
+      padding: const EdgeInsets.all(0),
+      child: Column(
+        children: [
+          if (!isCompact)
+            _SignalTableHeader(
+              sortKey: sortKey,
+              sortAscending: sortAscending,
+              onSortName: onSortName,
+              onSortUpdated: onSortUpdated,
+            ),
+          if (entries.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'No signals match the current filter.',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                children: [
+                  for (var index = 0; index < entries.length; index++) ...[
+                    _SignalRow(
+                      entry: entries[index],
+                      isSelected: selectedId == entries[index].id,
+                      isCompact: isCompact,
+                      onTap: () => onSelect(entries[index]),
+                    ),
+                    if (index != entries.length - 1) const SizedBox(height: 8),
+                  ],
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SignalTableHeader extends StatelessWidget {
+  const _SignalTableHeader({
+    required this.sortKey,
+    required this.sortAscending,
+    required this.onSortName,
+    required this.onSortUpdated,
+  });
+
+  final _SortKey sortKey;
+  final bool sortAscending;
+  final VoidCallback onSortName;
+  final VoidCallback onSortUpdated;
+
+  @override
+  Widget build(BuildContext context) {
+    final labelStyle = Theme.of(context).textTheme.labelSmall;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.4),
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 3,
+            child: _SortHeaderCell(
+              label: 'Name',
+              isActive: sortKey == _SortKey.name,
+              ascending: sortAscending,
+              onTap: onSortName,
+              style: labelStyle,
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Align(
+              alignment: Alignment.center,
+              child: Text('Value', style: labelStyle),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Align(
+              alignment: Alignment.center,
+              child: Text('Type', style: labelStyle),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Align(
+              alignment: Alignment.center,
+              child: Text('Status', style: labelStyle),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: _SortHeaderCell(
+              label: 'Updated',
+              isActive: sortKey == _SortKey.updated,
+              ascending: sortAscending,
+              onTap: onSortUpdated,
+              style: labelStyle,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SignalRow extends StatelessWidget {
+  const _SignalRow({
+    required this.entry,
+    required this.isSelected,
+    required this.isCompact,
+    required this.onTap,
+  });
+
+  final Sample entry;
+  final bool isSelected;
+  final bool isCompact;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final highlight = isSelected
+        ? OrefPalette.teal.withValues(alpha: 0.2)
+        : Colors.transparent;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          decoration: BoxDecoration(
+            color: highlight,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isSelected
+                  ? OrefPalette.teal.withValues(alpha: 0.4)
+                  : colorScheme.onSurface.withValues(alpha: 0.08),
+            ),
+          ),
+          child: isCompact
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(entry.label),
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
+                      children: [
+                        _GlassPill(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          child: Text(entry.type),
+                        ),
+                        _StatusBadge(status: entry.status ?? 'Active'),
+                        _GlassPill(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          child: Text(_formatAge(entry.updatedAt)),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      entry.value ?? '',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                )
+              : Row(
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text(entry.label, textAlign: TextAlign.center),
+                          const SizedBox(height: 4),
+                          Text(
+                            entry.owner,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        entry.value ?? '',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: Text(entry.type, textAlign: TextAlign.center),
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: Align(
+                        alignment: Alignment.center,
+                        child: _StatusBadge(status: entry.status ?? 'Active'),
+                      ),
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        _formatAge(entry.updatedAt),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ],
+                ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SignalDetail extends StatelessWidget {
+  const _SignalDetail({required this.entry});
+
+  final Sample? entry;
+
+  @override
+  Widget build(BuildContext context) {
+    if (entry == null) {
+      return _GlassCard(
+        padding: const EdgeInsets.all(20),
+        child: Center(
+          child: Text(
+            'Select a signal to view details.',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ),
+      );
+    }
+
+    final textTheme = Theme.of(context).textTheme;
+
+    return _GlassCard(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(entry!.label, style: textTheme.titleMedium),
+          const SizedBox(height: 8),
+          _StatusBadge(status: entry!.status ?? 'Active'),
+          const SizedBox(height: 16),
+          _InfoRow(label: 'Owner', value: entry!.owner),
+          _InfoRow(label: 'Scope', value: entry!.scope),
+          _InfoRow(label: 'Type', value: entry!.type),
+          _InfoRow(label: 'Value', value: entry!.value ?? ''),
+          _InfoRow(label: 'Updated', value: _formatAge(entry!.updatedAt)),
+          _InfoRow(label: 'Listeners', value: '${entry!.listeners ?? 0}'),
+          _InfoRow(label: 'Deps', value: '${entry!.dependencies ?? 0}'),
+          if (entry!.note.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(entry!.note, style: textTheme.bodySmall),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _StatusBadge extends StatelessWidget {
+  const _StatusBadge({required this.status});
+
+  final String status;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = _statusStyles[status] ?? _statusStyles['Active']!;
+    return _GlassPill(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      color: style.color.withValues(alpha: 0.2),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: style.color,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(status),
+        ],
+      ),
+    );
+  }
+}
+
+class _FilterChip extends StatelessWidget {
+  const _FilterChip({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final background = isSelected
+        ? OrefPalette.indigo.withValues(alpha: 0.35)
+        : colorScheme.surface.withValues(alpha: 0.35);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(999),
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: background,
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: isSelected
+                  ? OrefPalette.indigo.withValues(alpha: 0.7)
+                  : colorScheme.onSurface.withValues(alpha: 0.1),
+            ),
+          ),
+          child: Text(label, style: Theme.of(context).textTheme.labelMedium),
+        ),
+      ),
+    );
+  }
+}
+
+class _GlassInput extends StatelessWidget {
+  const _GlassInput({required this.controller, required this.hintText});
+
+  final TextEditingController controller;
+  final String hintText;
+
+  @override
+  Widget build(BuildContext context) {
+    return _GlassCard(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+      child: Row(
+        children: [
+          const Icon(Icons.search, size: 18),
+          const SizedBox(width: 8),
+          Expanded(
+            child: TextField(
+              controller: controller,
+              decoration: InputDecoration(
+                hintText: hintText,
+                hintStyle: Theme.of(context).textTheme.bodySmall,
+                border: InputBorder.none,
+                isDense: true,
+              ),
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SortHeaderCell extends StatelessWidget {
+  const _SortHeaderCell({
+    required this.label,
+    required this.isActive,
+    required this.ascending,
+    required this.onTap,
+    required this.style,
+  });
+
+  final String label;
+  final bool isActive;
+  final bool ascending;
+  final VoidCallback onTap;
+  final TextStyle? style;
+
+  @override
+  Widget build(BuildContext context) {
+    final icon = ascending ? Icons.arrow_drop_up : Icons.arrow_drop_down;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(6),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: SizedBox(
+            width: double.infinity,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(label, style: style),
+                if (isActive) Icon(icon, size: 16),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PanelInfo {
+  const _PanelInfo({
+    required this.title,
+    required this.description,
+    required this.bullets,
+  });
+
+  final String title;
+  final String description;
+  final List<String> bullets;
+}
+
+class _PanelScrollView extends StatelessWidget {
+  const _PanelScrollView({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: child,
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _PanelPlaceholder extends StatelessWidget {
+  const _PanelPlaceholder({required this.info, required this.icon});
+
+  final _PanelInfo info;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _GlassPill(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                color: OrefPalette.indigo.withValues(alpha: 0.2),
+                child: const Text('UI in progress'),
+              ),
+              const Spacer(),
+              Icon(icon, size: 28, color: OrefPalette.teal),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(info.title, style: textTheme.headlineSmall),
+          const SizedBox(height: 8),
+          Text(info.description, style: textTheme.bodyLarge),
+          const SizedBox(height: 20),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isStacked = constraints.maxWidth < 860;
+              final bulletCard = _GlassCard(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('What you will get', style: textTheme.titleMedium),
+                    const SizedBox(height: 12),
+                    for (final bullet in info.bullets)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.circle, size: 8),
+                            const SizedBox(width: 8),
+                            Expanded(child: Text(bullet)),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              );
+
+              final previewCard = _GlassCard(
+                padding: const EdgeInsets.all(20),
+                child: Container(
+                  height: 180,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(18),
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0x2222E3C4), Color(0x116C5CFF)],
+                    ),
+                    border: Border.all(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.1),
+                    ),
+                  ),
+                  child: const Center(
+                    child: Icon(Icons.grid_view_rounded, size: 48),
+                  ),
+                ),
+              );
+
+              return isStacked
+                  ? Column(
+                      children: [
+                        bulletCard,
+                        const SizedBox(height: 20),
+                        previewCard,
+                      ],
+                    )
+                  : Row(
+                      children: [
+                        Expanded(flex: 3, child: bulletCard),
+                        const SizedBox(width: 20),
+                        Expanded(flex: 2, child: previewCard),
+                      ],
+                    );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MetricTile extends StatelessWidget {
+  const _MetricTile({
+    required this.label,
+    required this.value,
+    required this.trend,
+    required this.accent,
+    required this.icon,
+  });
+
+  final String label;
+  final String value;
+  final String trend;
+  final Color accent;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return _GlassCard(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: accent, size: 18),
+              ),
+              const Spacer(),
+              _GlassPill(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                color: accent.withValues(alpha: 0.18),
+                child: Text(trend),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(label, style: Theme.of(context).textTheme.labelLarge),
+          const SizedBox(height: 6),
+          Text(value, style: Theme.of(context).textTheme.headlineSmall),
+          const SizedBox(height: 10),
+          _Sparkline(color: accent),
+        ],
+      ),
+    );
+  }
+}
+
+class _AdaptiveWrap extends StatelessWidget {
+  const _AdaptiveWrap({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const minItemWidth = 220.0;
+        const maxColumns = 4;
+        const spacing = 16.0;
+        const runSpacing = 16.0;
+        final available = constraints.maxWidth;
+        final rawColumns = (available / (minItemWidth + spacing)).floor();
+        final columns = rawColumns.clamp(1, maxColumns);
+        final width =
+            (available - (columns - 1) * spacing) / columns.toDouble();
+
+        return Wrap(
+          spacing: spacing,
+          runSpacing: runSpacing,
+          children: [
+            for (final child in children) SizedBox(width: width, child: child),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _InsightCard extends StatelessWidget {
+  const _InsightCard({
+    required this.title,
+    required this.subtitle,
+    required this.primary,
+    required this.secondary,
+  });
+
+  final String title;
+  final String subtitle;
+  final List<_InsightRow> primary;
+  final List<_InsightRow> secondary;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return _GlassCard(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: textTheme.titleMedium),
+          const SizedBox(height: 6),
+          Text(subtitle, style: textTheme.bodySmall),
+          const SizedBox(height: 16),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isStacked = constraints.maxWidth < 420;
+              final primaryColumn = Column(
+                children: [for (final row in primary) row],
+              );
+              final secondaryColumn = Column(
+                children: [for (final row in secondary) row],
+              );
+
+              return isStacked
+                  ? Column(
+                      children: [
+                        primaryColumn,
+                        const SizedBox(height: 12),
+                        secondaryColumn,
+                      ],
+                    )
+                  : Row(
+                      children: [
+                        Expanded(child: primaryColumn),
+                        const SizedBox(width: 16),
+                        Expanded(child: secondaryColumn),
+                      ],
+                    );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InsightRow extends StatelessWidget {
+  const _InsightRow(this.label, this.value);
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: DefaultTextStyle.merge(
+        style: textTheme.bodySmall,
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.right,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HealthCard extends StatelessWidget {
+  const _HealthCard({
+    required this.activeNodes,
+    required this.totalNodes,
+    required this.watchedNodes,
+    required this.activityRate,
+    required this.activityProgress,
+  });
+
+  final int activeNodes;
+  final int totalNodes;
+  final int watchedNodes;
+  final int activityRate;
+  final double activityProgress;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return _GlassCard(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Health Snapshot', style: textTheme.titleMedium),
+          const SizedBox(height: 6),
+          Text(
+            'Service health and steady-state metrics.',
+            style: textTheme.bodySmall,
+          ),
+          const SizedBox(height: 16),
+          _HealthBar(
+            label: 'Active nodes',
+            value: totalNodes == 0 ? '—' : '$activeNodes / $totalNodes',
+            progress: totalNodes == 0 ? 0 : activeNodes / totalNodes,
+            color: OrefPalette.teal,
+          ),
+          const SizedBox(height: 12),
+          _HealthBar(
+            label: 'Watched nodes',
+            value: totalNodes == 0 ? '—' : '$watchedNodes watched',
+            progress: totalNodes == 0 ? 0 : watchedNodes / totalNodes,
+            color: OrefPalette.indigo,
+          ),
+          const SizedBox(height: 12),
+          _HealthBar(
+            label: 'Update rate',
+            value: activityRate == 0 ? '—' : '$activityRate/min',
+            progress: activityProgress,
+            color: OrefPalette.coral,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HealthBar extends StatelessWidget {
+  const _HealthBar({
+    required this.label,
+    required this.value,
+    required this.progress,
+    required this.color,
+  });
+
+  final String label;
+  final String value;
+  final double progress;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final clamped = progress.clamp(0.0, 1.0);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(child: Text(label, style: textTheme.bodySmall)),
+            Text(value, style: textTheme.bodySmall),
+          ],
+        ),
+        const SizedBox(height: 6),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            return Stack(
+              children: [
+                Container(
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+                Container(
+                  height: 8,
+                  width: constraints.maxWidth * clamped,
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: BorderRadius.circular(999),
+                    boxShadow: [
+                      BoxShadow(
+                        color: color.withValues(alpha: 0.35),
+                        blurRadius: 8,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class _ChartPlaceholder extends StatelessWidget {
+  const _ChartPlaceholder({required this.icon, required this.caption});
+
+  final IconData icon;
+  final String caption;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 180,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        gradient: const LinearGradient(
+          colors: [Color(0x3322E3C4), Color(0x226C5CFF)],
+        ),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+        ),
+      ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Icon(icon, size: 48),
+          Positioned(
+            bottom: 12,
+            right: 12,
+            child: _GlassPill(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              child: Text(caption),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MiniChart extends StatelessWidget {
+  const _MiniChart({
+    required this.values,
+    required this.icon,
+    required this.caption,
+    required this.color,
+  });
+
+  final List<int> values;
+  final IconData icon;
+  final String caption;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    if (values.isEmpty) {
+      return _ChartPlaceholder(icon: icon, caption: caption);
+    }
+    final maxValue = values.fold<int>(1, (max, value) {
+      return value > max ? value : max;
+    });
+
+    return Container(
+      height: 180,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        gradient: LinearGradient(
+          colors: [
+            color.withValues(alpha: 0.12),
+            color.withValues(alpha: 0.04),
+          ],
+        ),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+        child: Column(
+          children: [
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final barMaxHeight = constraints.maxHeight;
+                  final barCount = values.length;
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      for (var index = 0; index < barCount; index++) ...[
+                        Expanded(
+                          child: Align(
+                            alignment: Alignment.bottomCenter,
+                            child: Container(
+                              height: barMaxHeight * (values[index] / maxValue),
+                              decoration: BoxDecoration(
+                                color: color.withValues(alpha: 0.75),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                            ),
+                          ),
+                        ),
+                        if (index != barCount - 1) const SizedBox(width: 6),
+                      ],
+                    ],
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Icon(icon, size: 14, color: color),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    caption,
+                    style: Theme.of(context).textTheme.bodySmall,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Sparkline extends StatelessWidget {
+  const _Sparkline({required this.color});
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    const bars = [0.3, 0.5, 0.7, 0.4, 0.6, 0.8, 0.5, 0.9];
+    return SizedBox(
+      height: 28,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          for (final value in bars)
+            Container(
+              width: 10,
+              height: 28 * value,
+              margin: const EdgeInsets.only(right: 4),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(6),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TimelineRow extends StatelessWidget {
+  const _TimelineRow({required this.event});
+
+  final TimelineEvent event;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 10,
+            height: 10,
+            margin: const EdgeInsets.only(top: 6),
+            decoration: BoxDecoration(
+              color: _timelineColors[event.type] ?? OrefPalette.teal,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  event.title,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                Text(
+                  '${event.detail} · ${_formatAge(event.timestamp)}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          SizedBox(width: 84, child: Text(label, style: textTheme.bodySmall)),
+          Expanded(child: Text(value, style: textTheme.bodyMedium)),
+        ],
+      ),
+    );
+  }
+}
+
+class _GlassCard extends StatelessWidget {
+  const _GlassCard({required this.child, this.padding, this.width});
+
+  final Widget child;
+  final EdgeInsets? padding;
+  final double? width;
+
+  @override
+  Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    final tint = brightness == Brightness.dark
+        ? Colors.white.withValues(alpha: 0.06)
+        : Colors.white.withValues(alpha: 0.7);
+
+    return SizedBox(
+      width: width,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(22),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+          child: Container(
+            padding: padding ?? const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: tint,
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(
+                color: brightness == Brightness.dark
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : Colors.white.withValues(alpha: 0.4),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: brightness == Brightness.dark
+                      ? Colors.black.withValues(alpha: 0.3)
+                      : Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 24,
+                  offset: const Offset(0, 12),
+                ),
+              ],
+            ),
+            child: child,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _GlassPill extends StatelessWidget {
+  const _GlassPill({required this.child, this.padding, this.color});
+
+  final Widget child;
+  final EdgeInsets? padding;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    final tint =
+        color ??
+        (brightness == Brightness.dark
+            ? Colors.white.withValues(alpha: 0.08)
+            : Colors.white.withValues(alpha: 0.9));
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(999),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Container(
+          padding:
+              padding ??
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: tint,
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: brightness == Brightness.dark
+                  ? Colors.white.withValues(alpha: 0.1)
+                  : Colors.white.withValues(alpha: 0.5),
+            ),
+          ),
+          child: DefaultTextStyle.merge(
+            style: Theme.of(context).textTheme.labelMedium,
+            child: child,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _GradientButton extends StatelessWidget {
+  const _GradientButton({required this.label, this.onTap});
+
+  final String label;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final isEnabled = onTap != null;
+    return Opacity(
+      opacity: isEnabled ? 1 : 0.6,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onTap,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [OrefPalette.teal, OrefPalette.indigo],
+              ),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x6622E3C4),
+                  blurRadius: 16,
+                  offset: Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              child: Text(label, style: Theme.of(context).textTheme.labelLarge),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _OutlineButton extends StatelessWidget {
+  const _OutlineButton({required this.label, this.onTap});
+
+  final String label;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final isEnabled = onTap != null;
+    final color = Theme.of(context).colorScheme.onSurface;
+    return Opacity(
+      opacity: isEnabled ? 1 : 0.6,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: color.withValues(alpha: 0.2)),
+            ),
+            child: Text(label, style: Theme.of(context).textTheme.labelLarge),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ConnectionGuard extends StatelessWidget {
+  const _ConnectionGuard({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = OrefDevToolsScope.of(context);
+    if (!controller.connected) {
+      return const _PanelStateCard(
+        icon: Icons.link_off_rounded,
+        title: 'No app connected',
+        message: 'Run your Flutter app and open DevTools to connect.',
+      );
+    }
+    if (controller.isUnavailable) {
+      return const _PanelStateCard(
+        icon: Icons.extension_off_rounded,
+        title: 'DevTools not active',
+        message:
+            'Diagnostics auto-register after the first signal/computed/effect '
+            'in debug mode. Interact with the app to activate.',
+      );
+    }
+    if (controller.isConnecting && controller.snapshot == null) {
+      return const _PanelLoadingCard();
+    }
+    if (controller.hasError && controller.snapshot == null) {
+      return _PanelStateCard(
+        icon: Icons.error_outline_rounded,
+        title: 'Connection error',
+        message: controller.errorMessage ?? 'Unable to reach the VM service.',
+      );
+    }
+    return child;
+  }
+}
+
+class _PanelStateCard extends StatelessWidget {
+  const _PanelStateCard({
+    required this.icon,
+    required this.title,
+    required this.message,
+  });
+
+  final IconData icon;
+  final String title;
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: _GlassCard(
+        padding: const EdgeInsets.all(24),
+        width: 420,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 48, color: OrefPalette.coral),
+            const SizedBox(height: 12),
+            Text(title, style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PanelLoadingCard extends StatelessWidget {
+  const _PanelLoadingCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: _GlassCard(
+        padding: const EdgeInsets.all(24),
+        width: 320,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(
+              width: 36,
+              height: 36,
+              child: CircularProgressIndicator(strokeWidth: 2.5),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Connecting to Oref diagnostics...',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NavItemData {
+  const _NavItemData(this.label, this.icon);
+
+  final String label;
+  final IconData icon;
+}
+
+const _navItems = [
+  _NavItemData('Overview', Icons.dashboard_rounded),
+  _NavItemData('Signals', Icons.bubble_chart_rounded),
+  _NavItemData('Computed', Icons.schema_rounded),
+  _NavItemData('Effects', Icons.auto_awesome_motion_rounded),
+  _NavItemData('Collections', Icons.grid_view_rounded),
+  _NavItemData('Batching', Icons.layers_rounded),
+  _NavItemData('Timeline', Icons.timeline_rounded),
+];
+
+const _utilityItems = [_NavItemData('Performance', Icons.speed_rounded)];
+
+const _settingsItem = _NavItemData('Settings', Icons.tune_rounded);
+
+const _navDisplayItems = [..._navItems, ..._utilityItems];
+
+const _allNavItems = [..._navDisplayItems, _settingsItem];
+
+const _panelInfo = {
+  'Computed': _PanelInfo(
+    title: 'Computed',
+    description: 'Understand derived state and cache behavior.',
+    bullets: [
+      'Dependency graph preview',
+      'Cache hit / miss ratio',
+      'Invalidation cascade list',
+    ],
+  ),
+  'Effects': _PanelInfo(
+    title: 'Effects',
+    description: 'Track effect execution and lifecycle changes.',
+    bullets: [
+      'Timeline with rerun counts',
+      'Execution duration stats',
+      'Dispose + scope diagnostics',
+    ],
+  ),
+  'Collections': _PanelInfo(
+    title: 'Collections',
+    description: 'Audit reactive lists, maps, and sets.',
+    bullets: [
+      'Mutation history',
+      'Diff view for changes',
+      'Batch operations overview',
+    ],
+  ),
+  'Batching': _PanelInfo(
+    title: 'Batching',
+    description: 'Inspect batched writes and flush timing.',
+    bullets: [
+      'Grouped updates per frame',
+      'Longest batch duration',
+      'Hot write sources',
+    ],
+  ),
+  'Timeline': _PanelInfo(
+    title: 'Timeline',
+    description: 'Correlate signal updates with frame rendering.',
+    bullets: [
+      'Frame markers + signal spikes',
+      'CPU / UI jank overlay',
+      'Exportable diagnostics',
+    ],
+  ),
+  'Performance': _PanelInfo(
+    title: 'Performance',
+    description: 'Track frame costs and signal churn hotspots.',
+    bullets: [
+      'Frame budget + jank markers',
+      'Top signal recomputes',
+      'Slow effects callouts',
+    ],
+  ),
+  'Settings': _PanelInfo(
+    title: 'Settings',
+    description: 'Tune how diagnostics are collected.',
+    bullets: [
+      'Sampling frequency',
+      'Auto capture thresholds',
+      'Export + privacy controls',
+    ],
+  ),
+};
+
+enum _SortKey { name, updated }
+
+class _StatusStyle {
+  const _StatusStyle(this.color);
+
+  final Color color;
+}
+
+const _signalFilters = ['All', 'Active', 'Dirty', 'Disposed'];
+
+const _statusStyles = {
+  'Active': _StatusStyle(OrefPalette.lime),
+  'Dirty': _StatusStyle(OrefPalette.coral),
+  'Disposed': _StatusStyle(Color(0xFF8B97A8)),
+};
+
+const _effectColors = {
+  'UI': OrefPalette.teal,
+  'Network': OrefPalette.indigo,
+  'Persist': OrefPalette.coral,
+  'Analytics': OrefPalette.pink,
+  'Effect': OrefPalette.teal,
+};
+
+const _collectionOpColors = {
+  'Add': OrefPalette.lime,
+  'Remove': OrefPalette.coral,
+  'Replace': OrefPalette.indigo,
+  'Clear': OrefPalette.pink,
+  'Resize': OrefPalette.indigo,
+};
+
+const _deltaStyles = {
+  'add': OrefPalette.lime,
+  'remove': OrefPalette.coral,
+  'update': OrefPalette.indigo,
+};
+
+const _timelineColors = {
+  'signal': OrefPalette.teal,
+  'computed': OrefPalette.indigo,
+  'effect': OrefPalette.pink,
+  'collection': OrefPalette.coral,
+  'batch': OrefPalette.lime,
+};
+
+String _formatAge(int? timestamp) {
+  if (timestamp == null || timestamp == 0) return '—';
+  final now = DateTime.now().toUtc().millisecondsSinceEpoch;
+  final diff = now - timestamp;
+  if (diff < 0) return 'just now';
+  if (diff < 1000) return '${diff}ms ago';
+  final seconds = diff ~/ 1000;
+  if (seconds < 60) return '${seconds}s ago';
+  final minutes = seconds ~/ 60;
+  if (minutes < 60) return '${minutes}m ago';
+  final hours = minutes ~/ 60;
+  if (hours < 24) return '${hours}h ago';
+  final days = hours ~/ 24;
+  return '${days}d ago';
+}
+
+String _formatDurationUs(int durationUs) {
+  if (durationUs <= 0) return '<1us';
+  if (durationUs < 1000) return '${durationUs}us';
+  final ms = durationUs / 1000;
+  if (ms < 10) {
+    return '${ms.toStringAsFixed(2)}ms';
+  }
+  if (ms < 100) {
+    return '${ms.toStringAsFixed(1)}ms';
+  }
+  return '${ms.round()}ms';
+}
+
+String _formatTimelineDetail(TimelineEvent event) {
+  final durationUs = event.durationUs;
+  switch (event.type) {
+    case 'computed':
+      return durationUs == null
+          ? event.detail
+          : 'Recomputed in ${_formatDurationUs(durationUs)}';
+    case 'effect':
+      return durationUs == null
+          ? event.detail
+          : 'Ran in ${_formatDurationUs(durationUs)}';
+    case 'collection':
+      final op = event.operation;
+      return op == null ? event.detail : '$op mutation';
+    case 'batch':
+      if (durationUs == null && event.writeCount == null) return event.detail;
+      final duration = durationUs == null ? '' : _formatDurationUs(durationUs);
+      final writes = event.writeCount == null
+          ? ''
+          : '${event.writeCount} writes';
+      if (duration.isEmpty) return writes;
+      if (writes.isEmpty) return 'Batch in $duration';
+      return '$writes in $duration';
+    default:
+      return event.detail;
+  }
+}
+
+String _formatCount(int? value) {
+  if (value == null) return '—';
+  return value.toString();
+}
+
+String _formatDelta(int? value, {String suffix = ''}) {
+  if (value == null) return '—';
+  if (value == 0) return 'idle';
+  final label = value > 0 ? '+$value' : value.toString();
+  return suffix.isEmpty ? label : '$label $suffix';
+}
+
+int _compareSort(
+  _SortKey key,
+  bool ascending,
+  String nameA,
+  String nameB,
+  int updatedA,
+  int updatedB,
+  int idA,
+  int idB,
+) {
+  int result;
+  if (key == _SortKey.name) {
+    result = nameA.toLowerCase().compareTo(nameB.toLowerCase());
+  } else {
+    result = updatedA.compareTo(updatedB);
+  }
+  if (result == 0) {
+    result = idA.compareTo(idB);
+  }
+  return ascending ? result : -result;
+}
+
+Future<void> _exportData(
+  BuildContext context,
+  String label,
+  Object data,
+) async {
+  if (data is Iterable && data.isEmpty) {
+    _showToast(context, 'No $label data to export.');
+    return;
+  }
+  if (data is Map && data.isEmpty) {
+    _showToast(context, 'No $label data to export.');
+    return;
+  }
+  final payload = const JsonEncoder.withIndent('  ').convert(data);
+  await Clipboard.setData(ClipboardData(text: payload));
+  if (!context.mounted) return;
+  _showToast(context, 'Copied $label JSON to clipboard.');
+}
+
+void _showToast(BuildContext context, String message) {
+  final messenger = ScaffoldMessenger.maybeOf(context);
+  if (messenger == null) return;
+  messenger.hideCurrentSnackBar();
+  messenger.showSnackBar(
+    SnackBar(
+      content: Text(message),
+      behavior: SnackBarBehavior.floating,
+      duration: const Duration(seconds: 2),
+    ),
+  );
+}
+
+List<String> _buildFilterOptions(Iterable<String> values) {
+  final unique = <String>{};
+  for (final value in values) {
+    final trimmed = value.trim();
+    if (trimmed.isNotEmpty) unique.add(trimmed);
+  }
+  final sorted = unique.toList()..sort();
+  return ['All', ...sorted];
+}
+
+extension _IterableX<T> on Iterable<T> {
+  T? firstWhereOrNull(bool Function(T element) test) {
+    for (final element in this) {
+      if (test(element)) return element;
+    }
+    return null;
+  }
+}
