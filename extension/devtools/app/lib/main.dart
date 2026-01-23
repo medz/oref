@@ -2590,46 +2590,50 @@ class _PerformanceRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
     return _GlassCard(
       padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 2,
-            child: Text(
-              _formatAge(sample.timestamp),
-              textAlign: TextAlign.center,
+      child: DefaultTextStyle.merge(
+        style: textTheme.bodyMedium,
+        child: Row(
+          children: [
+            Expanded(
+              flex: 2,
+              child: Text(
+                _formatAge(sample.timestamp),
+                textAlign: TextAlign.center,
+              ),
             ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Text(
-              '${sample.signalWrites} writes',
-              textAlign: TextAlign.center,
+            Expanded(
+              flex: 2,
+              child: Text(
+                '${sample.signalWrites} writes',
+                textAlign: TextAlign.center,
+              ),
             ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Text(
-              '${sample.effectRuns} runs',
-              textAlign: TextAlign.center,
+            Expanded(
+              flex: 2,
+              child: Text(
+                '${sample.effectRuns} runs',
+                textAlign: TextAlign.center,
+              ),
             ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Text(
-              '${sample.avgEffectDurationMs.toStringAsFixed(1)}ms',
-              textAlign: TextAlign.center,
+            Expanded(
+              flex: 2,
+              child: Text(
+                '${sample.avgEffectDurationMs.toStringAsFixed(1)}ms',
+                textAlign: TextAlign.center,
+              ),
             ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Text(
-              '${sample.collectionMutations} mutations',
-              textAlign: TextAlign.center,
+            Expanded(
+              flex: 2,
+              child: Text(
+                '${sample.collectionMutations} mutations',
+                textAlign: TextAlign.center,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -3138,107 +3142,110 @@ class _CollectionRow extends StatelessWidget {
 
     return _GlassCard(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (isCompact)
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(entry.label),
-                const SizedBox(height: 6),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    _GlassPill(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      child: Text(entry.type),
-                    ),
-                    _GlassPill(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      color: tone.withOpacity(0.22),
-                      child: Text(entry.operation),
-                    ),
-                    _GlassPill(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      child: Text(_formatAge(entry.updatedAt)),
-                    ),
-                  ],
-                ),
-              ],
-            )
-          else
-            Row(
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
+      child: DefaultTextStyle.merge(
+        style: textTheme.bodyMedium,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (isCompact)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(entry.label),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
                     children: [
-                      Text(entry.label, textAlign: TextAlign.center),
-                      const SizedBox(height: 4),
-                      Text(
-                        entry.owner,
-                        textAlign: TextAlign.center,
-                        style: textTheme.bodySmall,
+                      _GlassPill(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        child: Text(entry.type),
+                      ),
+                      _GlassPill(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        color: tone.withOpacity(0.22),
+                        child: Text(entry.operation),
+                      ),
+                      _GlassPill(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        child: Text(_formatAge(entry.updatedAt)),
                       ),
                     ],
                   ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text(entry.type, textAlign: TextAlign.center),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Align(
-                    alignment: Alignment.center,
-                    child: _GlassPill(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      color: tone.withOpacity(0.22),
-                      child: Text(entry.operation),
+                ],
+              )
+            else
+              Row(
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text(entry.label, textAlign: TextAlign.center),
+                        const SizedBox(height: 4),
+                        Text(
+                          entry.owner,
+                          textAlign: TextAlign.center,
+                          style: textTheme.bodySmall,
+                        ),
+                      ],
                     ),
                   ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text(entry.scope, textAlign: TextAlign.center),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    _formatAge(entry.updatedAt),
-                    textAlign: TextAlign.center,
+                  Expanded(
+                    flex: 2,
+                    child: Text(entry.type, textAlign: TextAlign.center),
                   ),
-                ),
+                  Expanded(
+                    flex: 2,
+                    child: Align(
+                      alignment: Alignment.center,
+                      child: _GlassPill(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        color: tone.withOpacity(0.22),
+                        child: Text(entry.operation),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: Text(entry.scope, textAlign: TextAlign.center),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      _formatAge(entry.updatedAt),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
+              ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final delta in entry.deltas) _DiffToken(delta: delta),
               ],
             ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final delta in entry.deltas) _DiffToken(delta: delta),
+            if (entry.note.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(entry.note, style: textTheme.bodySmall),
             ],
-          ),
-          if (entry.note.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text(entry.note, style: textTheme.bodySmall),
           ],
-        ],
+        ),
       ),
     );
   }
@@ -4731,15 +4738,13 @@ class _InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         children: [
-          SizedBox(
-            width: 84,
-            child: Text(label, style: Theme.of(context).textTheme.bodySmall),
-          ),
-          Expanded(child: Text(value)),
+          SizedBox(width: 84, child: Text(label, style: textTheme.bodySmall)),
+          Expanded(child: Text(value, style: textTheme.bodyMedium)),
         ],
       ),
     );
