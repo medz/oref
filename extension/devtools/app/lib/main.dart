@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:oref/devtools.dart';
+import 'package:oref/oref.dart' as oref;
 
 import 'oref_service.dart';
 
@@ -17,35 +18,23 @@ void main() {
   runApp(const DevToolsExtension(child: OrefDevToolsApp()));
 }
 
-class OrefDevToolsApp extends StatefulWidget {
+class OrefDevToolsApp extends StatelessWidget {
   const OrefDevToolsApp({super.key});
 
   @override
-  State<OrefDevToolsApp> createState() => _OrefDevToolsAppState();
-}
-
-class _OrefDevToolsAppState extends State<OrefDevToolsApp> {
-  final _themeController = _ThemeController();
-
-  @override
-  void dispose() {
-    _themeController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return _ThemeScope(
-      controller: _themeController,
-      child: AnimatedBuilder(
-        animation: _themeController,
-        builder: (context, _) {
+    final uiState = oref.useMemoized(context, () => _UiState(context));
+    return _UiScope(
+      state: uiState,
+      child: oref.SignalBuilder(
+        builder: (context) {
+          final mode = uiState.themeMode();
           return MaterialApp(
             debugShowCheckedModeBanner: false,
             title: 'Oref DevTools',
             theme: OrefTheme.light(),
             darkTheme: OrefTheme.dark(),
-            themeMode: _themeController.mode,
+            themeMode: mode,
             home: const _DevToolsShell(),
           );
         },
@@ -69,29 +58,36 @@ class OrefDevToolsScope extends InheritedNotifier<OrefDevToolsController> {
   }
 }
 
-class _ThemeController extends ChangeNotifier {
-  ThemeMode _mode = ThemeMode.system;
+class _UiState {
+  _UiState(BuildContext context)
+    : themeMode = oref.signal(
+        context,
+        ThemeMode.system,
+        debugLabel: 'ui.themeMode',
+      ),
+      selectedNavLabel = oref.signal(
+        context,
+        _navItems.first.label,
+        debugLabel: 'ui.nav.selected',
+      );
 
-  ThemeMode get mode => _mode;
-
-  void setMode(ThemeMode mode) {
-    if (_mode == mode) return;
-    _mode = mode;
-    notifyListeners();
-  }
+  final oref.WritableSignal<ThemeMode> themeMode;
+  final oref.WritableSignal<String> selectedNavLabel;
 }
 
-class _ThemeScope extends InheritedNotifier<_ThemeController> {
-  const _ThemeScope({
-    required _ThemeController controller,
-    required super.child,
-  }) : super(notifier: controller);
+class _UiScope extends InheritedWidget {
+  const _UiScope({required this.state, required super.child});
 
-  static _ThemeController of(BuildContext context) {
-    final scope = context.dependOnInheritedWidgetOfExactType<_ThemeScope>();
-    assert(scope != null, '_ThemeScope not found in widget tree.');
-    return scope!.notifier!;
+  final _UiState state;
+
+  static _UiState of(BuildContext context) {
+    final scope = context.dependOnInheritedWidgetOfExactType<_UiScope>();
+    assert(scope != null, '_UiScope not found in widget tree.');
+    return scope!.state;
   }
+
+  @override
+  bool updateShouldNotify(_UiScope oldWidget) => state != oldWidget.state;
 }
 
 class OrefTheme {
@@ -185,102 +181,88 @@ class OrefPalette {
   static const Color lightBlue = Color(0xFFE7F3FF);
 }
 
-class _DevToolsShell extends StatefulWidget {
+class _DevToolsShell extends StatelessWidget {
   const _DevToolsShell();
 
   @override
-  State<_DevToolsShell> createState() => _DevToolsShellState();
-}
-
-class _DevToolsShellState extends State<_DevToolsShell> {
-  String _selectedLabel = _navItems.first.label;
-  late final OrefDevToolsController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = OrefDevToolsController();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _handleSelect(_NavItemData item) {
-    if (item.label == _selectedLabel) return;
-    setState(() => _selectedLabel = item.label);
-  }
-
-  void _openSettings() {
-    _handleSelect(_settingsItem);
-  }
-
-  _NavItemData get _selectedItem {
-    return _allNavItems.firstWhere(
-      (item) => item.label == _selectedLabel,
-      orElse: () => _navItems.first,
-    );
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final selectedItem = _selectedItem;
+    final controller = oref.useMemoized(context, () {
+      final controller = OrefDevToolsController();
+      oref.onUnmounted(context, controller.dispose);
+      return controller;
+    });
+    final uiState = _UiScope.of(context);
 
-    return OrefDevToolsScope(
-      controller: _controller,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final isWide = constraints.maxWidth >= 1100;
-          final padding = EdgeInsets.symmetric(
-            horizontal: isWide ? 28 : 20,
-            vertical: 20,
-          );
+    return oref.SignalBuilder(
+      builder: (context) {
+        final selectedLabel = uiState.selectedNavLabel();
+        final selectedItem = _allNavItems.firstWhere(
+          (item) => item.label == selectedLabel,
+          orElse: () => _navItems.first,
+        );
 
-          return Stack(
-            children: [
-              const _BackgroundLayer(),
-              SafeArea(
-                child: Padding(
-                  padding: padding,
-                  child: Column(
-                    children: [
-                      _TopBar(onOpenSettings: _openSettings),
-                      const SizedBox(height: 20),
-                      Expanded(
-                        child: isWide
-                            ? Row(
-                                children: [
-                                  SizedBox(
-                                    width: 240,
-                                    child: _SideNav(
-                                      selectedLabel: _selectedLabel,
-                                      onSelect: _handleSelect,
-                                    ),
+        void handleSelect(_NavItemData item) {
+          if (item.label == selectedLabel) return;
+          uiState.selectedNavLabel.set(item.label);
+        }
+
+        void openSettings() => handleSelect(_settingsItem);
+
+        return OrefDevToolsScope(
+          controller: controller,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isWide = constraints.maxWidth >= 1100;
+              final padding = EdgeInsets.symmetric(
+                horizontal: isWide ? 28 : 20,
+                vertical: 20,
+              );
+
+              return Stack(
+                children: [
+                  const _BackgroundLayer(),
+                  SafeArea(
+                    child: Padding(
+                      padding: padding,
+                      child: Column(
+                        children: [
+                          _TopBar(onOpenSettings: openSettings),
+                          const SizedBox(height: 20),
+                          Expanded(
+                            child: isWide
+                                ? Row(
+                                    children: [
+                                      SizedBox(
+                                        width: 240,
+                                        child: _SideNav(
+                                          selectedLabel: selectedLabel,
+                                          onSelect: handleSelect,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 20),
+                                      Expanded(
+                                        child: _MainPanel(
+                                          selectedItem: selectedItem,
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                : _CompactLayout(
+                                    selectedLabel: selectedLabel,
+                                    onSelect: handleSelect,
+                                    selectedItem: selectedItem,
                                   ),
-                                  const SizedBox(width: 20),
-                                  Expanded(
-                                    child: _MainPanel(
-                                      selectedItem: selectedItem,
-                                    ),
-                                  ),
-                                ],
-                              )
-                            : _CompactLayout(
-                                selectedLabel: _selectedLabel,
-                                onSelect: _handleSelect,
-                                selectedItem: selectedItem,
-                              ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
-                ),
-              ),
-            ],
-          );
-        },
-      ),
+                ],
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }
@@ -1111,122 +1093,164 @@ class _OverviewPanel extends StatelessWidget {
   }
 }
 
-class _SignalsPanel extends StatefulWidget {
+class _SignalsPanel extends StatelessWidget {
   const _SignalsPanel();
 
   @override
-  State<_SignalsPanel> createState() => _SignalsPanelState();
-}
-
-class _SignalsPanelState extends State<_SignalsPanel> {
-  final _searchController = TextEditingController();
-  String _statusFilter = 'All';
-  int? _selectedId;
-  _SortKey _sortKey = _SortKey.updated;
-  bool _sortAscending = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _searchController.addListener(() => setState(() {}));
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return _ConnectionGuard(
-      child: _PanelScrollView(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final controller = OrefDevToolsScope.of(context);
-            final entries = _samplesByKind(
-              controller.snapshot?.samples ?? const <Sample>[],
-              'signal',
-            );
-            final isSplit = constraints.maxWidth >= 980;
-            final filtered = _filterSignals(entries);
-            final selected = entries.firstWhereOrNull(
-              (entry) => entry.id == _selectedId,
-            );
-            final list = _SignalList(
-              entries: filtered,
-              selectedId: selected?.id,
-              isCompact: !isSplit,
-              sortKey: _sortKey,
-              sortAscending: _sortAscending,
-              onSortName: () => _toggleSort(_SortKey.name),
-              onSortUpdated: () => _toggleSort(_SortKey.updated),
-              onSelect: (entry) => setState(() {
-                _selectedId = _selectedId == entry.id ? null : entry.id;
-              }),
-            );
-            final detail = _SignalDetail(entry: selected);
+    final state = oref.useMemoized(
+      context,
+      () => _SignalsPanelStateData(context),
+    );
 
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _SignalsHeader(
-                  controller: _searchController,
-                  selectedFilter: _statusFilter,
-                  onFilterChange: (value) =>
-                      setState(() => _statusFilter = value),
-                  totalCount: entries.length,
-                  filteredCount: filtered.length,
-                  onExport: () => _exportData(
-                    context,
-                    'signals',
-                    filtered.map((entry) => entry.toJson()).toList(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                if (isSplit)
-                  selected == null
-                      ? list
-                      : Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(flex: 3, child: list),
-                            const SizedBox(width: 20),
-                            SizedBox(width: 320, child: detail),
+    return oref.SignalBuilder(
+      builder: (context) {
+        return _ConnectionGuard(
+          child: _PanelScrollView(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final controller = OrefDevToolsScope.of(context);
+                final entries = _samplesByKind(
+                  controller.snapshot?.samples ?? const <Sample>[],
+                  'signal',
+                );
+                final isSplit = constraints.maxWidth >= 980;
+                final filtered = state.filter(entries);
+                final selected = entries.firstWhereOrNull(
+                  (entry) => entry.id == state.selectedId(),
+                );
+                final list = _SignalList(
+                  entries: filtered,
+                  selectedId: selected?.id,
+                  isCompact: !isSplit,
+                  sortKey: state.sortKey(),
+                  sortAscending: state.sortAscending(),
+                  onSortName: () => state.toggleSort(_SortKey.name),
+                  onSortUpdated: () => state.toggleSort(_SortKey.updated),
+                  onSelect: (entry) => state.toggleSelection(entry.id),
+                );
+                final detail = _SignalDetail(entry: selected);
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _SignalsHeader(
+                      controller: state.searchController,
+                      selectedFilter: state.statusFilter(),
+                      onFilterChange: (value) =>
+                          state.statusFilter.set(value),
+                      totalCount: entries.length,
+                      filteredCount: filtered.length,
+                      onExport: () => _exportData(
+                        context,
+                        'signals',
+                        filtered.map((entry) => entry.toJson()).toList(),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    if (isSplit)
+                      selected == null
+                          ? list
+                          : Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(flex: 3, child: list),
+                                const SizedBox(width: 20),
+                                SizedBox(width: 320, child: detail),
+                              ],
+                            )
+                    else
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          list,
+                          if (selected != null) ...[
+                            const SizedBox(height: 16),
+                            detail,
                           ],
-                        )
-                else
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      list,
-                      if (selected != null) ...[
-                        const SizedBox(height: 16),
-                        detail,
-                      ],
-                    ],
-                  ),
-              ],
-            );
-          },
-        ),
-      ),
+                        ],
+                      ),
+                  ],
+                );
+              },
+            ),
+          ),
+        );
+      },
     );
   }
+}
 
-  List<Sample> _filterSignals(List<Sample> entries) {
-    final query = _searchController.text.trim().toLowerCase();
+class _SignalsPanelStateData {
+  _SignalsPanelStateData(BuildContext context)
+    : searchController = TextEditingController(),
+      searchQuery = oref.signal(
+        context,
+        '',
+        debugLabel: 'signals.search',
+      ),
+      statusFilter = oref.signal(
+        context,
+        'All',
+        debugLabel: 'signals.statusFilter',
+      ),
+      selectedId = oref.signal<int?>(
+        context,
+        null,
+        debugLabel: 'signals.selected',
+      ),
+      sortKey = oref.signal(
+        context,
+        _SortKey.updated,
+        debugLabel: 'signals.sortKey',
+      ),
+      sortAscending = oref.signal(
+        context,
+        false,
+        debugLabel: 'signals.sortAscending',
+      ) {
+    searchController.addListener(() {
+      searchQuery.set(searchController.text);
+    });
+    oref.onUnmounted(context, searchController.dispose);
+  }
+
+  final TextEditingController searchController;
+  final oref.WritableSignal<String> searchQuery;
+  final oref.WritableSignal<String> statusFilter;
+  final oref.WritableSignal<int?> selectedId;
+  final oref.WritableSignal<_SortKey> sortKey;
+  final oref.WritableSignal<bool> sortAscending;
+
+  void toggleSelection(int id) {
+    selectedId.set(selectedId() == id ? null : id);
+  }
+
+  void toggleSort(_SortKey key) {
+    if (sortKey() == key) {
+      sortAscending.set(!sortAscending());
+    } else {
+      sortKey.set(key);
+      sortAscending.set(key == _SortKey.name);
+    }
+  }
+
+  List<Sample> filter(List<Sample> entries) {
+    final query = searchQuery().trim().toLowerCase();
+    final currentStatus = statusFilter();
+    final currentSortKey = sortKey();
+    final ascending = sortAscending();
     final filtered = entries.where((entry) {
       final matchesQuery =
           query.isEmpty || entry.label.toLowerCase().contains(query);
       final status = entry.status ?? 'Active';
-      final matchesStatus = _statusFilter == 'All' || status == _statusFilter;
+      final matchesStatus = currentStatus == 'All' || status == currentStatus;
       return matchesQuery && matchesStatus;
     }).toList();
     filtered.sort(
       (a, b) => _compareSort(
-        _sortKey,
-        _sortAscending,
+        currentSortKey,
+        ascending,
         a.label,
         b.label,
         a.updatedAt,
@@ -1237,135 +1261,166 @@ class _SignalsPanelState extends State<_SignalsPanel> {
     );
     return filtered;
   }
-
-  void _toggleSort(_SortKey key) {
-    setState(() {
-      if (_sortKey == key) {
-        _sortAscending = !_sortAscending;
-      } else {
-        _sortKey = key;
-        _sortAscending = key == _SortKey.name;
-      }
-    });
-  }
 }
 
-class _ComputedPanel extends StatefulWidget {
+class _ComputedPanel extends StatelessWidget {
   const _ComputedPanel();
 
   @override
-  State<_ComputedPanel> createState() => _ComputedPanelState();
-}
-
-class _ComputedPanelState extends State<_ComputedPanel> {
-  final _searchController = TextEditingController();
-  String _statusFilter = 'All';
-  int? _selectedId;
-  _SortKey _sortKey = _SortKey.updated;
-  bool _sortAscending = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _searchController.addListener(() => setState(() {}));
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return _ConnectionGuard(
-      child: _PanelScrollView(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final controller = OrefDevToolsScope.of(context);
-            final entries = _samplesByKind(
-              controller.snapshot?.samples ?? const <Sample>[],
-              'computed',
-            );
-            final isSplit = constraints.maxWidth >= 980;
-            final filtered = _filterComputed(entries);
-            final selected = entries.firstWhereOrNull(
-              (entry) => entry.id == _selectedId,
-            );
-            final list = _ComputedList(
-              entries: filtered,
-              selectedId: selected?.id,
-              isCompact: !isSplit,
-              sortKey: _sortKey,
-              sortAscending: _sortAscending,
-              onSortName: () => _toggleSort(_SortKey.name),
-              onSortUpdated: () => _toggleSort(_SortKey.updated),
-              onSelect: (entry) => setState(() {
-                _selectedId = _selectedId == entry.id ? null : entry.id;
-              }),
-            );
-            final detail = _ComputedDetail(entry: selected);
+    final state = oref.useMemoized(
+      context,
+      () => _ComputedPanelStateData(context),
+    );
 
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _ComputedHeader(
-                  controller: _searchController,
-                  selectedFilter: _statusFilter,
-                  onFilterChange: (value) =>
-                      setState(() => _statusFilter = value),
-                  totalCount: entries.length,
-                  filteredCount: filtered.length,
-                  onExport: () => _exportData(
-                    context,
-                    'computed',
-                    filtered.map((entry) => entry.toJson()).toList(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                if (isSplit)
-                  selected == null
-                      ? list
-                      : Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(flex: 3, child: list),
-                            const SizedBox(width: 20),
-                            SizedBox(width: 320, child: detail),
+    return oref.SignalBuilder(
+      builder: (context) {
+        return _ConnectionGuard(
+          child: _PanelScrollView(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final controller = OrefDevToolsScope.of(context);
+                final entries = _samplesByKind(
+                  controller.snapshot?.samples ?? const <Sample>[],
+                  'computed',
+                );
+                final isSplit = constraints.maxWidth >= 980;
+                final filtered = state.filter(entries);
+                final selected = entries.firstWhereOrNull(
+                  (entry) => entry.id == state.selectedId(),
+                );
+                final list = _ComputedList(
+                  entries: filtered,
+                  selectedId: selected?.id,
+                  isCompact: !isSplit,
+                  sortKey: state.sortKey(),
+                  sortAscending: state.sortAscending(),
+                  onSortName: () => state.toggleSort(_SortKey.name),
+                  onSortUpdated: () => state.toggleSort(_SortKey.updated),
+                  onSelect: (entry) => state.toggleSelection(entry.id),
+                );
+                final detail = _ComputedDetail(entry: selected);
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _ComputedHeader(
+                      controller: state.searchController,
+                      selectedFilter: state.statusFilter(),
+                      onFilterChange: (value) =>
+                          state.statusFilter.set(value),
+                      totalCount: entries.length,
+                      filteredCount: filtered.length,
+                      onExport: () => _exportData(
+                        context,
+                        'computed',
+                        filtered.map((entry) => entry.toJson()).toList(),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    if (isSplit)
+                      selected == null
+                          ? list
+                          : Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(flex: 3, child: list),
+                                const SizedBox(width: 20),
+                                SizedBox(width: 320, child: detail),
+                              ],
+                            )
+                    else
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          list,
+                          if (selected != null) ...[
+                            const SizedBox(height: 16),
+                            detail,
                           ],
-                        )
-                else
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      list,
-                      if (selected != null) ...[
-                        const SizedBox(height: 16),
-                        detail,
-                      ],
-                    ],
-                  ),
-              ],
-            );
-          },
-        ),
-      ),
+                        ],
+                      ),
+                  ],
+                );
+              },
+            ),
+          ),
+        );
+      },
     );
   }
+}
 
-  List<Sample> _filterComputed(List<Sample> entries) {
-    final query = _searchController.text.trim().toLowerCase();
+class _ComputedPanelStateData {
+  _ComputedPanelStateData(BuildContext context)
+    : searchController = TextEditingController(),
+      searchQuery = oref.signal(
+        context,
+        '',
+        debugLabel: 'computed.search',
+      ),
+      statusFilter = oref.signal(
+        context,
+        'All',
+        debugLabel: 'computed.statusFilter',
+      ),
+      selectedId = oref.signal<int?>(
+        context,
+        null,
+        debugLabel: 'computed.selected',
+      ),
+      sortKey = oref.signal(
+        context,
+        _SortKey.updated,
+        debugLabel: 'computed.sortKey',
+      ),
+      sortAscending = oref.signal(
+        context,
+        false,
+        debugLabel: 'computed.sortAscending',
+      ) {
+    searchController.addListener(() {
+      searchQuery.set(searchController.text);
+    });
+    oref.onUnmounted(context, searchController.dispose);
+  }
+
+  final TextEditingController searchController;
+  final oref.WritableSignal<String> searchQuery;
+  final oref.WritableSignal<String> statusFilter;
+  final oref.WritableSignal<int?> selectedId;
+  final oref.WritableSignal<_SortKey> sortKey;
+  final oref.WritableSignal<bool> sortAscending;
+
+  void toggleSelection(int id) {
+    selectedId.set(selectedId() == id ? null : id);
+  }
+
+  void toggleSort(_SortKey key) {
+    if (sortKey() == key) {
+      sortAscending.set(!sortAscending());
+    } else {
+      sortKey.set(key);
+      sortAscending.set(key == _SortKey.name);
+    }
+  }
+
+  List<Sample> filter(List<Sample> entries) {
+    final query = searchQuery().trim().toLowerCase();
+    final currentStatus = statusFilter();
+    final currentSortKey = sortKey();
+    final ascending = sortAscending();
     final filtered = entries.where((entry) {
       final matchesQuery =
           query.isEmpty || entry.label.toLowerCase().contains(query);
       final status = entry.status ?? 'Active';
-      final matchesStatus = _statusFilter == 'All' || status == _statusFilter;
+      final matchesStatus = currentStatus == 'All' || status == currentStatus;
       return matchesQuery && matchesStatus;
     }).toList();
     filtered.sort(
       (a, b) => _compareSort(
-        _sortKey,
-        _sortAscending,
+        currentSortKey,
+        ascending,
         a.label,
         b.label,
         a.updatedAt,
@@ -1375,17 +1430,6 @@ class _ComputedPanelState extends State<_ComputedPanel> {
       ),
     );
     return filtered;
-  }
-
-  void _toggleSort(_SortKey key) {
-    setState(() {
-      if (_sortKey == key) {
-        _sortAscending = !_sortAscending;
-      } else {
-        _sortKey = key;
-        _sortAscending = key == _SortKey.name;
-      }
-    });
   }
 }
 
@@ -1781,63 +1825,205 @@ class _ComputedDetail extends StatelessWidget {
   }
 }
 
-class _EffectsPanel extends StatefulWidget {
+class _EffectsPanel extends StatelessWidget {
   const _EffectsPanel();
 
   @override
-  State<_EffectsPanel> createState() => _EffectsPanelState();
+  Widget build(BuildContext context) {
+    final state = oref.useMemoized(
+      context,
+      () => _EffectsPanelStateData(context),
+    );
+
+    return oref.SignalBuilder(
+      builder: (context) {
+        final controller = OrefDevToolsScope.of(context);
+        final entries = _samplesByKind(
+          controller.snapshot?.samples ?? const <Sample>[],
+          'effect',
+        );
+        final typeFilters = _buildFilterOptions(
+          entries.map((entry) => entry.type),
+        );
+        final scopeFilters = _buildFilterOptions(
+          entries.map((entry) => entry.scope),
+        );
+        final filtered = entries.where((entry) {
+          final matchesType =
+              state.typeFilter() == 'All' || entry.type == state.typeFilter();
+          final matchesScope = state.scopeFilter() == 'All' ||
+              entry.scope == state.scopeFilter();
+          return matchesType && matchesScope;
+        }).toList();
+
+        return _ConnectionGuard(
+          child: _PanelScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _EffectsHeader(
+                  typeFilter: state.typeFilter(),
+                  scopeFilter: state.scopeFilter(),
+                  typeFilters: typeFilters,
+                  scopeFilters: scopeFilters,
+                  onTypeChange: (value) => state.typeFilter.set(value),
+                  onScopeChange: (value) => state.scopeFilter.set(value),
+                  totalCount: entries.length,
+                  filteredCount: filtered.length,
+                  onExport: () => _exportData(
+                    context,
+                    'effects',
+                    filtered.map((entry) => entry.toJson()).toList(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _EffectsTimeline(entries: filtered),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
 
-class _CollectionsPanel extends StatefulWidget {
+class _CollectionsPanel extends StatelessWidget {
   const _CollectionsPanel();
 
   @override
-  State<_CollectionsPanel> createState() => _CollectionsPanelState();
+  Widget build(BuildContext context) {
+    final state = oref.useMemoized(
+      context,
+      () => _CollectionsPanelStateData(context),
+    );
+
+    return oref.SignalBuilder(
+      builder: (context) {
+        final controller = OrefDevToolsScope.of(context);
+        final entries = _samplesByKind(
+          controller.snapshot?.samples ?? const <Sample>[],
+          'collection',
+        );
+        final typeFilters = _buildFilterOptions(
+          entries.map((entry) => entry.type),
+        );
+        final opFilters = _buildFilterOptions(
+          entries.map((entry) => entry.operation ?? 'Idle'),
+        );
+        final filtered = state.filter(entries);
+
+        return _ConnectionGuard(
+          child: _PanelScrollView(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final isCompact = constraints.maxWidth < 860;
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _CollectionsHeader(
+                      controller: state.searchController,
+                      typeFilter: state.typeFilter(),
+                      opFilter: state.opFilter(),
+                      typeFilters: typeFilters,
+                      opFilters: opFilters,
+                      onTypeChange: (value) => state.typeFilter.set(value),
+                      onOpChange: (value) => state.opFilter.set(value),
+                      totalCount: entries.length,
+                      filteredCount: filtered.length,
+                      onExport: () => _exportData(
+                        context,
+                        'collections',
+                        filtered.map((entry) => entry.toJson()).toList(),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _CollectionsList(
+                      entries: filtered,
+                      isCompact: isCompact,
+                      sortKey: state.sortKey(),
+                      sortAscending: state.sortAscending(),
+                      onSortName: () => state.toggleSort(_SortKey.name),
+                      onSortUpdated: () => state.toggleSort(_SortKey.updated),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
 
-class _CollectionsPanelState extends State<_CollectionsPanel> {
-  final _searchController = TextEditingController();
-  String _typeFilter = 'All';
-  String _opFilter = 'All';
-  _SortKey _sortKey = _SortKey.updated;
-  bool _sortAscending = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _searchController.addListener(() => setState(() {}));
+class _CollectionsPanelStateData {
+  _CollectionsPanelStateData(BuildContext context)
+    : searchController = TextEditingController(),
+      searchQuery = oref.signal(
+        context,
+        '',
+        debugLabel: 'collections.search',
+      ),
+      typeFilter = oref.signal(
+        context,
+        'All',
+        debugLabel: 'collections.typeFilter',
+      ),
+      opFilter = oref.signal(
+        context,
+        'All',
+        debugLabel: 'collections.opFilter',
+      ),
+      sortKey = oref.signal(
+        context,
+        _SortKey.updated,
+        debugLabel: 'collections.sortKey',
+      ),
+      sortAscending = oref.signal(
+        context,
+        false,
+        debugLabel: 'collections.sortAscending',
+      ) {
+    searchController.addListener(() {
+      searchQuery.set(searchController.text);
+    });
+    oref.onUnmounted(context, searchController.dispose);
   }
 
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
+  final TextEditingController searchController;
+  final oref.WritableSignal<String> searchQuery;
+  final oref.WritableSignal<String> typeFilter;
+  final oref.WritableSignal<String> opFilter;
+  final oref.WritableSignal<_SortKey> sortKey;
+  final oref.WritableSignal<bool> sortAscending;
+
+  void toggleSort(_SortKey key) {
+    if (sortKey() == key) {
+      sortAscending.set(!sortAscending());
+    } else {
+      sortKey.set(key);
+      sortAscending.set(key == _SortKey.name);
+    }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final controller = OrefDevToolsScope.of(context);
-    final entries = _samplesByKind(
-      controller.snapshot?.samples ?? const <Sample>[],
-      'collection',
-    );
-    final typeFilters = _buildFilterOptions(entries.map((entry) => entry.type));
-    final opFilters = _buildFilterOptions(
-      entries.map((entry) => entry.operation ?? 'Idle'),
-    );
+  List<Sample> filter(List<Sample> entries) {
+    final query = searchQuery().trim().toLowerCase();
+    final typeValue = typeFilter();
+    final opValue = opFilter();
+    final currentSortKey = sortKey();
+    final ascending = sortAscending();
     final filtered = entries.where((entry) {
-      final query = _searchController.text.trim().toLowerCase();
       final matchesQuery =
           query.isEmpty || entry.label.toLowerCase().contains(query);
-      final matchesType = _typeFilter == 'All' || entry.type == _typeFilter;
+      final matchesType = typeValue == 'All' || entry.type == typeValue;
       final operation = entry.operation ?? 'Idle';
-      final matchesOp = _opFilter == 'All' || operation == _opFilter;
+      final matchesOp = opValue == 'All' || operation == opValue;
       return matchesQuery && matchesType && matchesOp;
     }).toList();
     filtered.sort(
       (a, b) => _compareSort(
-        _sortKey,
-        _sortAscending,
+        currentSortKey,
+        ascending,
         a.label,
         b.label,
         a.updatedAt,
@@ -1846,57 +2032,7 @@ class _CollectionsPanelState extends State<_CollectionsPanel> {
         b.id,
       ),
     );
-
-    return _ConnectionGuard(
-      child: _PanelScrollView(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final isCompact = constraints.maxWidth < 860;
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _CollectionsHeader(
-                  controller: _searchController,
-                  typeFilter: _typeFilter,
-                  opFilter: _opFilter,
-                  typeFilters: typeFilters,
-                  opFilters: opFilters,
-                  onTypeChange: (value) => setState(() => _typeFilter = value),
-                  onOpChange: (value) => setState(() => _opFilter = value),
-                  totalCount: entries.length,
-                  filteredCount: filtered.length,
-                  onExport: () => _exportData(
-                    context,
-                    'collections',
-                    filtered.map((entry) => entry.toJson()).toList(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                _CollectionsList(
-                  entries: filtered,
-                  isCompact: isCompact,
-                  sortKey: _sortKey,
-                  sortAscending: _sortAscending,
-                  onSortName: () => _toggleSort(_SortKey.name),
-                  onSortUpdated: () => _toggleSort(_SortKey.updated),
-                ),
-              ],
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  void _toggleSort(_SortKey key) {
-    setState(() {
-      if (_sortKey == key) {
-        _sortAscending = !_sortAscending;
-      } else {
-        _sortKey = key;
-        _sortAscending = key == _SortKey.name;
-      }
-    });
+    return filtered;
   }
 }
 
@@ -2200,113 +2336,135 @@ class _BatchRow extends StatelessWidget {
   }
 }
 
-class _TimelinePanel extends StatefulWidget {
+class _TimelinePanel extends StatelessWidget {
   const _TimelinePanel();
 
   @override
-  State<_TimelinePanel> createState() => _TimelinePanelState();
-}
-
-class _TimelinePanelState extends State<_TimelinePanel> {
-  String _typeFilter = 'All';
-  String _severityFilter = 'All';
-
-  @override
   Widget build(BuildContext context) {
-    final controller = OrefDevToolsScope.of(context);
-    final events =
-        controller.snapshot?.timeline.toList() ?? const <TimelineEvent>[];
-    events.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-    final typeFilters = _buildFilterOptions(events.map((event) => event.type));
-    final severityFilters = _buildFilterOptions(
-      events.map((event) => event.severity),
+    final state = oref.useMemoized(
+      context,
+      () => _TimelinePanelStateData(context),
     );
-    final filtered = events.where((event) {
-      final matchesType = _typeFilter == 'All' || event.type == _typeFilter;
-      final matchesSeverity =
-          _severityFilter == 'All' || event.severity == _severityFilter;
-      return matchesType && matchesSeverity;
-    }).toList();
 
-    return _ConnectionGuard(
-      child: _PanelScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+    return oref.SignalBuilder(
+      builder: (context) {
+        final controller = OrefDevToolsScope.of(context);
+        final events =
+            controller.snapshot?.timeline.toList() ?? const <TimelineEvent>[];
+        events.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+        final typeFilters = _buildFilterOptions(
+          events.map((event) => event.type),
+        );
+        final severityFilters = _buildFilterOptions(
+          events.map((event) => event.severity),
+        );
+        final filtered = events.where((event) {
+          final matchesType =
+              state.typeFilter() == 'All' || event.type == state.typeFilter();
+          final matchesSeverity = state.severityFilter() == 'All' ||
+              event.severity == state.severityFilter();
+          return matchesType && matchesSeverity;
+        }).toList();
+
+        return _ConnectionGuard(
+          child: _PanelScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Row(
+                  children: [
+                    Text(
+                      'Timeline',
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                    const SizedBox(width: 12),
+                    const _GlassPill(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      child: Text('Live'),
+                    ),
+                    const Spacer(),
+                    _GlassPill(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      child: Text('${filtered.length} events'),
+                    ),
+                    const SizedBox(width: 12),
+                    _ActionPill(
+                      label: 'Export',
+                      icon: Icons.download_rounded,
+                      onTap: () => _exportData(
+                        context,
+                        'timeline',
+                        filtered.map((event) => event.toJson()).toList(),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
                 Text(
-                  'Timeline',
-                  style: Theme.of(context).textTheme.headlineSmall,
+                  'Correlate signal updates with effects, batches, and collections.',
+                  style: Theme.of(context).textTheme.bodyMedium,
                 ),
-                const SizedBox(width: 12),
-                const _GlassPill(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  child: Text('Live'),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    Text('Type', style: Theme.of(context).textTheme.labelMedium),
+                    for (final filter in typeFilters)
+                      _FilterChip(
+                        label: filter,
+                        isSelected: filter == state.typeFilter(),
+                        onTap: () => state.typeFilter.set(filter),
+                      ),
+                  ],
                 ),
-                const Spacer(),
-                _GlassPill(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  child: Text('${filtered.length} events'),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    Text(
+                      'Severity',
+                      style: Theme.of(context).textTheme.labelMedium,
+                    ),
+                    for (final filter in severityFilters)
+                      _FilterChip(
+                        label: filter,
+                        isSelected: filter == state.severityFilter(),
+                        onTap: () => state.severityFilter.set(filter),
+                      ),
+                  ],
                 ),
-                const SizedBox(width: 12),
-                _ActionPill(
-                  label: 'Export',
-                  icon: Icons.download_rounded,
-                  onTap: () => _exportData(
-                    context,
-                    'timeline',
-                    filtered.map((event) => event.toJson()).toList(),
-                  ),
-                ),
+                const SizedBox(height: 16),
+                _TimelineList(events: filtered),
               ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Correlate signal updates with effects, batches, and collections.',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                Text('Type', style: Theme.of(context).textTheme.labelMedium),
-                for (final filter in typeFilters)
-                  _FilterChip(
-                    label: filter,
-                    isSelected: filter == _typeFilter,
-                    onTap: () => setState(() => _typeFilter = filter),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                Text(
-                  'Severity',
-                  style: Theme.of(context).textTheme.labelMedium,
-                ),
-                for (final filter in severityFilters)
-                  _FilterChip(
-                    label: filter,
-                    isSelected: filter == _severityFilter,
-                    onTap: () => setState(() => _severityFilter = filter),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            _TimelineList(events: filtered),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
+}
+
+class _TimelinePanelStateData {
+  _TimelinePanelStateData(BuildContext context)
+    : typeFilter = oref.signal(
+        context,
+        'All',
+        debugLabel: 'timeline.typeFilter',
+      ),
+      severityFilter = oref.signal(
+        context,
+        'All',
+        debugLabel: 'timeline.severityFilter',
+      );
+
+  final oref.WritableSignal<String> typeFilter;
+  final oref.WritableSignal<String> severityFilter;
 }
 
 class _TimelineList extends StatelessWidget {
@@ -2565,267 +2723,285 @@ class _PerformanceRow extends StatelessWidget {
   }
 }
 
-class _SettingsPanel extends StatefulWidget {
+class _SettingsPanel extends StatelessWidget {
   const _SettingsPanel();
 
   @override
-  State<_SettingsPanel> createState() => _SettingsPanelState();
-}
-
-class _SettingsPanelState extends State<_SettingsPanel> {
-  bool _isEditing = false;
-  DevToolsSettings _draft = const DevToolsSettings();
-
-  @override
   Widget build(BuildContext context) {
-    final controller = OrefDevToolsScope.of(context);
-    final themeController = _ThemeScope.of(context);
-    final current = controller.snapshot?.settings ?? const DevToolsSettings();
-    if (!_isEditing) {
-      _draft = current;
-    }
+    final state = oref.useMemoized(
+      context,
+      () => _SettingsPanelStateData(context),
+    );
 
-    return _ConnectionGuard(
-      child: _PanelScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+    return oref.SignalBuilder(
+      builder: (context) {
+        final controller = OrefDevToolsScope.of(context);
+        final uiState = _UiScope.of(context);
+        final themeMode = uiState.themeMode();
+        final current = controller.snapshot?.settings ?? const DevToolsSettings();
+        var draft = state.draft();
+        if (!state.isEditing() && draft != current) {
+          state.draft.set(current);
+          draft = current;
+        }
+
+        return _ConnectionGuard(
+          child: _PanelScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Settings',
-                  style: Theme.of(context).textTheme.headlineSmall,
+                Row(
+                  children: [
+                    Text(
+                      'Settings',
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                    const Spacer(),
+                    _ActionPill(
+                      label: 'Refresh',
+                      icon: Icons.refresh_rounded,
+                      onTap: controller.refresh,
+                    ),
+                  ],
                 ),
-                const Spacer(),
-                _ActionPill(
-                  label: 'Refresh',
-                  icon: Icons.refresh_rounded,
-                  onTap: controller.refresh,
+                const SizedBox(height: 8),
+                Text(
+                  'Tune how diagnostics are collected.',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 16),
+                _GlassCard(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Appearance',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 12),
+                      SegmentedButton<ThemeMode>(
+                        segments: const [
+                          ButtonSegment<ThemeMode>(
+                            value: ThemeMode.system,
+                            label: Text('System'),
+                            icon: Icon(Icons.brightness_auto_rounded),
+                          ),
+                          ButtonSegment<ThemeMode>(
+                            value: ThemeMode.light,
+                            label: Text('Light'),
+                            icon: Icon(Icons.light_mode_rounded),
+                          ),
+                          ButtonSegment<ThemeMode>(
+                            value: ThemeMode.dark,
+                            label: Text('Dark'),
+                            icon: Icon(Icons.dark_mode_rounded),
+                          ),
+                        ],
+                        selected: {themeMode},
+                        onSelectionChanged: (selection) {
+                          uiState.themeMode.set(selection.first);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _GlassCard(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Sampling',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 12),
+                      SwitchListTile.adaptive(
+                        value: draft.enabled,
+                        onChanged: (value) {
+                          state.isEditing.set(true);
+                          state.draft.set(draft.copyWith(enabled: value));
+                          controller.updateSettings(state.draft());
+                          state.isEditing.set(false);
+                        },
+                        title: const Text('Enable sampling'),
+                        subtitle: Text(
+                          'Collect timeline and performance samples.',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Sample interval (${draft.sampleIntervalMs}ms)',
+                        style: Theme.of(context).textTheme.labelLarge,
+                      ),
+                      Slider(
+                        value: draft.sampleIntervalMs.toDouble(),
+                        min: 250,
+                        max: 5000,
+                        divisions: 19,
+                        label: '${draft.sampleIntervalMs}ms',
+                        onChanged: (value) {
+                          state.isEditing.set(true);
+                          state.draft.set(
+                            draft.copyWith(sampleIntervalMs: value.round()),
+                          );
+                        },
+                        onChangeEnd: (_) async {
+                          await controller.updateSettings(state.draft());
+                          if (!context.mounted) return;
+                          state.isEditing.set(false);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _GlassCard(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Retention',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Timeline limit (${draft.timelineLimit})',
+                        style: Theme.of(context).textTheme.labelLarge,
+                      ),
+                      Slider(
+                        value: draft.timelineLimit.toDouble(),
+                        min: 50,
+                        max: 500,
+                        divisions: 9,
+                        label: draft.timelineLimit.toString(),
+                        onChanged: (value) {
+                          state.isEditing.set(true);
+                          state.draft.set(
+                            draft.copyWith(timelineLimit: value.round()),
+                          );
+                        },
+                        onChangeEnd: (_) async {
+                          await controller.updateSettings(state.draft());
+                          if (!context.mounted) return;
+                          state.isEditing.set(false);
+                        },
+                      ),
+                      Text(
+                        'Batch limit (${draft.batchLimit})',
+                        style: Theme.of(context).textTheme.labelLarge,
+                      ),
+                      Slider(
+                        value: draft.batchLimit.toDouble(),
+                        min: 20,
+                        max: 300,
+                        divisions: 14,
+                        label: draft.batchLimit.toString(),
+                        onChanged: (value) {
+                          state.isEditing.set(true);
+                          state.draft.set(
+                            draft.copyWith(batchLimit: value.round()),
+                          );
+                        },
+                        onChangeEnd: (_) async {
+                          await controller.updateSettings(state.draft());
+                          if (!context.mounted) return;
+                          state.isEditing.set(false);
+                        },
+                      ),
+                      Text(
+                        'Performance samples (${draft.performanceLimit})',
+                        style: Theme.of(context).textTheme.labelLarge,
+                      ),
+                      Slider(
+                        value: draft.performanceLimit.toDouble(),
+                        min: 30,
+                        max: 300,
+                        divisions: 9,
+                        label: draft.performanceLimit.toString(),
+                        onChanged: (value) {
+                          state.isEditing.set(true);
+                          state.draft.set(
+                            draft.copyWith(performanceLimit: value.round()),
+                          );
+                        },
+                        onChangeEnd: (_) async {
+                          await controller.updateSettings(state.draft());
+                          if (!context.mounted) return;
+                          state.isEditing.set(false);
+                        },
+                      ),
+                      Text(
+                        'Value preview (${draft.valuePreviewLength} chars)',
+                        style: Theme.of(context).textTheme.labelLarge,
+                      ),
+                      Slider(
+                        value: draft.valuePreviewLength.toDouble(),
+                        min: 40,
+                        max: 240,
+                        divisions: 10,
+                        label: draft.valuePreviewLength.toString(),
+                        onChanged: (value) {
+                          state.isEditing.set(true);
+                          state.draft.set(
+                            draft.copyWith(valuePreviewLength: value.round()),
+                          );
+                        },
+                        onChangeEnd: (_) async {
+                          await controller.updateSettings(state.draft());
+                          if (!context.mounted) return;
+                          state.isEditing.set(false);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _GlassCard(
+                  padding: const EdgeInsets.all(20),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Clear cached diagnostics and restart sampling.',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ),
+                      _ActionPill(
+                        label: 'Clear history',
+                        icon: Icons.delete_sweep_rounded,
+                        onTap: controller.clearHistory,
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Tune how diagnostics are collected.',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-            _GlassCard(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Appearance',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 12),
-                  SegmentedButton<ThemeMode>(
-                    segments: const [
-                      ButtonSegment<ThemeMode>(
-                        value: ThemeMode.system,
-                        label: Text('System'),
-                        icon: Icon(Icons.brightness_auto_rounded),
-                      ),
-                      ButtonSegment<ThemeMode>(
-                        value: ThemeMode.light,
-                        label: Text('Light'),
-                        icon: Icon(Icons.light_mode_rounded),
-                      ),
-                      ButtonSegment<ThemeMode>(
-                        value: ThemeMode.dark,
-                        label: Text('Dark'),
-                        icon: Icon(Icons.dark_mode_rounded),
-                      ),
-                    ],
-                    selected: {themeController.mode},
-                    onSelectionChanged: (selection) {
-                      themeController.setMode(selection.first);
-                    },
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            _GlassCard(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Sampling',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 12),
-                  SwitchListTile.adaptive(
-                    value: _draft.enabled,
-                    onChanged: (value) {
-                      setState(() {
-                        _isEditing = true;
-                        _draft = _draft.copyWith(enabled: value);
-                      });
-                      controller.updateSettings(_draft);
-                      _isEditing = false;
-                    },
-                    title: const Text('Enable sampling'),
-                    subtitle: Text(
-                      'Collect timeline and performance samples.',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Sample interval (${_draft.sampleIntervalMs}ms)',
-                    style: Theme.of(context).textTheme.labelLarge,
-                  ),
-                  Slider(
-                    value: _draft.sampleIntervalMs.toDouble(),
-                    min: 250,
-                    max: 5000,
-                    divisions: 19,
-                    label: '${_draft.sampleIntervalMs}ms',
-                    onChanged: (value) {
-                      setState(() {
-                        _isEditing = true;
-                        _draft = _draft.copyWith(
-                          sampleIntervalMs: value.round(),
-                        );
-                      });
-                    },
-                    onChangeEnd: (_) async {
-                      await controller.updateSettings(_draft);
-                      if (mounted) setState(() => _isEditing = false);
-                    },
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            _GlassCard(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Retention',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Timeline limit (${_draft.timelineLimit})',
-                    style: Theme.of(context).textTheme.labelLarge,
-                  ),
-                  Slider(
-                    value: _draft.timelineLimit.toDouble(),
-                    min: 50,
-                    max: 500,
-                    divisions: 9,
-                    label: _draft.timelineLimit.toString(),
-                    onChanged: (value) {
-                      setState(() {
-                        _isEditing = true;
-                        _draft = _draft.copyWith(timelineLimit: value.round());
-                      });
-                    },
-                    onChangeEnd: (_) async {
-                      await controller.updateSettings(_draft);
-                      if (mounted) setState(() => _isEditing = false);
-                    },
-                  ),
-                  Text(
-                    'Batch limit (${_draft.batchLimit})',
-                    style: Theme.of(context).textTheme.labelLarge,
-                  ),
-                  Slider(
-                    value: _draft.batchLimit.toDouble(),
-                    min: 20,
-                    max: 300,
-                    divisions: 14,
-                    label: _draft.batchLimit.toString(),
-                    onChanged: (value) {
-                      setState(() {
-                        _isEditing = true;
-                        _draft = _draft.copyWith(batchLimit: value.round());
-                      });
-                    },
-                    onChangeEnd: (_) async {
-                      await controller.updateSettings(_draft);
-                      if (mounted) setState(() => _isEditing = false);
-                    },
-                  ),
-                  Text(
-                    'Performance samples (${_draft.performanceLimit})',
-                    style: Theme.of(context).textTheme.labelLarge,
-                  ),
-                  Slider(
-                    value: _draft.performanceLimit.toDouble(),
-                    min: 30,
-                    max: 300,
-                    divisions: 9,
-                    label: _draft.performanceLimit.toString(),
-                    onChanged: (value) {
-                      setState(() {
-                        _isEditing = true;
-                        _draft = _draft.copyWith(
-                          performanceLimit: value.round(),
-                        );
-                      });
-                    },
-                    onChangeEnd: (_) async {
-                      await controller.updateSettings(_draft);
-                      if (mounted) setState(() => _isEditing = false);
-                    },
-                  ),
-                  Text(
-                    'Value preview (${_draft.valuePreviewLength} chars)',
-                    style: Theme.of(context).textTheme.labelLarge,
-                  ),
-                  Slider(
-                    value: _draft.valuePreviewLength.toDouble(),
-                    min: 40,
-                    max: 240,
-                    divisions: 10,
-                    label: _draft.valuePreviewLength.toString(),
-                    onChanged: (value) {
-                      setState(() {
-                        _isEditing = true;
-                        _draft = _draft.copyWith(
-                          valuePreviewLength: value.round(),
-                        );
-                      });
-                    },
-                    onChangeEnd: (_) async {
-                      await controller.updateSettings(_draft);
-                      if (mounted) setState(() => _isEditing = false);
-                    },
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            _GlassCard(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Clear cached diagnostics and restart sampling.',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ),
-                  _ActionPill(
-                    label: 'Clear history',
-                    icon: Icons.delete_sweep_rounded,
-                    onTap: controller.clearHistory,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
+}
+
+class _SettingsPanelStateData {
+  _SettingsPanelStateData(BuildContext context)
+    : isEditing = oref.signal(
+        context,
+        false,
+        debugLabel: 'settings.editing',
+      ),
+      draft = oref.signal(
+        context,
+        const DevToolsSettings(),
+        debugLabel: 'settings.draft',
+      );
+
+  final oref.WritableSignal<bool> isEditing;
+  final oref.WritableSignal<DevToolsSettings> draft;
 }
 
 class _CollectionsHeader extends StatelessWidget {
@@ -3200,54 +3376,21 @@ class _DiffToken extends StatelessWidget {
   }
 }
 
-class _EffectsPanelState extends State<_EffectsPanel> {
-  String _typeFilter = 'All';
-  String _scopeFilter = 'All';
-
-  @override
-  Widget build(BuildContext context) {
-    final controller = OrefDevToolsScope.of(context);
-    final entries = _samplesByKind(
-      controller.snapshot?.samples ?? const <Sample>[],
-      'effect',
-    );
-    final typeFilters = _buildFilterOptions(entries.map((entry) => entry.type));
-    final scopeFilters = _buildFilterOptions(
-      entries.map((entry) => entry.scope),
-    );
-    final filtered = entries.where((entry) {
-      final matchesType = _typeFilter == 'All' || entry.type == _typeFilter;
-      final matchesScope = _scopeFilter == 'All' || entry.scope == _scopeFilter;
-      return matchesType && matchesScope;
-    }).toList();
-
-    return _ConnectionGuard(
-      child: _PanelScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _EffectsHeader(
-              typeFilter: _typeFilter,
-              scopeFilter: _scopeFilter,
-              typeFilters: typeFilters,
-              scopeFilters: scopeFilters,
-              onTypeChange: (value) => setState(() => _typeFilter = value),
-              onScopeChange: (value) => setState(() => _scopeFilter = value),
-              totalCount: entries.length,
-              filteredCount: filtered.length,
-              onExport: () => _exportData(
-                context,
-                'effects',
-                filtered.map((entry) => entry.toJson()).toList(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            _EffectsTimeline(entries: filtered),
-          ],
-        ),
+class _EffectsPanelStateData {
+  _EffectsPanelStateData(BuildContext context)
+    : typeFilter = oref.signal(
+        context,
+        'All',
+        debugLabel: 'effects.typeFilter',
       ),
-    );
-  }
+      scopeFilter = oref.signal(
+        context,
+        'All',
+        debugLabel: 'effects.scopeFilter',
+      );
+
+  final oref.WritableSignal<String> typeFilter;
+  final oref.WritableSignal<String> scopeFilter;
 }
 
 class _EffectsHeader extends StatelessWidget {
