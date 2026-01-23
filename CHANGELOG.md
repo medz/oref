@@ -1,3 +1,11 @@
+## 2.8.0
+
+### Features
+
+- Add Oref DevTools diagnostics protocol and service extensions.
+- Ship a dedicated DevTools extension UI with Computed, Batching, Timeline, Performance, and Settings panels.
+- Wire live signal/effect/collection data and sampling controls into the extension.
+
 ## 2.7.0
 
 ### Features
