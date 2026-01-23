@@ -218,7 +218,7 @@ class OrefDevTools {
 
   void _ensureInitialized() {
     if (_initialized) return;
-    if (kReleaseMode || kIsWeb) return;
+    if (kReleaseMode) return;
     _initialized = true;
     _registerExtensions();
     _startSampling();
