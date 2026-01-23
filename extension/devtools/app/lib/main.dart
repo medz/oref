@@ -522,7 +522,8 @@ class _SideNav extends StatelessWidget {
             const SizedBox(height: 12),
             Expanded(
               child: Scrollbar(
-                thumbVisibility: true,
+                thumbVisibility: false,
+                interactive: true,
                 child: CustomScrollView(
                   slivers: [
                     SliverPadding(
