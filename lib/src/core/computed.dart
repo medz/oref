@@ -1,5 +1,6 @@
 import "package:alien_signals/alien_signals.dart" as alien;
 import "package:alien_signals/preset.dart" as alien;
+import 'package:alien_signals/system.dart' as alien show ReactiveFlags;
 import "package:flutter/widgets.dart";
 
 import "context.dart";
