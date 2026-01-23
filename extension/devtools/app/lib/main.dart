@@ -4,6 +4,9 @@ import 'package:devtools_extensions/devtools_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'oref_models.dart';
+import 'oref_service.dart';
+
 void main() {
   runApp(const DevToolsExtension(child: OrefDevToolsApp()));
 }
@@ -21,6 +24,21 @@ class OrefDevToolsApp extends StatelessWidget {
       themeMode: ThemeMode.system,
       home: const _DevToolsShell(),
     );
+  }
+}
+
+class OrefDevToolsScope extends InheritedNotifier<OrefDevToolsController> {
+  const OrefDevToolsScope({
+    super.key,
+    required OrefDevToolsController controller,
+    required Widget child,
+  }) : super(notifier: controller, child: child);
+
+  static OrefDevToolsController of(BuildContext context) {
+    final scope = context
+        .dependOnInheritedWidgetOfExactType<OrefDevToolsScope>();
+    assert(scope != null, 'OrefDevToolsScope not found in widget tree.');
+    return scope!.notifier!;
   }
 }
 
@@ -105,6 +123,19 @@ class _DevToolsShell extends StatefulWidget {
 
 class _DevToolsShellState extends State<_DevToolsShell> {
   String _selectedLabel = _navItems.first.label;
+  late final OrefDevToolsController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = OrefDevToolsController();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   void _handleSelect(_NavItemData item) {
     if (item.label == _selectedLabel) return;
@@ -122,54 +153,59 @@ class _DevToolsShellState extends State<_DevToolsShell> {
   Widget build(BuildContext context) {
     final selectedItem = _selectedItem;
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isWide = constraints.maxWidth >= 1100;
-        final padding = EdgeInsets.symmetric(
-          horizontal: isWide ? 28 : 20,
-          vertical: 20,
-        );
+    return OrefDevToolsScope(
+      controller: _controller,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWide = constraints.maxWidth >= 1100;
+          final padding = EdgeInsets.symmetric(
+            horizontal: isWide ? 28 : 20,
+            vertical: 20,
+          );
 
-        return Stack(
-          children: [
-            const _BackgroundLayer(),
-            SafeArea(
-              child: Padding(
-                padding: padding,
-                child: Column(
-                  children: [
-                    const _TopBar(),
-                    const SizedBox(height: 20),
-                    Expanded(
-                      child: isWide
-                          ? Row(
-                              children: [
-                                SizedBox(
-                                  width: 240,
-                                  child: _SideNav(
-                                    selectedLabel: _selectedLabel,
-                                    onSelect: _handleSelect,
+          return Stack(
+            children: [
+              const _BackgroundLayer(),
+              SafeArea(
+                child: Padding(
+                  padding: padding,
+                  child: Column(
+                    children: [
+                      const _TopBar(),
+                      const SizedBox(height: 20),
+                      Expanded(
+                        child: isWide
+                            ? Row(
+                                children: [
+                                  SizedBox(
+                                    width: 240,
+                                    child: _SideNav(
+                                      selectedLabel: _selectedLabel,
+                                      onSelect: _handleSelect,
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(width: 20),
-                                Expanded(
-                                  child: _MainPanel(selectedItem: selectedItem),
-                                ),
-                              ],
-                            )
-                          : _CompactLayout(
-                              selectedLabel: _selectedLabel,
-                              onSelect: _handleSelect,
-                              selectedItem: selectedItem,
-                            ),
-                    ),
-                  ],
+                                  const SizedBox(width: 20),
+                                  Expanded(
+                                    child: _MainPanel(
+                                      selectedItem: selectedItem,
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : _CompactLayout(
+                                selectedLabel: _selectedLabel,
+                                onSelect: _handleSelect,
+                                selectedItem: selectedItem,
+                              ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
-        );
-      },
+            ],
+          );
+        },
+      ),
     );
   }
 }
@@ -269,17 +305,30 @@ class _TopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final controller = OrefDevToolsScope.of(context);
     final isCompact = MediaQuery.of(context).size.width < 900;
+    final canInteract = controller.connected;
     final children = <Widget>[
       const _BrandMark(),
       const SizedBox(width: 16),
-      const _StatusPill(),
+      _StatusPill(status: controller.status),
       const Spacer(),
-      const _ActionPill(label: 'Watch', icon: Icons.visibility_rounded),
+      _ActionPill(
+        label: 'Refresh',
+        icon: Icons.refresh_rounded,
+        onTap: canInteract ? controller.refresh : null,
+      ),
       const SizedBox(width: 12),
-      const _ActionPill(label: 'Record', icon: Icons.fiber_manual_record),
+      _ActionPill(
+        label: 'Clear',
+        icon: Icons.delete_sweep_rounded,
+        onTap: canInteract ? controller.clearHistory : null,
+      ),
       const SizedBox(width: 12),
-      const _IconAction(icon: Icons.more_horiz),
+      _IconAction(
+        icon: Icons.more_horiz,
+        onTap: canInteract ? controller.refresh : null,
+      ),
     ];
 
     return _GlassCard(
@@ -343,26 +392,40 @@ class _BrandMark extends StatelessWidget {
 }
 
 class _StatusPill extends StatelessWidget {
-  const _StatusPill();
+  const _StatusPill({required this.status});
+
+  final OrefServiceStatus status;
 
   @override
   Widget build(BuildContext context) {
+    final tone = switch (status) {
+      OrefServiceStatus.ready => OrefPalette.lime,
+      OrefServiceStatus.connecting => OrefPalette.teal,
+      OrefServiceStatus.unavailable => OrefPalette.coral,
+      OrefServiceStatus.error => OrefPalette.pink,
+      OrefServiceStatus.disconnected => const Color(0xFF8B97A8),
+    };
+    final label = switch (status) {
+      OrefServiceStatus.ready => 'Connected',
+      OrefServiceStatus.connecting => 'Connecting',
+      OrefServiceStatus.unavailable => 'Extension missing',
+      OrefServiceStatus.error => 'Connection error',
+      OrefServiceStatus.disconnected => 'Disconnected',
+    };
+
     return _GlassPill(
-      color: OrefPalette.lime.withOpacity(0.22),
+      color: tone.withOpacity(0.22),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
             width: 8,
             height: 8,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: OrefPalette.lime,
-            ),
+            decoration: BoxDecoration(shape: BoxShape.circle, color: tone),
           ),
           const SizedBox(width: 8),
           Text(
-            'Connected',
+            label,
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
             ),
@@ -374,32 +437,46 @@ class _StatusPill extends StatelessWidget {
 }
 
 class _ActionPill extends StatelessWidget {
-  const _ActionPill({required this.label, required this.icon});
+  const _ActionPill({required this.label, required this.icon, this.onTap});
 
   final String label;
   final IconData icon;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return _GlassPill(
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [Icon(icon, size: 16), const SizedBox(width: 8), Text(label)],
+    return InkWell(
+      borderRadius: BorderRadius.circular(999),
+      onTap: onTap,
+      child: _GlassPill(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 16),
+            const SizedBox(width: 8),
+            Text(label),
+          ],
+        ),
       ),
     );
   }
 }
 
 class _IconAction extends StatelessWidget {
-  const _IconAction({required this.icon});
+  const _IconAction({required this.icon, this.onTap});
 
   final IconData icon;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return _GlassPill(
-      padding: const EdgeInsets.all(10),
-      child: Icon(icon, size: 18),
+    return InkWell(
+      borderRadius: BorderRadius.circular(999),
+      onTap: onTap,
+      child: _GlassPill(
+        padding: const EdgeInsets.all(10),
+        child: Icon(icon, size: 18),
+      ),
     );
   }
 }
@@ -553,11 +630,26 @@ class _MainPanel extends StatelessWidget {
     if (selectedItem.label == 'Signals') {
       return const _SignalsPanel();
     }
+    if (selectedItem.label == 'Computed') {
+      return const _ComputedPanel();
+    }
     if (selectedItem.label == 'Effects') {
       return const _EffectsPanel();
     }
     if (selectedItem.label == 'Collections') {
       return const _CollectionsPanel();
+    }
+    if (selectedItem.label == 'Batching') {
+      return const _BatchingPanel();
+    }
+    if (selectedItem.label == 'Timeline') {
+      return const _TimelinePanel();
+    }
+    if (selectedItem.label == 'Performance') {
+      return const _PerformancePanel();
+    }
+    if (selectedItem.label == 'Settings') {
+      return const _SettingsPanel();
     }
 
     final info =
@@ -582,6 +674,9 @@ class _OverviewPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final controller = OrefDevToolsScope.of(context);
+    final snapshot = controller.snapshot;
+    final stats = snapshot?.stats;
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -598,32 +693,32 @@ class _OverviewPanel extends StatelessWidget {
           Wrap(
             spacing: 16,
             runSpacing: 16,
-            children: const [
+            children: [
               _MetricTile(
                 label: 'Signals',
-                value: '128',
-                trend: '+12%',
+                value: _formatCount(stats?.signals),
+                trend: _formatDelta(stats?.signalWrites, suffix: 'upd'),
                 accent: OrefPalette.teal,
                 icon: Icons.bubble_chart_rounded,
               ),
               _MetricTile(
                 label: 'Computed',
-                value: '42',
-                trend: 'stable',
+                value: _formatCount(stats?.computed),
+                trend: _formatDelta(stats?.computedRuns, suffix: 'runs'),
                 accent: OrefPalette.indigo,
                 icon: Icons.schema_rounded,
               ),
               _MetricTile(
                 label: 'Effects',
-                value: '17',
-                trend: '+3',
+                value: _formatCount(stats?.effects),
+                trend: _formatDelta(stats?.effectRuns, suffix: 'runs'),
                 accent: OrefPalette.pink,
                 icon: Icons.auto_awesome_motion_rounded,
               ),
               _MetricTile(
-                label: 'Batch Writes',
-                value: '9',
-                trend: 'hot',
+                label: 'Batches',
+                value: _formatCount(stats?.batches),
+                trend: _formatDelta(stats?.signalWrites, suffix: 'writes'),
                 accent: OrefPalette.coral,
                 icon: Icons.layers_rounded,
               ),
@@ -705,10 +800,22 @@ class _OverviewPanel extends StatelessWidget {
                     children: [
                       Text('Session', style: textTheme.labelLarge),
                       const SizedBox(height: 12),
-                      _InfoRow(label: 'App', value: 'Oref Showcase'),
-                      _InfoRow(label: 'Isolate', value: 'main'),
-                      _InfoRow(label: 'Frame time', value: '7.3ms'),
-                      _InfoRow(label: 'Updates', value: '1.2k'),
+                      _InfoRow(
+                        label: 'Status',
+                        value: controller.connected ? 'Connected' : 'Offline',
+                      ),
+                      _InfoRow(
+                        label: 'Signals',
+                        value: _formatCount(stats?.signals),
+                      ),
+                      _InfoRow(
+                        label: 'Effects',
+                        value: _formatCount(stats?.effects),
+                      ),
+                      _InfoRow(
+                        label: 'Last update',
+                        value: _formatAge(snapshot?.timestamp),
+                      ),
                     ],
                   ),
                 );
@@ -797,14 +904,16 @@ class _OverviewPanel extends StatelessWidget {
                   children: [
                     Text('Recent Activity', style: textTheme.titleMedium),
                     const SizedBox(height: 12),
-                    if (_activityItems.isEmpty)
+                    if ((snapshot?.timeline ?? []).isEmpty)
                       Text(
-                        'No recent activity yet.',
+                        controller.isUnavailable
+                            ? 'Enable Oref DevTools to capture activity.'
+                            : 'No recent activity yet.',
                         style: textTheme.bodyMedium,
                       )
                     else
-                      for (final item in _activityItems)
-                        _TimelineRow(item: item),
+                      for (final event in snapshot!.timeline.reversed.take(6))
+                        _TimelineRow(event: event),
                   ],
                 ),
               );
@@ -843,12 +952,11 @@ class _SignalsPanel extends StatefulWidget {
 class _SignalsPanelState extends State<_SignalsPanel> {
   final _searchController = TextEditingController();
   String _statusFilter = 'All';
-  _SignalEntry? _selected;
+  int? _selectedId;
 
   @override
   void initState() {
     super.initState();
-    _selected = _signalEntries.first;
     _searchController.addListener(() => setState(() {}));
   }
 
@@ -860,73 +968,512 @@ class _SignalsPanelState extends State<_SignalsPanel> {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isSplit = constraints.maxWidth >= 980;
-        final filtered = _filterSignals();
+    return _ConnectionGuard(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final controller = OrefDevToolsScope.of(context);
+          final entries = controller.snapshot?.signals ?? const <OrefSignal>[];
+          final isSplit = constraints.maxWidth >= 980;
+          final filtered = _filterSignals(entries);
+          final selected =
+              entries.firstWhereOrNull((entry) => entry.id == _selectedId) ??
+              (entries.isNotEmpty ? entries.first : null);
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _SignalsHeader(
-              controller: _searchController,
-              selectedFilter: _statusFilter,
-              onFilterChange: (value) => setState(() => _statusFilter = value),
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: isSplit
-                  ? Row(
-                      children: [
-                        Expanded(
-                          flex: 3,
-                          child: _SignalList(
-                            entries: filtered,
-                            selected: _selected,
-                            onSelect: (entry) =>
-                                setState(() => _selected = entry),
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _SignalsHeader(
+                controller: _searchController,
+                selectedFilter: _statusFilter,
+                onFilterChange: (value) =>
+                    setState(() => _statusFilter = value),
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: isSplit
+                    ? Row(
+                        children: [
+                          Expanded(
+                            flex: 3,
+                            child: _SignalList(
+                              entries: filtered,
+                              selectedId: selected?.id,
+                              isCompact: false,
+                              onSelect: (entry) =>
+                                  setState(() => _selectedId = entry.id),
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 20),
-                        SizedBox(
-                          width: 320,
-                          child: _SignalDetail(entry: _selected),
-                        ),
-                      ],
-                    )
-                  : Column(
-                      children: [
-                        Expanded(
-                          child: _SignalList(
-                            entries: filtered,
-                            selected: _selected,
-                            onSelect: (entry) =>
-                                setState(() => _selected = entry),
+                          const SizedBox(width: 20),
+                          SizedBox(
+                            width: 320,
+                            child: _SignalDetail(entry: selected),
                           ),
-                        ),
-                        const SizedBox(height: 16),
-                        SizedBox(
-                          height: 220,
-                          child: _SignalDetail(entry: _selected),
-                        ),
-                      ],
-                    ),
-            ),
-          ],
-        );
-      },
+                        ],
+                      )
+                    : Column(
+                        children: [
+                          Expanded(
+                            child: _SignalList(
+                              entries: filtered,
+                              selectedId: selected?.id,
+                              isCompact: true,
+                              onSelect: (entry) =>
+                                  setState(() => _selectedId = entry.id),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            height: 220,
+                            child: _SignalDetail(entry: selected),
+                          ),
+                        ],
+                      ),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 
-  List<_SignalEntry> _filterSignals() {
+  List<OrefSignal> _filterSignals(List<OrefSignal> entries) {
     final query = _searchController.text.trim().toLowerCase();
-    return _signalEntries.where((entry) {
+    return entries.where((entry) {
       final matchesQuery =
-          query.isEmpty || entry.name.toLowerCase().contains(query);
+          query.isEmpty || entry.label.toLowerCase().contains(query);
       final matchesStatus =
           _statusFilter == 'All' || entry.status == _statusFilter;
       return matchesQuery && matchesStatus;
     }).toList();
+  }
+}
+
+class _ComputedPanel extends StatefulWidget {
+  const _ComputedPanel();
+
+  @override
+  State<_ComputedPanel> createState() => _ComputedPanelState();
+}
+
+class _ComputedPanelState extends State<_ComputedPanel> {
+  final _searchController = TextEditingController();
+  String _statusFilter = 'All';
+  int? _selectedId;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _ConnectionGuard(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final controller = OrefDevToolsScope.of(context);
+          final entries =
+              controller.snapshot?.computed ?? const <OrefComputed>[];
+          final isSplit = constraints.maxWidth >= 980;
+          final filtered = _filterComputed(entries);
+          final selected =
+              entries.firstWhereOrNull((entry) => entry.id == _selectedId) ??
+              (entries.isNotEmpty ? entries.first : null);
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _ComputedHeader(
+                controller: _searchController,
+                selectedFilter: _statusFilter,
+                onFilterChange: (value) =>
+                    setState(() => _statusFilter = value),
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: isSplit
+                    ? Row(
+                        children: [
+                          Expanded(
+                            flex: 3,
+                            child: _ComputedList(
+                              entries: filtered,
+                              selectedId: selected?.id,
+                              isCompact: false,
+                              onSelect: (entry) =>
+                                  setState(() => _selectedId = entry.id),
+                            ),
+                          ),
+                          const SizedBox(width: 20),
+                          SizedBox(
+                            width: 320,
+                            child: _ComputedDetail(entry: selected),
+                          ),
+                        ],
+                      )
+                    : Column(
+                        children: [
+                          Expanded(
+                            child: _ComputedList(
+                              entries: filtered,
+                              selectedId: selected?.id,
+                              isCompact: true,
+                              onSelect: (entry) =>
+                                  setState(() => _selectedId = entry.id),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            height: 220,
+                            child: _ComputedDetail(entry: selected),
+                          ),
+                        ],
+                      ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  List<OrefComputed> _filterComputed(List<OrefComputed> entries) {
+    final query = _searchController.text.trim().toLowerCase();
+    return entries.where((entry) {
+      final matchesQuery =
+          query.isEmpty || entry.label.toLowerCase().contains(query);
+      final matchesStatus =
+          _statusFilter == 'All' || entry.status == _statusFilter;
+      return matchesQuery && matchesStatus;
+    }).toList();
+  }
+}
+
+class _ComputedHeader extends StatelessWidget {
+  const _ComputedHeader({
+    required this.controller,
+    required this.selectedFilter,
+    required this.onFilterChange,
+  });
+
+  final TextEditingController controller;
+  final String selectedFilter;
+  final ValueChanged<String> onFilterChange;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text('Computed', style: textTheme.headlineSmall),
+            const SizedBox(width: 12),
+            const _GlassPill(
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              child: Text('Live'),
+            ),
+            const Spacer(),
+            const _ActionPill(label: 'Export', icon: Icons.download_rounded),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Inspect derived state, cache hits, and dependency churn.',
+          style: textTheme.bodyMedium?.copyWith(
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.65),
+          ),
+        ),
+        const SizedBox(height: 16),
+        _GlassInput(
+          controller: controller,
+          hintText: 'Search computed values...',
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final filter in _signalFilters)
+              _FilterChip(
+                label: filter,
+                isSelected: filter == selectedFilter,
+                onTap: () => onFilterChange(filter),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _ComputedList extends StatelessWidget {
+  const _ComputedList({
+    required this.entries,
+    required this.selectedId,
+    required this.isCompact,
+    required this.onSelect,
+  });
+
+  final List<OrefComputed> entries;
+  final int? selectedId;
+  final bool isCompact;
+  final ValueChanged<OrefComputed> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    return _GlassCard(
+      padding: const EdgeInsets.all(0),
+      child: Column(
+        children: [
+          if (!isCompact) const _ComputedTableHeader(),
+          Expanded(
+            child: entries.isEmpty
+                ? Center(
+                    child: Text(
+                      'No computed values match the current filter.',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  )
+                : ListView.separated(
+                    padding: const EdgeInsets.all(12),
+                    itemCount: entries.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    itemBuilder: (context, index) {
+                      final entry = entries[index];
+                      final isSelected = selectedId == entry.id;
+                      return _ComputedRow(
+                        entry: entry,
+                        isSelected: isSelected,
+                        isCompact: isCompact,
+                        onTap: () => onSelect(entry),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ComputedTableHeader extends StatelessWidget {
+  const _ComputedTableHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    final labelStyle = Theme.of(context).textTheme.labelSmall?.copyWith(
+      letterSpacing: 0.4,
+      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+    );
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: Theme.of(context).dividerColor.withOpacity(0.4),
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(flex: 3, child: Text('Name', style: labelStyle)),
+          Expanded(flex: 2, child: Text('Value', style: labelStyle)),
+          Expanded(flex: 2, child: Text('Status', style: labelStyle)),
+          Expanded(flex: 2, child: Text('Runs', style: labelStyle)),
+          Expanded(flex: 2, child: Text('Updated', style: labelStyle)),
+        ],
+      ),
+    );
+  }
+}
+
+class _ComputedRow extends StatelessWidget {
+  const _ComputedRow({
+    required this.entry,
+    required this.isSelected,
+    required this.isCompact,
+    required this.onTap,
+  });
+
+  final OrefComputed entry;
+  final bool isSelected;
+  final bool isCompact;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final highlight = isSelected
+        ? OrefPalette.indigo.withOpacity(0.2)
+        : Colors.transparent;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          decoration: BoxDecoration(
+            color: highlight,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isSelected
+                  ? OrefPalette.indigo.withOpacity(0.4)
+                  : colorScheme.onSurface.withOpacity(0.08),
+            ),
+          ),
+          child: isCompact
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(entry.label),
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
+                      children: [
+                        _StatusBadge(status: entry.status),
+                        _GlassPill(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          child: Text('${entry.runs} runs'),
+                        ),
+                        _GlassPill(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          child: Text(_formatAge(entry.updatedAt)),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      entry.value,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurface.withOpacity(0.7),
+                      ),
+                    ),
+                  ],
+                )
+              : Row(
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(entry.label),
+                          const SizedBox(height: 4),
+                          Text(
+                            entry.owner,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: colorScheme.onSurface.withOpacity(0.6),
+                                ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        entry.value,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: _StatusBadge(status: entry.status),
+                    ),
+                    Expanded(flex: 2, child: Text('${entry.runs}')),
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        _formatAge(entry.updatedAt),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurface.withOpacity(0.6),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ComputedDetail extends StatelessWidget {
+  const _ComputedDetail({required this.entry});
+
+  final OrefComputed? entry;
+
+  @override
+  Widget build(BuildContext context) {
+    if (entry == null) {
+      return _GlassCard(
+        padding: const EdgeInsets.all(20),
+        child: Center(
+          child: Text(
+            'Select a computed value to view details.',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ),
+      );
+    }
+
+    final textTheme = Theme.of(context).textTheme;
+
+    return _GlassCard(
+      padding: const EdgeInsets.all(20),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(entry!.label, style: textTheme.titleMedium),
+            const SizedBox(height: 8),
+            _StatusBadge(status: entry!.status),
+            const SizedBox(height: 16),
+            _InfoRow(label: 'Owner', value: entry!.owner),
+            _InfoRow(label: 'Scope', value: entry!.scope),
+            _InfoRow(label: 'Type', value: entry!.type),
+            _InfoRow(label: 'Value', value: entry!.value),
+            _InfoRow(label: 'Updated', value: _formatAge(entry!.updatedAt)),
+            _InfoRow(label: 'Runs', value: entry!.runs.toString()),
+            _InfoRow(label: 'Last run', value: '${entry!.lastDurationMs}ms'),
+            _InfoRow(label: 'Listeners', value: entry!.listeners.toString()),
+            _InfoRow(label: 'Deps', value: entry!.dependencies.toString()),
+            if (entry!.note.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Text(
+                entry!.note,
+                style: textTheme.bodySmall?.copyWith(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.6),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -963,28 +1510,824 @@ class _CollectionsPanelState extends State<_CollectionsPanel> {
 
   @override
   Widget build(BuildContext context) {
-    final filtered = _collectionEntries.where((entry) {
+    final controller = OrefDevToolsScope.of(context);
+    final entries =
+        controller.snapshot?.collections ?? const <OrefCollection>[];
+    final typeFilters = _buildFilterOptions(entries.map((entry) => entry.type));
+    final opFilters = _buildFilterOptions(
+      entries.map((entry) => entry.operation),
+    );
+    final filtered = entries.where((entry) {
       final query = _searchController.text.trim().toLowerCase();
       final matchesQuery =
-          query.isEmpty || entry.name.toLowerCase().contains(query);
+          query.isEmpty || entry.label.toLowerCase().contains(query);
       final matchesType = _typeFilter == 'All' || entry.type == _typeFilter;
       final matchesOp = _opFilter == 'All' || entry.operation == _opFilter;
       return matchesQuery && matchesType && matchesOp;
     }).toList();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _CollectionsHeader(
-          controller: _searchController,
-          typeFilter: _typeFilter,
-          opFilter: _opFilter,
-          onTypeChange: (value) => setState(() => _typeFilter = value),
-          onOpChange: (value) => setState(() => _opFilter = value),
+    return _ConnectionGuard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _CollectionsHeader(
+            controller: _searchController,
+            typeFilter: _typeFilter,
+            opFilter: _opFilter,
+            typeFilters: typeFilters,
+            opFilters: opFilters,
+            onTypeChange: (value) => setState(() => _typeFilter = value),
+            onOpChange: (value) => setState(() => _opFilter = value),
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final isCompact = constraints.maxWidth < 860;
+                return _CollectionsList(
+                  entries: filtered,
+                  isCompact: isCompact,
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BatchingPanel extends StatelessWidget {
+  const _BatchingPanel();
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = OrefDevToolsScope.of(context);
+    final batches = controller.snapshot?.batches ?? const <OrefBatch>[];
+    final latest = batches.isNotEmpty ? batches.last : null;
+    final totalWrites = batches.fold<int>(
+      0,
+      (sum, batch) => sum + batch.writeCount,
+    );
+    final avgDuration = batches.isEmpty
+        ? 0
+        : (batches.fold<int>(0, (sum, batch) => sum + batch.durationMs) /
+                  batches.length)
+              .round();
+
+    return _ConnectionGuard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                'Batching',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(width: 12),
+              const _GlassPill(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                child: Text('Live'),
+              ),
+              const Spacer(),
+              const _ActionPill(label: 'Export', icon: Icons.download_rounded),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Inspect batched writes and flush timing.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.65),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 16,
+            runSpacing: 16,
+            children: [
+              _MetricTile(
+                label: 'Batches',
+                value: _formatCount(batches.length),
+                trend: _formatDelta(totalWrites, suffix: 'writes'),
+                accent: OrefPalette.coral,
+                icon: Icons.layers_rounded,
+              ),
+              _MetricTile(
+                label: 'Avg duration',
+                value: '${avgDuration}ms',
+                trend: latest == null ? '—' : _formatAge(latest.endedAt),
+                accent: OrefPalette.indigo,
+                icon: Icons.timer_rounded,
+              ),
+              _MetricTile(
+                label: 'Last batch',
+                value: latest == null ? '—' : '${latest.durationMs}ms',
+                trend: latest == null ? '—' : '${latest.writeCount} writes',
+                accent: OrefPalette.teal,
+                icon: Icons.bolt_rounded,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final isCompact = constraints.maxWidth < 860;
+                return _BatchList(batches: batches, isCompact: isCompact);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BatchList extends StatelessWidget {
+  const _BatchList({required this.batches, required this.isCompact});
+
+  final List<OrefBatch> batches;
+  final bool isCompact;
+
+  @override
+  Widget build(BuildContext context) {
+    return _GlassCard(
+      padding: const EdgeInsets.all(0),
+      child: Column(
+        children: [
+          if (!isCompact) const _BatchHeaderRow(),
+          Expanded(
+            child: batches.isEmpty
+                ? Center(
+                    child: Text(
+                      'No batches recorded yet.',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  )
+                : ListView.separated(
+                    padding: const EdgeInsets.all(12),
+                    itemCount: batches.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    itemBuilder: (context, index) {
+                      final batch = batches[index];
+                      return _BatchRow(batch: batch, isCompact: isCompact);
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BatchHeaderRow extends StatelessWidget {
+  const _BatchHeaderRow();
+
+  @override
+  Widget build(BuildContext context) {
+    final labelStyle = Theme.of(context).textTheme.labelSmall?.copyWith(
+      letterSpacing: 0.4,
+      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+    );
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: Theme.of(context).dividerColor.withOpacity(0.4),
+          ),
         ),
-        const SizedBox(height: 16),
-        Expanded(child: _CollectionsList(entries: filtered)),
-      ],
+      ),
+      child: Row(
+        children: [
+          Expanded(flex: 2, child: Text('Batch', style: labelStyle)),
+          Expanded(flex: 2, child: Text('Depth', style: labelStyle)),
+          Expanded(flex: 2, child: Text('Writes', style: labelStyle)),
+          Expanded(flex: 2, child: Text('Duration', style: labelStyle)),
+          Expanded(flex: 3, child: Text('Ended', style: labelStyle)),
+        ],
+      ),
+    );
+  }
+}
+
+class _BatchRow extends StatelessWidget {
+  const _BatchRow({required this.batch, required this.isCompact});
+
+  final OrefBatch batch;
+  final bool isCompact;
+
+  @override
+  Widget build(BuildContext context) {
+    final subdued = Theme.of(context).colorScheme.onSurface.withOpacity(0.6);
+    return _GlassCard(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      child: isCompact
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Batch #${batch.id}'),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _GlassPill(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      child: Text('Depth ${batch.depth}'),
+                    ),
+                    _GlassPill(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      child: Text('${batch.writeCount} writes'),
+                    ),
+                    _GlassPill(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      child: Text('${batch.durationMs}ms'),
+                    ),
+                    _GlassPill(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      child: Text(_formatAge(batch.endedAt)),
+                    ),
+                  ],
+                ),
+              ],
+            )
+          : Row(
+              children: [
+                Expanded(flex: 2, child: Text('Batch #${batch.id}')),
+                Expanded(flex: 2, child: Text('${batch.depth}')),
+                Expanded(flex: 2, child: Text('${batch.writeCount}')),
+                Expanded(flex: 2, child: Text('${batch.durationMs}ms')),
+                Expanded(
+                  flex: 3,
+                  child: Text(
+                    _formatAge(batch.endedAt),
+                    style: TextStyle(color: subdued),
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
+}
+
+class _TimelinePanel extends StatefulWidget {
+  const _TimelinePanel();
+
+  @override
+  State<_TimelinePanel> createState() => _TimelinePanelState();
+}
+
+class _TimelinePanelState extends State<_TimelinePanel> {
+  String _typeFilter = 'All';
+  String _severityFilter = 'All';
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = OrefDevToolsScope.of(context);
+    final events = controller.snapshot?.timeline ?? const <OrefTimelineEvent>[];
+    final typeFilters = _buildFilterOptions(events.map((event) => event.type));
+    final severityFilters = _buildFilterOptions(
+      events.map((event) => event.severity),
+    );
+    final filtered = events.where((event) {
+      final matchesType = _typeFilter == 'All' || event.type == _typeFilter;
+      final matchesSeverity =
+          _severityFilter == 'All' || event.severity == _severityFilter;
+      return matchesType && matchesSeverity;
+    }).toList();
+
+    return _ConnectionGuard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                'Timeline',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(width: 12),
+              const _GlassPill(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                child: Text('Live'),
+              ),
+              const Spacer(),
+              const _ActionPill(label: 'Export', icon: Icons.download_rounded),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Correlate signal updates with effects, batches, and collections.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.65),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              Text('Type', style: Theme.of(context).textTheme.labelMedium),
+              for (final filter in typeFilters)
+                _FilterChip(
+                  label: filter,
+                  isSelected: filter == _typeFilter,
+                  onTap: () => setState(() => _typeFilter = filter),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              Text('Severity', style: Theme.of(context).textTheme.labelMedium),
+              for (final filter in severityFilters)
+                _FilterChip(
+                  label: filter,
+                  isSelected: filter == _severityFilter,
+                  onTap: () => setState(() => _severityFilter = filter),
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Expanded(child: _TimelineList(events: filtered)),
+        ],
+      ),
+    );
+  }
+}
+
+class _TimelineList extends StatelessWidget {
+  const _TimelineList({required this.events});
+
+  final List<OrefTimelineEvent> events;
+
+  @override
+  Widget build(BuildContext context) {
+    return _GlassCard(
+      padding: const EdgeInsets.all(0),
+      child: events.isEmpty
+          ? Center(
+              child: Text(
+                'No timeline events yet.',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            )
+          : ListView.separated(
+              padding: const EdgeInsets.all(16),
+              itemCount: events.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              itemBuilder: (context, index) {
+                final event = events[index];
+                return _TimelineEventRow(event: event);
+              },
+            ),
+    );
+  }
+}
+
+class _TimelineEventRow extends StatelessWidget {
+  const _TimelineEventRow({required this.event});
+
+  final OrefTimelineEvent event;
+
+  @override
+  Widget build(BuildContext context) {
+    final tone = _timelineColors[event.type] ?? OrefPalette.teal;
+    final subdued = Theme.of(context).colorScheme.onSurface.withOpacity(0.6);
+    return _GlassCard(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 10,
+            height: 10,
+            margin: const EdgeInsets.only(top: 6),
+            decoration: BoxDecoration(color: tone, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  event.title,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  event.detail,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: subdued),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            _formatAge(event.timestamp),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: subdued),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PerformancePanel extends StatelessWidget {
+  const _PerformancePanel();
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = OrefDevToolsScope.of(context);
+    final samples =
+        controller.snapshot?.performance ?? const <OrefPerformanceSample>[];
+    final latest = samples.isNotEmpty ? samples.last : null;
+
+    return _ConnectionGuard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                'Performance',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(width: 12),
+              const _GlassPill(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                child: Text('Live'),
+              ),
+              const Spacer(),
+              const _ActionPill(label: 'Export', icon: Icons.download_rounded),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Sampled signal throughput and effect costs.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.65),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 16,
+            runSpacing: 16,
+            children: [
+              _MetricTile(
+                label: 'Effect avg',
+                value: latest == null
+                    ? '—'
+                    : '${latest.avgEffectDurationMs.toStringAsFixed(1)}ms',
+                trend: latest == null ? '—' : '${latest.effectRuns} runs',
+                accent: OrefPalette.pink,
+                icon: Icons.speed_rounded,
+              ),
+              _MetricTile(
+                label: 'Signal writes',
+                value: latest == null ? '—' : '${latest.signalWrites}',
+                trend: latest == null
+                    ? '—'
+                    : '${latest.collectionMutations} mutations',
+                accent: OrefPalette.teal,
+                icon: Icons.bolt_rounded,
+              ),
+              _MetricTile(
+                label: 'Collections',
+                value: latest == null ? '—' : '${latest.collectionCount}',
+                trend: latest == null ? '—' : '${latest.batchWrites} batched',
+                accent: OrefPalette.indigo,
+                icon: Icons.grid_view_rounded,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Expanded(child: _PerformanceList(samples: samples)),
+        ],
+      ),
+    );
+  }
+}
+
+class _PerformanceList extends StatelessWidget {
+  const _PerformanceList({required this.samples});
+
+  final List<OrefPerformanceSample> samples;
+
+  @override
+  Widget build(BuildContext context) {
+    return _GlassCard(
+      padding: const EdgeInsets.all(0),
+      child: samples.isEmpty
+          ? Center(
+              child: Text(
+                'No performance samples yet.',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            )
+          : ListView.separated(
+              padding: const EdgeInsets.all(16),
+              itemCount: samples.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              itemBuilder: (context, index) {
+                final sample = samples[index];
+                return _PerformanceRow(sample: sample);
+              },
+            ),
+    );
+  }
+}
+
+class _PerformanceRow extends StatelessWidget {
+  const _PerformanceRow({required this.sample});
+
+  final OrefPerformanceSample sample;
+
+  @override
+  Widget build(BuildContext context) {
+    final subdued = Theme.of(context).colorScheme.onSurface.withOpacity(0.6);
+    return _GlassCard(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          Expanded(flex: 2, child: Text(_formatAge(sample.timestamp))),
+          Expanded(flex: 2, child: Text('${sample.signalWrites} writes')),
+          Expanded(flex: 2, child: Text('${sample.effectRuns} runs')),
+          Expanded(
+            flex: 2,
+            child: Text(
+              '${sample.avgEffectDurationMs.toStringAsFixed(1)}ms',
+              style: TextStyle(color: subdued),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Text(
+              '${sample.collectionMutations} mutations',
+              style: TextStyle(color: subdued),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SettingsPanel extends StatefulWidget {
+  const _SettingsPanel();
+
+  @override
+  State<_SettingsPanel> createState() => _SettingsPanelState();
+}
+
+class _SettingsPanelState extends State<_SettingsPanel> {
+  bool _isEditing = false;
+  OrefDevToolsSettings _draft = const OrefDevToolsSettings();
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = OrefDevToolsScope.of(context);
+    final current =
+        controller.snapshot?.settings ?? const OrefDevToolsSettings();
+    if (!_isEditing) {
+      _draft = current;
+    }
+
+    return _ConnectionGuard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                'Settings',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const Spacer(),
+              _ActionPill(
+                label: 'Refresh',
+                icon: Icons.refresh_rounded,
+                onTap: controller.refresh,
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Tune how diagnostics are collected.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.65),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  _GlassCard(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Sampling',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 12),
+                        SwitchListTile.adaptive(
+                          value: _draft.enabled,
+                          onChanged: (value) {
+                            setState(() {
+                              _isEditing = true;
+                              _draft = _draft.copyWith(enabled: value);
+                            });
+                            controller.updateSettings(_draft);
+                            _isEditing = false;
+                          },
+                          title: const Text('Enable sampling'),
+                          subtitle: Text(
+                            'Collect timeline and performance samples.',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Sample interval (${_draft.sampleIntervalMs}ms)',
+                          style: Theme.of(context).textTheme.labelLarge,
+                        ),
+                        Slider(
+                          value: _draft.sampleIntervalMs.toDouble(),
+                          min: 250,
+                          max: 5000,
+                          divisions: 19,
+                          label: '${_draft.sampleIntervalMs}ms',
+                          onChanged: (value) {
+                            setState(() {
+                              _isEditing = true;
+                              _draft = _draft.copyWith(
+                                sampleIntervalMs: value.round(),
+                              );
+                            });
+                          },
+                          onChangeEnd: (_) async {
+                            await controller.updateSettings(_draft);
+                            if (mounted) setState(() => _isEditing = false);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _GlassCard(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Retention',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Timeline limit (${_draft.timelineLimit})',
+                          style: Theme.of(context).textTheme.labelLarge,
+                        ),
+                        Slider(
+                          value: _draft.timelineLimit.toDouble(),
+                          min: 50,
+                          max: 500,
+                          divisions: 9,
+                          label: _draft.timelineLimit.toString(),
+                          onChanged: (value) {
+                            setState(() {
+                              _isEditing = true;
+                              _draft = _draft.copyWith(
+                                timelineLimit: value.round(),
+                              );
+                            });
+                          },
+                          onChangeEnd: (_) async {
+                            await controller.updateSettings(_draft);
+                            if (mounted) setState(() => _isEditing = false);
+                          },
+                        ),
+                        Text(
+                          'Batch limit (${_draft.batchLimit})',
+                          style: Theme.of(context).textTheme.labelLarge,
+                        ),
+                        Slider(
+                          value: _draft.batchLimit.toDouble(),
+                          min: 20,
+                          max: 300,
+                          divisions: 14,
+                          label: _draft.batchLimit.toString(),
+                          onChanged: (value) {
+                            setState(() {
+                              _isEditing = true;
+                              _draft = _draft.copyWith(
+                                batchLimit: value.round(),
+                              );
+                            });
+                          },
+                          onChangeEnd: (_) async {
+                            await controller.updateSettings(_draft);
+                            if (mounted) setState(() => _isEditing = false);
+                          },
+                        ),
+                        Text(
+                          'Performance samples (${_draft.performanceLimit})',
+                          style: Theme.of(context).textTheme.labelLarge,
+                        ),
+                        Slider(
+                          value: _draft.performanceLimit.toDouble(),
+                          min: 30,
+                          max: 300,
+                          divisions: 9,
+                          label: _draft.performanceLimit.toString(),
+                          onChanged: (value) {
+                            setState(() {
+                              _isEditing = true;
+                              _draft = _draft.copyWith(
+                                performanceLimit: value.round(),
+                              );
+                            });
+                          },
+                          onChangeEnd: (_) async {
+                            await controller.updateSettings(_draft);
+                            if (mounted) setState(() => _isEditing = false);
+                          },
+                        ),
+                        Text(
+                          'Value preview (${_draft.valuePreviewLength} chars)',
+                          style: Theme.of(context).textTheme.labelLarge,
+                        ),
+                        Slider(
+                          value: _draft.valuePreviewLength.toDouble(),
+                          min: 40,
+                          max: 240,
+                          divisions: 10,
+                          label: _draft.valuePreviewLength.toString(),
+                          onChanged: (value) {
+                            setState(() {
+                              _isEditing = true;
+                              _draft = _draft.copyWith(
+                                valuePreviewLength: value.round(),
+                              );
+                            });
+                          },
+                          onChangeEnd: (_) async {
+                            await controller.updateSettings(_draft);
+                            if (mounted) setState(() => _isEditing = false);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _GlassCard(
+                    padding: const EdgeInsets.all(20),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Clear cached diagnostics and restart sampling.',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ),
+                        _ActionPill(
+                          label: 'Clear history',
+                          icon: Icons.delete_sweep_rounded,
+                          onTap: controller.clearHistory,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -994,6 +2337,8 @@ class _CollectionsHeader extends StatelessWidget {
     required this.controller,
     required this.typeFilter,
     required this.opFilter,
+    required this.typeFilters,
+    required this.opFilters,
     required this.onTypeChange,
     required this.onOpChange,
   });
@@ -1001,6 +2346,8 @@ class _CollectionsHeader extends StatelessWidget {
   final TextEditingController controller;
   final String typeFilter;
   final String opFilter;
+  final List<String> typeFilters;
+  final List<String> opFilters;
   final ValueChanged<String> onTypeChange;
   final ValueChanged<String> onOpChange;
 
@@ -1039,7 +2386,7 @@ class _CollectionsHeader extends StatelessWidget {
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             Text('Type', style: textTheme.labelMedium),
-            for (final filter in _collectionTypeFilters)
+            for (final filter in typeFilters)
               _FilterChip(
                 label: filter,
                 isSelected: filter == typeFilter,
@@ -1054,7 +2401,7 @@ class _CollectionsHeader extends StatelessWidget {
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             Text('Op', style: textTheme.labelMedium),
-            for (final filter in _collectionOpFilters)
+            for (final filter in opFilters)
               _FilterChip(
                 label: filter,
                 isSelected: filter == opFilter,
@@ -1068,9 +2415,10 @@ class _CollectionsHeader extends StatelessWidget {
 }
 
 class _CollectionsList extends StatelessWidget {
-  const _CollectionsList({required this.entries});
+  const _CollectionsList({required this.entries, required this.isCompact});
 
-  final List<_CollectionEntry> entries;
+  final List<OrefCollection> entries;
+  final bool isCompact;
 
   @override
   Widget build(BuildContext context) {
@@ -1078,7 +2426,7 @@ class _CollectionsList extends StatelessWidget {
       padding: const EdgeInsets.all(0),
       child: Column(
         children: [
-          const _CollectionsHeaderRow(),
+          if (!isCompact) const _CollectionsHeaderRow(),
           Expanded(
             child: entries.isEmpty
                 ? Center(
@@ -1092,7 +2440,10 @@ class _CollectionsList extends StatelessWidget {
                     itemCount: entries.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 10),
                     itemBuilder: (context, index) {
-                      return _CollectionRow(entry: entries[index]);
+                      return _CollectionRow(
+                        entry: entries[index],
+                        isCompact: isCompact,
+                      );
                     },
                   ),
           ),
@@ -1135,9 +2486,10 @@ class _CollectionsHeaderRow extends StatelessWidget {
 }
 
 class _CollectionRow extends StatelessWidget {
-  const _CollectionRow({required this.entry});
+  const _CollectionRow({required this.entry, required this.isCompact});
 
-  final _CollectionEntry entry;
+  final OrefCollection entry;
+  final bool isCompact;
 
   @override
   Widget build(BuildContext context) {
@@ -1149,41 +2501,81 @@ class _CollectionRow extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                flex: 3,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          if (isCompact)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(entry.label),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
                   children: [
-                    Text(entry.name),
-                    const SizedBox(height: 4),
-                    Text(entry.owner, style: TextStyle(color: subdued)),
+                    _GlassPill(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      child: Text(entry.type),
+                    ),
+                    _GlassPill(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      color: tone.withOpacity(0.22),
+                      child: Text(entry.operation),
+                    ),
+                    _GlassPill(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      child: Text(_formatAge(entry.updatedAt)),
+                    ),
                   ],
                 ),
-              ),
-              Expanded(flex: 2, child: Text(entry.type)),
-              Expanded(
-                flex: 2,
-                child: _GlassPill(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
+              ],
+            )
+          else
+            Row(
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(entry.label),
+                      const SizedBox(height: 4),
+                      Text(entry.owner, style: TextStyle(color: subdued)),
+                    ],
                   ),
-                  color: tone.withOpacity(0.22),
-                  child: Text(entry.operation),
                 ),
-              ),
-              Expanded(
-                flex: 2,
-                child: Text(entry.scope, style: TextStyle(color: subdued)),
-              ),
-              Expanded(
-                flex: 2,
-                child: Text(entry.updated, style: TextStyle(color: subdued)),
-              ),
-            ],
-          ),
+                Expanded(flex: 2, child: Text(entry.type)),
+                Expanded(
+                  flex: 2,
+                  child: _GlassPill(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    color: tone.withOpacity(0.22),
+                    child: Text(entry.operation),
+                  ),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: Text(entry.scope, style: TextStyle(color: subdued)),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    _formatAge(entry.updatedAt),
+                    style: TextStyle(color: subdued),
+                  ),
+                ),
+              ],
+            ),
           const SizedBox(height: 10),
           Wrap(
             spacing: 8,
@@ -1205,15 +2597,15 @@ class _CollectionRow extends StatelessWidget {
 class _DiffToken extends StatelessWidget {
   const _DiffToken({required this.delta});
 
-  final _CollectionDelta delta;
+  final OrefCollectionDelta delta;
 
   @override
   Widget build(BuildContext context) {
-    final style = _deltaStyles[delta.kind]!;
+    final style = _deltaStyles[delta.kind] ?? OrefPalette.indigo;
     final prefix = switch (delta.kind) {
-      _DeltaKind.add => '+',
-      _DeltaKind.remove => '-',
-      _DeltaKind.update => '±',
+      'add' => '+',
+      'remove' => '-',
+      _ => '±',
     };
 
     return _GlassPill(
@@ -1230,24 +2622,34 @@ class _EffectsPanelState extends State<_EffectsPanel> {
 
   @override
   Widget build(BuildContext context) {
-    final filtered = _effectEntries.where((entry) {
+    final controller = OrefDevToolsScope.of(context);
+    final entries = controller.snapshot?.effects ?? const <OrefEffect>[];
+    final typeFilters = _buildFilterOptions(entries.map((entry) => entry.type));
+    final scopeFilters = _buildFilterOptions(
+      entries.map((entry) => entry.scope),
+    );
+    final filtered = entries.where((entry) {
       final matchesType = _typeFilter == 'All' || entry.type == _typeFilter;
       final matchesScope = _scopeFilter == 'All' || entry.scope == _scopeFilter;
       return matchesType && matchesScope;
     }).toList();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _EffectsHeader(
-          typeFilter: _typeFilter,
-          scopeFilter: _scopeFilter,
-          onTypeChange: (value) => setState(() => _typeFilter = value),
-          onScopeChange: (value) => setState(() => _scopeFilter = value),
-        ),
-        const SizedBox(height: 16),
-        Expanded(child: _EffectsTimeline(entries: filtered)),
-      ],
+    return _ConnectionGuard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _EffectsHeader(
+            typeFilter: _typeFilter,
+            scopeFilter: _scopeFilter,
+            typeFilters: typeFilters,
+            scopeFilters: scopeFilters,
+            onTypeChange: (value) => setState(() => _typeFilter = value),
+            onScopeChange: (value) => setState(() => _scopeFilter = value),
+          ),
+          const SizedBox(height: 16),
+          Expanded(child: _EffectsTimeline(entries: filtered)),
+        ],
+      ),
     );
   }
 }
@@ -1256,12 +2658,16 @@ class _EffectsHeader extends StatelessWidget {
   const _EffectsHeader({
     required this.typeFilter,
     required this.scopeFilter,
+    required this.typeFilters,
+    required this.scopeFilters,
     required this.onTypeChange,
     required this.onScopeChange,
   });
 
   final String typeFilter;
   final String scopeFilter;
+  final List<String> typeFilters;
+  final List<String> scopeFilters;
   final ValueChanged<String> onTypeChange;
   final ValueChanged<String> onScopeChange;
 
@@ -1303,7 +2709,7 @@ class _EffectsHeader extends StatelessWidget {
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             Text('Type', style: textTheme.labelMedium),
-            for (final filter in _effectTypeFilters)
+            for (final filter in typeFilters)
               _FilterChip(
                 label: filter,
                 isSelected: filter == typeFilter,
@@ -1318,7 +2724,7 @@ class _EffectsHeader extends StatelessWidget {
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             Text('Scope', style: textTheme.labelMedium),
-            for (final filter in _effectScopeFilters)
+            for (final filter in scopeFilters)
               _FilterChip(
                 label: filter,
                 isSelected: filter == scopeFilter,
@@ -1334,7 +2740,7 @@ class _EffectsHeader extends StatelessWidget {
 class _EffectsTimeline extends StatelessWidget {
   const _EffectsTimeline({required this.entries});
 
-  final List<_EffectEntry> entries;
+  final List<OrefEffect> entries;
 
   @override
   Widget build(BuildContext context) {
@@ -1376,7 +2782,7 @@ class _EffectsTimeline extends StatelessWidget {
 class _EffectRow extends StatelessWidget {
   const _EffectRow({required this.entry});
 
-  final _EffectEntry entry;
+  final OrefEffect entry;
 
   @override
   Widget build(BuildContext context) {
@@ -1409,7 +2815,7 @@ class _EffectRow extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        entry.name,
+                        entry.label,
                         style: Theme.of(context).textTheme.titleSmall,
                       ),
                     ),
@@ -1418,7 +2824,9 @@ class _EffectRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  entry.description,
+                  entry.note.isEmpty
+                      ? 'Last run ${_formatAge(entry.updatedAt)}'
+                      : entry.note,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: colorScheme.onSurface.withOpacity(0.6),
                   ),
@@ -1455,13 +2863,13 @@ class _EffectRow extends StatelessWidget {
                         horizontal: 10,
                         vertical: 6,
                       ),
-                      color: entry.durationMs > 16
+                      color: entry.lastDurationMs > 16
                           ? OrefPalette.coral.withOpacity(0.2)
                           : OrefPalette.lime.withOpacity(0.2),
-                      child: Text('${entry.durationMs}ms'),
+                      child: Text('${entry.lastDurationMs}ms'),
                     ),
                     Text(
-                      entry.lastRun,
+                      _formatAge(entry.updatedAt),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: colorScheme.onSurface.withOpacity(0.6),
                       ),
@@ -1555,13 +2963,15 @@ class _SignalsHeader extends StatelessWidget {
 class _SignalList extends StatelessWidget {
   const _SignalList({
     required this.entries,
-    required this.selected,
+    required this.selectedId,
+    required this.isCompact,
     required this.onSelect,
   });
 
-  final List<_SignalEntry> entries;
-  final _SignalEntry? selected;
-  final ValueChanged<_SignalEntry> onSelect;
+  final List<OrefSignal> entries;
+  final int? selectedId;
+  final bool isCompact;
+  final ValueChanged<OrefSignal> onSelect;
 
   @override
   Widget build(BuildContext context) {
@@ -1569,7 +2979,7 @@ class _SignalList extends StatelessWidget {
       padding: const EdgeInsets.all(0),
       child: Column(
         children: [
-          const _SignalTableHeader(),
+          if (!isCompact) const _SignalTableHeader(),
           Expanded(
             child: entries.isEmpty
                 ? Center(
@@ -1584,10 +2994,11 @@ class _SignalList extends StatelessWidget {
                     separatorBuilder: (_, __) => const SizedBox(height: 8),
                     itemBuilder: (context, index) {
                       final entry = entries[index];
-                      final isSelected = selected?.id == entry.id;
+                      final isSelected = selectedId == entry.id;
                       return _SignalRow(
                         entry: entry,
                         isSelected: isSelected,
+                        isCompact: isCompact,
                         onTap: () => onSelect(entry),
                       );
                     },
@@ -1635,11 +3046,13 @@ class _SignalRow extends StatelessWidget {
   const _SignalRow({
     required this.entry,
     required this.isSelected,
+    required this.isCompact,
     required this.onTap,
   });
 
-  final _SignalEntry entry;
+  final OrefSignal entry;
   final bool isSelected;
+  final bool isCompact;
   final VoidCallback onTap;
 
   @override
@@ -1666,46 +3079,93 @@ class _SignalRow extends StatelessWidget {
                   : colorScheme.onSurface.withOpacity(0.08),
             ),
           ),
-          child: Row(
-            children: [
-              Expanded(
-                flex: 3,
-                child: Column(
+          child: isCompact
+              ? Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(entry.name),
-                    const SizedBox(height: 4),
+                    Text(entry.label),
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
+                      children: [
+                        _GlassPill(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          child: Text(entry.type),
+                        ),
+                        _StatusBadge(status: entry.status),
+                        _GlassPill(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          child: Text(_formatAge(entry.updatedAt)),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
                     Text(
-                      entry.owner,
+                      entry.value,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurface.withOpacity(0.6),
+                        color: colorScheme.onSurface.withOpacity(0.7),
+                      ),
+                    ),
+                  ],
+                )
+              : Row(
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(entry.label),
+                          const SizedBox(height: 4),
+                          Text(
+                            entry.owner,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: colorScheme.onSurface.withOpacity(0.6),
+                                ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        entry.value,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        entry.type,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurface.withOpacity(0.7),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: _StatusBadge(status: entry.status),
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        _formatAge(entry.updatedAt),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurface.withOpacity(0.6),
+                        ),
                       ),
                     ),
                   ],
                 ),
-              ),
-              Expanded(flex: 2, child: Text(entry.value)),
-              Expanded(
-                flex: 2,
-                child: Text(
-                  entry.type,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurface.withOpacity(0.7),
-                  ),
-                ),
-              ),
-              Expanded(flex: 2, child: _StatusBadge(status: entry.status)),
-              Expanded(
-                flex: 2,
-                child: Text(
-                  entry.updated,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurface.withOpacity(0.6),
-                  ),
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );
@@ -1715,7 +3175,7 @@ class _SignalRow extends StatelessWidget {
 class _SignalDetail extends StatelessWidget {
   const _SignalDetail({required this.entry});
 
-  final _SignalEntry? entry;
+  final OrefSignal? entry;
 
   @override
   Widget build(BuildContext context) {
@@ -1739,7 +3199,7 @@ class _SignalDetail extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(entry!.name, style: textTheme.titleMedium),
+            Text(entry!.label, style: textTheme.titleMedium),
             const SizedBox(height: 8),
             _StatusBadge(status: entry!.status),
             const SizedBox(height: 16),
@@ -1747,7 +3207,7 @@ class _SignalDetail extends StatelessWidget {
             _InfoRow(label: 'Scope', value: entry!.scope),
             _InfoRow(label: 'Type', value: entry!.type),
             _InfoRow(label: 'Value', value: entry!.value),
-            _InfoRow(label: 'Updated', value: entry!.updated),
+            _InfoRow(label: 'Updated', value: _formatAge(entry!.updatedAt)),
             _InfoRow(label: 'Listeners', value: entry!.listeners.toString()),
             _InfoRow(label: 'Deps', value: entry!.dependencies.toString()),
             const SizedBox(height: 12),
@@ -2323,9 +3783,9 @@ class _Sparkline extends StatelessWidget {
 }
 
 class _TimelineRow extends StatelessWidget {
-  const _TimelineRow({required this.item});
+  const _TimelineRow({required this.event});
 
-  final _ActivityItem item;
+  final OrefTimelineEvent event;
 
   @override
   Widget build(BuildContext context) {
@@ -2339,7 +3799,7 @@ class _TimelineRow extends StatelessWidget {
             height: 10,
             margin: const EdgeInsets.only(top: 6),
             decoration: BoxDecoration(
-              color: item.color,
+              color: _timelineColors[event.type] ?? OrefPalette.teal,
               shape: BoxShape.circle,
             ),
           ),
@@ -2348,9 +3808,12 @@ class _TimelineRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(item.title, style: Theme.of(context).textTheme.bodyMedium),
                 Text(
-                  item.subtitle,
+                  event.title,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                Text(
+                  '${event.detail} · ${_formatAge(event.timestamp)}',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: Theme.of(
                       context,
@@ -2539,6 +4002,111 @@ class _OutlineButton extends StatelessWidget {
   }
 }
 
+class _ConnectionGuard extends StatelessWidget {
+  const _ConnectionGuard({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = OrefDevToolsScope.of(context);
+    if (!controller.connected) {
+      return const _PanelStateCard(
+        icon: Icons.link_off_rounded,
+        title: 'No app connected',
+        message: 'Run your Flutter app and open DevTools to connect.',
+      );
+    }
+    if (controller.isUnavailable) {
+      return const _PanelStateCard(
+        icon: Icons.extension_off_rounded,
+        title: 'DevTools not enabled',
+        message:
+            'Enable Oref DevTools by upgrading to the latest package and '
+            'running with debug instrumentation.',
+      );
+    }
+    if (controller.isConnecting && controller.snapshot == null) {
+      return const _PanelLoadingCard();
+    }
+    if (controller.hasError && controller.snapshot == null) {
+      return _PanelStateCard(
+        icon: Icons.error_outline_rounded,
+        title: 'Connection error',
+        message: controller.errorMessage ?? 'Unable to reach the VM service.',
+      );
+    }
+    return child;
+  }
+}
+
+class _PanelStateCard extends StatelessWidget {
+  const _PanelStateCard({
+    required this.icon,
+    required this.title,
+    required this.message,
+  });
+
+  final IconData icon;
+  final String title;
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: _GlassCard(
+        padding: const EdgeInsets.all(24),
+        width: 420,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 48, color: OrefPalette.coral),
+            const SizedBox(height: 12),
+            Text(title, style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PanelLoadingCard extends StatelessWidget {
+  const _PanelLoadingCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: _GlassCard(
+        padding: const EdgeInsets.all(24),
+        width: 320,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(
+              width: 36,
+              height: 36,
+              child: CircularProgressIndicator(strokeWidth: 2.5),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Connecting to Oref diagnostics...',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _NavItemData {
   const _NavItemData(this.label, this.icon);
 
@@ -2629,65 +4197,6 @@ const _panelInfo = {
   ),
 };
 
-class _ActivityItem {
-  const _ActivityItem(this.title, this.subtitle, this.color);
-
-  final String title;
-  final String subtitle;
-  final Color color;
-}
-
-const _activityItems = [
-  _ActivityItem(
-    'Effect #18 re-run',
-    'cartTotal recomputed • 120ms ago',
-    OrefPalette.teal,
-  ),
-  _ActivityItem(
-    'Batch write',
-    'orderItems updated (6 signals)',
-    OrefPalette.indigo,
-  ),
-  _ActivityItem(
-    'Computed invalidated',
-    'checkoutSummary dirty',
-    OrefPalette.coral,
-  ),
-  _ActivityItem(
-    'Collection mutation',
-    'ReactiveList.append x3',
-    OrefPalette.pink,
-  ),
-];
-
-class _SignalEntry {
-  const _SignalEntry({
-    required this.id,
-    required this.name,
-    required this.value,
-    required this.type,
-    required this.status,
-    required this.owner,
-    required this.updated,
-    required this.scope,
-    required this.listeners,
-    required this.dependencies,
-    required this.note,
-  });
-
-  final String id;
-  final String name;
-  final String value;
-  final String type;
-  final String status;
-  final String owner;
-  final String updated;
-  final String scope;
-  final int listeners;
-  final int dependencies;
-  final String note;
-}
-
 class _StatusStyle {
   const _StatusStyle(this.color);
 
@@ -2702,321 +4211,79 @@ const _statusStyles = {
   'Disposed': _StatusStyle(Color(0xFF8B97A8)),
 };
 
-const _signalEntries = [
-  _SignalEntry(
-    id: 'sig-01',
-    name: 'cartTotal',
-    value: '\$128.40',
-    type: 'Signal<double>',
-    status: 'Active',
-    owner: 'CheckoutViewModel',
-    updated: '80ms ago',
-    scope: 'CheckoutFlow',
-    listeners: 3,
-    dependencies: 4,
-    note: 'Derived from item subtotals + discount.',
-  ),
-  _SignalEntry(
-    id: 'sig-02',
-    name: 'userLocale',
-    value: 'en_US',
-    type: 'Signal<String>',
-    status: 'Active',
-    owner: 'AppSettings',
-    updated: '2m ago',
-    scope: 'Root',
-    listeners: 6,
-    dependencies: 0,
-    note: 'Persisted preference synchronized on boot.',
-  ),
-  _SignalEntry(
-    id: 'sig-03',
-    name: 'cartItemCount',
-    value: '5',
-    type: 'Signal<int>',
-    status: 'Dirty',
-    owner: 'CartStore',
-    updated: '120ms ago',
-    scope: 'CartFlow',
-    listeners: 5,
-    dependencies: 2,
-    note: 'Pending recompute after last batch.',
-  ),
-  _SignalEntry(
-    id: 'sig-04',
-    name: 'shippingQuote',
-    value: '\$12.90',
-    type: 'Computed<double>',
-    status: 'Active',
-    owner: 'ShippingService',
-    updated: '12s ago',
-    scope: 'CheckoutFlow',
-    listeners: 2,
-    dependencies: 3,
-    note: 'Computed from address + rate table.',
-  ),
-  _SignalEntry(
-    id: 'sig-05',
-    name: 'promoBannerVisible',
-    value: 'false',
-    type: 'Signal<bool>',
-    status: 'Disposed',
-    owner: 'MarketingOverlay',
-    updated: '18m ago',
-    scope: 'PromoCampaign',
-    listeners: 0,
-    dependencies: 1,
-    note: 'Disposed after campaign ended.',
-  ),
-  _SignalEntry(
-    id: 'sig-06',
-    name: 'formValidationState',
-    value: 'valid',
-    type: 'Signal<FormState>',
-    status: 'Active',
-    owner: 'CheckoutForm',
-    updated: '260ms ago',
-    scope: 'CheckoutFlow',
-    listeners: 4,
-    dependencies: 5,
-    note: 'Last validation run passed.',
-  ),
-  _SignalEntry(
-    id: 'sig-07',
-    name: 'paymentMethod',
-    value: 'Visa •••• 4242',
-    type: 'Signal<PaymentCard>',
-    status: 'Active',
-    owner: 'PaymentStore',
-    updated: '6m ago',
-    scope: 'CheckoutFlow',
-    listeners: 3,
-    dependencies: 1,
-    note: 'Default card selected for this session.',
-  ),
-  _SignalEntry(
-    id: 'sig-08',
-    name: 'syncQueueSize',
-    value: '0',
-    type: 'Signal<int>',
-    status: 'Active',
-    owner: 'SyncManager',
-    updated: '1s ago',
-    scope: 'Background',
-    listeners: 1,
-    dependencies: 0,
-    note: 'Queue drained successfully.',
-  ),
-];
-
-class _EffectEntry {
-  const _EffectEntry({
-    required this.name,
-    required this.description,
-    required this.type,
-    required this.scope,
-    required this.lastRun,
-    required this.durationMs,
-    required this.runs,
-    required this.isHot,
-  });
-
-  final String name;
-  final String description;
-  final String type;
-  final String scope;
-  final String lastRun;
-  final int durationMs;
-  final int runs;
-  final bool isHot;
-}
-
-const _effectTypeFilters = ['All', 'UI', 'Network', 'Persist', 'Analytics'];
-const _effectScopeFilters = ['All', 'CheckoutFlow', 'AppShell', 'Background'];
-
 const _effectColors = {
   'UI': OrefPalette.teal,
   'Network': OrefPalette.indigo,
   'Persist': OrefPalette.coral,
   'Analytics': OrefPalette.pink,
+  'Effect': OrefPalette.teal,
 };
-
-const _effectEntries = [
-  _EffectEntry(
-    name: 'syncCartTotals',
-    description: 'Recompute totals after cart mutation batch.',
-    type: 'UI',
-    scope: 'CheckoutFlow',
-    lastRun: '120ms ago',
-    durationMs: 6,
-    runs: 12,
-    isHot: false,
-  ),
-  _EffectEntry(
-    name: 'refreshShippingRates',
-    description: 'Fetch shipping quote from remote service.',
-    type: 'Network',
-    scope: 'CheckoutFlow',
-    lastRun: '320ms ago',
-    durationMs: 42,
-    runs: 5,
-    isHot: true,
-  ),
-  _EffectEntry(
-    name: 'persistPaymentMethod',
-    description: 'Write selected payment method to secure storage.',
-    type: 'Persist',
-    scope: 'AppShell',
-    lastRun: '2m ago',
-    durationMs: 18,
-    runs: 3,
-    isHot: false,
-  ),
-  _EffectEntry(
-    name: 'logCheckoutStep',
-    description: 'Send analytics event for funnel tracking.',
-    type: 'Analytics',
-    scope: 'CheckoutFlow',
-    lastRun: '5s ago',
-    durationMs: 12,
-    runs: 9,
-    isHot: false,
-  ),
-  _EffectEntry(
-    name: 'flushSyncQueue',
-    description: 'Persist background sync queue to disk.',
-    type: 'Persist',
-    scope: 'Background',
-    lastRun: '12s ago',
-    durationMs: 28,
-    runs: 2,
-    isHot: true,
-  ),
-  _EffectEntry(
-    name: 'hydrateProfile',
-    description: 'Fetch profile metadata for the session.',
-    type: 'Network',
-    scope: 'AppShell',
-    lastRun: '8m ago',
-    durationMs: 36,
-    runs: 4,
-    isHot: false,
-  ),
-];
-
-enum _DeltaKind { add, remove, update }
-
-class _CollectionDelta {
-  const _CollectionDelta({required this.label, required this.kind});
-
-  final String label;
-  final _DeltaKind kind;
-}
-
-class _CollectionEntry {
-  const _CollectionEntry({
-    required this.name,
-    required this.type,
-    required this.operation,
-    required this.owner,
-    required this.scope,
-    required this.updated,
-    required this.deltas,
-    required this.note,
-  });
-
-  final String name;
-  final String type;
-  final String operation;
-  final String owner;
-  final String scope;
-  final String updated;
-  final List<_CollectionDelta> deltas;
-  final String note;
-}
-
-const _collectionTypeFilters = ['All', 'List', 'Map', 'Set'];
-const _collectionOpFilters = ['All', 'Add', 'Remove', 'Replace'];
 
 const _collectionOpColors = {
   'Add': OrefPalette.lime,
   'Remove': OrefPalette.coral,
   'Replace': OrefPalette.indigo,
+  'Clear': OrefPalette.pink,
+  'Resize': OrefPalette.indigo,
 };
 
 const _deltaStyles = {
-  _DeltaKind.add: OrefPalette.lime,
-  _DeltaKind.remove: OrefPalette.coral,
-  _DeltaKind.update: OrefPalette.indigo,
+  'add': OrefPalette.lime,
+  'remove': OrefPalette.coral,
+  'update': OrefPalette.indigo,
 };
 
-const _collectionEntries = [
-  _CollectionEntry(
-    name: 'cartItems',
-    type: 'List',
-    operation: 'Add',
-    owner: 'CartStore',
-    scope: 'CheckoutFlow',
-    updated: '90ms ago',
-    deltas: [
-      _CollectionDelta(label: 'SKU-421 x1', kind: _DeltaKind.add),
-      _CollectionDelta(label: 'SKU-008 x2', kind: _DeltaKind.add),
-    ],
-    note: 'Batch append triggered by add-to-cart.',
-  ),
-  _CollectionEntry(
-    name: 'favoriteIds',
-    type: 'Set',
-    operation: 'Remove',
-    owner: 'FavoritesStore',
-    scope: 'AppShell',
-    updated: '2m ago',
-    deltas: [_CollectionDelta(label: 'item_882', kind: _DeltaKind.remove)],
-    note: 'User removed a saved item.',
-  ),
-  _CollectionEntry(
-    name: 'shippingRates',
-    type: 'Map',
-    operation: 'Replace',
-    owner: 'ShippingService',
-    scope: 'CheckoutFlow',
-    updated: '420ms ago',
-    deltas: [
-      _CollectionDelta(label: 'CA: 12.90 → 10.50', kind: _DeltaKind.update),
-      _CollectionDelta(label: 'NY: 14.20 → 13.10', kind: _DeltaKind.update),
-    ],
-    note: 'Remote quote refresh.',
-  ),
-  _CollectionEntry(
-    name: 'activeCoupons',
-    type: 'Set',
-    operation: 'Add',
-    owner: 'PromoEngine',
-    scope: 'CheckoutFlow',
-    updated: '4s ago',
-    deltas: [_CollectionDelta(label: 'SAVE10', kind: _DeltaKind.add)],
-    note: 'Promo banner applied.',
-  ),
-  _CollectionEntry(
-    name: 'recentSearches',
-    type: 'List',
-    operation: 'Remove',
-    owner: 'SearchStore',
-    scope: 'AppShell',
-    updated: '18m ago',
-    deltas: [_CollectionDelta(label: '"wallet case"', kind: _DeltaKind.remove)],
-    note: 'Trimmed for privacy.',
-  ),
-  _CollectionEntry(
-    name: 'profileCache',
-    type: 'Map',
-    operation: 'Replace',
-    owner: 'ProfileService',
-    scope: 'Background',
-    updated: '32s ago',
-    deltas: [
-      _CollectionDelta(label: 'user_109: v12 → v13', kind: _DeltaKind.update),
-    ],
-    note: 'Background sync refresh.',
-  ),
-];
+const _timelineColors = {
+  'signal': OrefPalette.teal,
+  'computed': OrefPalette.indigo,
+  'effect': OrefPalette.pink,
+  'collection': OrefPalette.coral,
+  'batch': OrefPalette.lime,
+};
+
+String _formatAge(int? timestamp) {
+  if (timestamp == null || timestamp == 0) return '—';
+  final now = DateTime.now().toUtc().millisecondsSinceEpoch;
+  final diff = now - timestamp;
+  if (diff < 0) return 'just now';
+  if (diff < 1000) return '${diff}ms ago';
+  final seconds = diff ~/ 1000;
+  if (seconds < 60) return '${seconds}s ago';
+  final minutes = seconds ~/ 60;
+  if (minutes < 60) return '${minutes}m ago';
+  final hours = minutes ~/ 60;
+  if (hours < 24) return '${hours}h ago';
+  final days = hours ~/ 24;
+  return '${days}d ago';
+}
+
+String _formatCount(int? value) {
+  if (value == null) return '—';
+  return value.toString();
+}
+
+String _formatDelta(int? value, {String suffix = ''}) {
+  if (value == null) return '—';
+  if (value == 0) return 'idle';
+  final label = value > 0 ? '+$value' : value.toString();
+  return suffix.isEmpty ? label : '$label $suffix';
+}
+
+List<String> _buildFilterOptions(Iterable<String> values) {
+  final unique = <String>{};
+  for (final value in values) {
+    final trimmed = value.trim();
+    if (trimmed.isNotEmpty) unique.add(trimmed);
+  }
+  final sorted = unique.toList()..sort();
+  return ['All', ...sorted];
+}
+
+extension _IterableX<T> on Iterable<T> {
+  T? firstWhereOrNull(bool Function(T element) test) {
+    for (final element in this) {
+      if (test(element)) return element;
+    }
+    return null;
+  }
+}
