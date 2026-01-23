@@ -8,6 +8,10 @@
 - Add `onMounted` widget lifecycle hook to run once after the first frame.
 - Add `onUnmounted` widget lifecycle hook to run once when a widget unmounts.
 
+### Breaking Changes
+
+- Remove `registerOrefDevToolsServiceExtensions`; DevTools auto-registers after the first signal/computed/effect in debug mode.
+
 ## 2.6.1
 
 ### Bug Fixes

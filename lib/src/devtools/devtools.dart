@@ -15,10 +15,6 @@ bool _isRunningInTest() {
       test_env.isFlutterTestEnv;
 }
 
-void registerOrefDevToolsServiceExtensions() {
-  OrefDevTools._instance._ensureInitialized();
-}
-
 void configureOrefDevTools({
   bool? enabled,
   int? sampleIntervalMs,
