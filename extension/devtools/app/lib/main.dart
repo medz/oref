@@ -1197,76 +1197,59 @@ class _SignalsPanelState extends State<_SignalsPanel> {
   @override
   Widget build(BuildContext context) {
     return _ConnectionGuard(
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final controller = OrefDevToolsScope.of(context);
-          final entries = controller.snapshot?.signals ?? const <OrefSignal>[];
-          final isSplit = constraints.maxWidth >= 980;
-          final filtered = _filterSignals(entries);
-          final selected =
-              entries.firstWhereOrNull((entry) => entry.id == _selectedId) ??
-              (entries.isNotEmpty ? entries.first : null);
+      child: _PanelScrollView(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final controller = OrefDevToolsScope.of(context);
+            final entries =
+                controller.snapshot?.signals ?? const <OrefSignal>[];
+            final isSplit = constraints.maxWidth >= 980;
+            final filtered = _filterSignals(entries);
+            final selected =
+                entries.firstWhereOrNull((entry) => entry.id == _selectedId) ??
+                (entries.isNotEmpty ? entries.first : null);
+            final list = _SignalList(
+              entries: filtered,
+              selectedId: selected?.id,
+              isCompact: !isSplit,
+              onSelect: (entry) => setState(() => _selectedId = entry.id),
+            );
+            final detail = _SignalDetail(entry: selected);
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _SignalsHeader(
-                controller: _searchController,
-                selectedFilter: _statusFilter,
-                onFilterChange: (value) =>
-                    setState(() => _statusFilter = value),
-                totalCount: entries.length,
-                filteredCount: filtered.length,
-                onExport: () => _exportData(
-                  context,
-                  'signals',
-                  filtered.map((entry) => entry.toJson()).toList(),
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _SignalsHeader(
+                  controller: _searchController,
+                  selectedFilter: _statusFilter,
+                  onFilterChange: (value) =>
+                      setState(() => _statusFilter = value),
+                  totalCount: entries.length,
+                  filteredCount: filtered.length,
+                  onExport: () => _exportData(
+                    context,
+                    'signals',
+                    filtered.map((entry) => entry.toJson()).toList(),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              Expanded(
-                child: isSplit
+                const SizedBox(height: 16),
+                isSplit
                     ? Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            flex: 3,
-                            child: _SignalList(
-                              entries: filtered,
-                              selectedId: selected?.id,
-                              isCompact: false,
-                              onSelect: (entry) =>
-                                  setState(() => _selectedId = entry.id),
-                            ),
-                          ),
+                          Expanded(flex: 3, child: list),
                           const SizedBox(width: 20),
-                          SizedBox(
-                            width: 320,
-                            child: _SignalDetail(entry: selected),
-                          ),
+                          SizedBox(width: 320, child: detail),
                         ],
                       )
                     : Column(
-                        children: [
-                          Expanded(
-                            child: _SignalList(
-                              entries: filtered,
-                              selectedId: selected?.id,
-                              isCompact: true,
-                              onSelect: (entry) =>
-                                  setState(() => _selectedId = entry.id),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          SizedBox(
-                            height: 220,
-                            child: _SignalDetail(entry: selected),
-                          ),
-                        ],
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [list, const SizedBox(height: 16), detail],
                       ),
-              ),
-            ],
-          );
-        },
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -1310,77 +1293,59 @@ class _ComputedPanelState extends State<_ComputedPanel> {
   @override
   Widget build(BuildContext context) {
     return _ConnectionGuard(
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final controller = OrefDevToolsScope.of(context);
-          final entries =
-              controller.snapshot?.computed ?? const <OrefComputed>[];
-          final isSplit = constraints.maxWidth >= 980;
-          final filtered = _filterComputed(entries);
-          final selected =
-              entries.firstWhereOrNull((entry) => entry.id == _selectedId) ??
-              (entries.isNotEmpty ? entries.first : null);
+      child: _PanelScrollView(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final controller = OrefDevToolsScope.of(context);
+            final entries =
+                controller.snapshot?.computed ?? const <OrefComputed>[];
+            final isSplit = constraints.maxWidth >= 980;
+            final filtered = _filterComputed(entries);
+            final selected =
+                entries.firstWhereOrNull((entry) => entry.id == _selectedId) ??
+                (entries.isNotEmpty ? entries.first : null);
+            final list = _ComputedList(
+              entries: filtered,
+              selectedId: selected?.id,
+              isCompact: !isSplit,
+              onSelect: (entry) => setState(() => _selectedId = entry.id),
+            );
+            final detail = _ComputedDetail(entry: selected);
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _ComputedHeader(
-                controller: _searchController,
-                selectedFilter: _statusFilter,
-                onFilterChange: (value) =>
-                    setState(() => _statusFilter = value),
-                totalCount: entries.length,
-                filteredCount: filtered.length,
-                onExport: () => _exportData(
-                  context,
-                  'computed',
-                  filtered.map((entry) => entry.toJson()).toList(),
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _ComputedHeader(
+                  controller: _searchController,
+                  selectedFilter: _statusFilter,
+                  onFilterChange: (value) =>
+                      setState(() => _statusFilter = value),
+                  totalCount: entries.length,
+                  filteredCount: filtered.length,
+                  onExport: () => _exportData(
+                    context,
+                    'computed',
+                    filtered.map((entry) => entry.toJson()).toList(),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              Expanded(
-                child: isSplit
+                const SizedBox(height: 16),
+                isSplit
                     ? Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            flex: 3,
-                            child: _ComputedList(
-                              entries: filtered,
-                              selectedId: selected?.id,
-                              isCompact: false,
-                              onSelect: (entry) =>
-                                  setState(() => _selectedId = entry.id),
-                            ),
-                          ),
+                          Expanded(flex: 3, child: list),
                           const SizedBox(width: 20),
-                          SizedBox(
-                            width: 320,
-                            child: _ComputedDetail(entry: selected),
-                          ),
+                          SizedBox(width: 320, child: detail),
                         ],
                       )
                     : Column(
-                        children: [
-                          Expanded(
-                            child: _ComputedList(
-                              entries: filtered,
-                              selectedId: selected?.id,
-                              isCompact: true,
-                              onSelect: (entry) =>
-                                  setState(() => _selectedId = entry.id),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          SizedBox(
-                            height: 220,
-                            child: _ComputedDetail(entry: selected),
-                          ),
-                        ],
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [list, const SizedBox(height: 16), detail],
                       ),
-              ),
-            ],
-          );
-        },
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -1492,30 +1457,31 @@ class _ComputedList extends StatelessWidget {
       child: Column(
         children: [
           if (!isCompact) const _ComputedTableHeader(),
-          Expanded(
-            child: entries.isEmpty
-                ? Center(
-                    child: Text(
-                      'No computed values match the current filter.',
-                      style: Theme.of(context).textTheme.bodyMedium,
+          if (entries.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'No computed values match the current filter.',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                children: [
+                  for (var index = 0; index < entries.length; index++) ...[
+                    _ComputedRow(
+                      entry: entries[index],
+                      isSelected: selectedId == entries[index].id,
+                      isCompact: isCompact,
+                      onTap: () => onSelect(entries[index]),
                     ),
-                  )
-                : ListView.separated(
-                    padding: const EdgeInsets.all(12),
-                    itemCount: entries.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
-                    itemBuilder: (context, index) {
-                      final entry = entries[index];
-                      final isSelected = selectedId == entry.id;
-                      return _ComputedRow(
-                        entry: entry,
-                        isSelected: isSelected,
-                        isCompact: isCompact,
-                        onTap: () => onSelect(entry),
-                      );
-                    },
-                  ),
-          ),
+                    if (index != entries.length - 1) const SizedBox(height: 8),
+                  ],
+                ],
+              ),
+            ),
         ],
       ),
     );
@@ -1699,36 +1665,32 @@ class _ComputedDetail extends StatelessWidget {
 
     return _GlassCard(
       padding: const EdgeInsets.all(20),
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(entry!.label, style: textTheme.titleMedium),
-            const SizedBox(height: 8),
-            _StatusBadge(status: entry!.status),
-            const SizedBox(height: 16),
-            _InfoRow(label: 'Owner', value: entry!.owner),
-            _InfoRow(label: 'Scope', value: entry!.scope),
-            _InfoRow(label: 'Type', value: entry!.type),
-            _InfoRow(label: 'Value', value: entry!.value),
-            _InfoRow(label: 'Updated', value: _formatAge(entry!.updatedAt)),
-            _InfoRow(label: 'Runs', value: entry!.runs.toString()),
-            _InfoRow(label: 'Last run', value: '${entry!.lastDurationMs}ms'),
-            _InfoRow(label: 'Listeners', value: entry!.listeners.toString()),
-            _InfoRow(label: 'Deps', value: entry!.dependencies.toString()),
-            if (entry!.note.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              Text(
-                entry!.note,
-                style: textTheme.bodySmall?.copyWith(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withOpacity(0.6),
-                ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(entry!.label, style: textTheme.titleMedium),
+          const SizedBox(height: 8),
+          _StatusBadge(status: entry!.status),
+          const SizedBox(height: 16),
+          _InfoRow(label: 'Owner', value: entry!.owner),
+          _InfoRow(label: 'Scope', value: entry!.scope),
+          _InfoRow(label: 'Type', value: entry!.type),
+          _InfoRow(label: 'Value', value: entry!.value),
+          _InfoRow(label: 'Updated', value: _formatAge(entry!.updatedAt)),
+          _InfoRow(label: 'Runs', value: entry!.runs.toString()),
+          _InfoRow(label: 'Last run', value: '${entry!.lastDurationMs}ms'),
+          _InfoRow(label: 'Listeners', value: entry!.listeners.toString()),
+          _InfoRow(label: 'Deps', value: entry!.dependencies.toString()),
+          if (entry!.note.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              entry!.note,
+              style: textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
               ),
-            ],
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -1784,38 +1746,35 @@ class _CollectionsPanelState extends State<_CollectionsPanel> {
     }).toList();
 
     return _ConnectionGuard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _CollectionsHeader(
-            controller: _searchController,
-            typeFilter: _typeFilter,
-            opFilter: _opFilter,
-            typeFilters: typeFilters,
-            opFilters: opFilters,
-            onTypeChange: (value) => setState(() => _typeFilter = value),
-            onOpChange: (value) => setState(() => _opFilter = value),
-            totalCount: entries.length,
-            filteredCount: filtered.length,
-            onExport: () => _exportData(
-              context,
-              'collections',
-              filtered.map((entry) => entry.toJson()).toList(),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final isCompact = constraints.maxWidth < 860;
-                return _CollectionsList(
-                  entries: filtered,
-                  isCompact: isCompact,
-                );
-              },
-            ),
-          ),
-        ],
+      child: _PanelScrollView(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isCompact = constraints.maxWidth < 860;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _CollectionsHeader(
+                  controller: _searchController,
+                  typeFilter: _typeFilter,
+                  opFilter: _opFilter,
+                  typeFilters: typeFilters,
+                  opFilters: opFilters,
+                  onTypeChange: (value) => setState(() => _typeFilter = value),
+                  onOpChange: (value) => setState(() => _opFilter = value),
+                  totalCount: entries.length,
+                  filteredCount: filtered.length,
+                  onExport: () => _exportData(
+                    context,
+                    'collections',
+                    filtered.map((entry) => entry.toJson()).toList(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _CollectionsList(entries: filtered, isCompact: isCompact),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -1840,83 +1799,90 @@ class _BatchingPanel extends StatelessWidget {
               .round();
 
     return _ConnectionGuard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(
-                'Batching',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(width: 12),
-              const _GlassPill(
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                child: Text('Live'),
-              ),
-              const Spacer(),
-              _GlassPill(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
+      child: _PanelScrollView(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isCompact = constraints.maxWidth < 860;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'Batching',
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                    const SizedBox(width: 12),
+                    const _GlassPill(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      child: Text('Live'),
+                    ),
+                    const Spacer(),
+                    _GlassPill(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      child: Text('${batches.length} batches'),
+                    ),
+                    const SizedBox(width: 12),
+                    _ActionPill(
+                      label: 'Export',
+                      icon: Icons.download_rounded,
+                      onTap: () => _exportData(
+                        context,
+                        'batches',
+                        batches.map((batch) => batch.toJson()).toList(),
+                      ),
+                    ),
+                  ],
                 ),
-                child: Text('${batches.length} batches'),
-              ),
-              const SizedBox(width: 12),
-              _ActionPill(
-                label: 'Export',
-                icon: Icons.download_rounded,
-                onTap: () => _exportData(
-                  context,
-                  'batches',
-                  batches.map((batch) => batch.toJson()).toList(),
+                const SizedBox(height: 8),
+                Text(
+                  'Inspect batched writes and flush timing.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.65),
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Inspect batched writes and flush timing.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.65),
-            ),
-          ),
-          const SizedBox(height: 16),
-          _AdaptiveWrap(
-            children: [
-              _MetricTile(
-                label: 'Batches',
-                value: _formatCount(batches.length),
-                trend: _formatDelta(totalWrites, suffix: 'writes'),
-                accent: OrefPalette.coral,
-                icon: Icons.layers_rounded,
-              ),
-              _MetricTile(
-                label: 'Avg duration',
-                value: '${avgDuration}ms',
-                trend: latest == null ? '—' : _formatAge(latest.endedAt),
-                accent: OrefPalette.indigo,
-                icon: Icons.timer_rounded,
-              ),
-              _MetricTile(
-                label: 'Last batch',
-                value: latest == null ? '—' : '${latest.durationMs}ms',
-                trend: latest == null ? '—' : '${latest.writeCount} writes',
-                accent: OrefPalette.teal,
-                icon: Icons.bolt_rounded,
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final isCompact = constraints.maxWidth < 860;
-                return _BatchList(batches: batches, isCompact: isCompact);
-              },
-            ),
-          ),
-        ],
+                const SizedBox(height: 16),
+                _AdaptiveWrap(
+                  children: [
+                    _MetricTile(
+                      label: 'Batches',
+                      value: _formatCount(batches.length),
+                      trend: _formatDelta(totalWrites, suffix: 'writes'),
+                      accent: OrefPalette.coral,
+                      icon: Icons.layers_rounded,
+                    ),
+                    _MetricTile(
+                      label: 'Avg duration',
+                      value: '${avgDuration}ms',
+                      trend: latest == null ? '—' : _formatAge(latest.endedAt),
+                      accent: OrefPalette.indigo,
+                      icon: Icons.timer_rounded,
+                    ),
+                    _MetricTile(
+                      label: 'Last batch',
+                      value: latest == null ? '—' : '${latest.durationMs}ms',
+                      trend: latest == null
+                          ? '—'
+                          : '${latest.writeCount} writes',
+                      accent: OrefPalette.teal,
+                      icon: Icons.bolt_rounded,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _BatchList(batches: batches, isCompact: isCompact),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -1935,24 +1901,26 @@ class _BatchList extends StatelessWidget {
       child: Column(
         children: [
           if (!isCompact) const _BatchHeaderRow(),
-          Expanded(
-            child: batches.isEmpty
-                ? Center(
-                    child: Text(
-                      'No batches recorded yet.',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  )
-                : ListView.separated(
-                    padding: const EdgeInsets.all(12),
-                    itemCount: batches.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 10),
-                    itemBuilder: (context, index) {
-                      final batch = batches[index];
-                      return _BatchRow(batch: batch, isCompact: isCompact);
-                    },
-                  ),
-          ),
+          if (batches.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'No batches recorded yet.',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                children: [
+                  for (var index = 0; index < batches.length; index++) ...[
+                    _BatchRow(batch: batches[index], isCompact: isCompact),
+                    if (index != batches.length - 1) const SizedBox(height: 10),
+                  ],
+                ],
+              ),
+            ),
         ],
       ),
     );
@@ -2090,78 +2058,85 @@ class _TimelinePanelState extends State<_TimelinePanel> {
     }).toList();
 
     return _ConnectionGuard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(
-                'Timeline',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(width: 12),
-              const _GlassPill(
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                child: Text('Live'),
-              ),
-              const Spacer(),
-              _GlassPill(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
+      child: _PanelScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  'Timeline',
+                  style: Theme.of(context).textTheme.headlineSmall,
                 ),
-                child: Text('${filtered.length} events'),
-              ),
-              const SizedBox(width: 12),
-              _ActionPill(
-                label: 'Export',
-                icon: Icons.download_rounded,
-                onTap: () => _exportData(
-                  context,
-                  'timeline',
-                  filtered.map((event) => event.toJson()).toList(),
+                const SizedBox(width: 12),
+                const _GlassPill(
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  child: Text('Live'),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Correlate signal updates with effects, batches, and collections.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.65),
+                const Spacer(),
+                _GlassPill(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  child: Text('${filtered.length} events'),
+                ),
+                const SizedBox(width: 12),
+                _ActionPill(
+                  label: 'Export',
+                  icon: Icons.download_rounded,
+                  onTap: () => _exportData(
+                    context,
+                    'timeline',
+                    filtered.map((event) => event.toJson()).toList(),
+                  ),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              Text('Type', style: Theme.of(context).textTheme.labelMedium),
-              for (final filter in typeFilters)
-                _FilterChip(
-                  label: filter,
-                  isSelected: filter == _typeFilter,
-                  onTap: () => setState(() => _typeFilter = filter),
+            const SizedBox(height: 8),
+            Text(
+              'Correlate signal updates with effects, batches, and collections.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withOpacity(0.65),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                Text('Type', style: Theme.of(context).textTheme.labelMedium),
+                for (final filter in typeFilters)
+                  _FilterChip(
+                    label: filter,
+                    isSelected: filter == _typeFilter,
+                    onTap: () => setState(() => _typeFilter = filter),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                Text(
+                  'Severity',
+                  style: Theme.of(context).textTheme.labelMedium,
                 ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              Text('Severity', style: Theme.of(context).textTheme.labelMedium),
-              for (final filter in severityFilters)
-                _FilterChip(
-                  label: filter,
-                  isSelected: filter == _severityFilter,
-                  onTap: () => setState(() => _severityFilter = filter),
-                ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Expanded(child: _TimelineList(events: filtered)),
-        ],
+                for (final filter in severityFilters)
+                  _FilterChip(
+                    label: filter,
+                    isSelected: filter == _severityFilter,
+                    onTap: () => setState(() => _severityFilter = filter),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _TimelineList(events: filtered),
+          ],
+        ),
       ),
     );
   }
@@ -2177,20 +2152,23 @@ class _TimelineList extends StatelessWidget {
     return _GlassCard(
       padding: const EdgeInsets.all(0),
       child: events.isEmpty
-          ? Center(
+          ? Padding(
+              padding: const EdgeInsets.all(16),
               child: Text(
                 'No timeline events yet.',
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
             )
-          : ListView.separated(
+          : Padding(
               padding: const EdgeInsets.all(16),
-              itemCount: events.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
-              itemBuilder: (context, index) {
-                final event = events[index];
-                return _TimelineEventRow(event: event);
-              },
+              child: Column(
+                children: [
+                  for (var index = 0; index < events.length; index++) ...[
+                    _TimelineEventRow(event: events[index]),
+                    if (index != events.length - 1) const SizedBox(height: 12),
+                  ],
+                ],
+              ),
             ),
     );
   }
@@ -2259,80 +2237,84 @@ class _PerformancePanel extends StatelessWidget {
     final latest = samples.isNotEmpty ? samples.last : null;
 
     return _ConnectionGuard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(
-                'Performance',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(width: 12),
-              const _GlassPill(
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                child: Text('Live'),
-              ),
-              const Spacer(),
-              _GlassPill(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
+      child: _PanelScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  'Performance',
+                  style: Theme.of(context).textTheme.headlineSmall,
                 ),
-                child: Text('${samples.length} samples'),
-              ),
-              const SizedBox(width: 12),
-              _ActionPill(
-                label: 'Export',
-                icon: Icons.download_rounded,
-                onTap: () => _exportData(
-                  context,
-                  'performance',
-                  samples.map((sample) => sample.toJson()).toList(),
+                const SizedBox(width: 12),
+                const _GlassPill(
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  child: Text('Live'),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Sampled signal throughput and effect costs.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.65),
+                const Spacer(),
+                _GlassPill(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  child: Text('${samples.length} samples'),
+                ),
+                const SizedBox(width: 12),
+                _ActionPill(
+                  label: 'Export',
+                  icon: Icons.download_rounded,
+                  onTap: () => _exportData(
+                    context,
+                    'performance',
+                    samples.map((sample) => sample.toJson()).toList(),
+                  ),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(height: 16),
-          _AdaptiveWrap(
-            children: [
-              _MetricTile(
-                label: 'Effect avg',
-                value: latest == null
-                    ? '—'
-                    : '${latest.avgEffectDurationMs.toStringAsFixed(1)}ms',
-                trend: latest == null ? '—' : '${latest.effectRuns} runs',
-                accent: OrefPalette.pink,
-                icon: Icons.speed_rounded,
+            const SizedBox(height: 8),
+            Text(
+              'Sampled signal throughput and effect costs.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withOpacity(0.65),
               ),
-              _MetricTile(
-                label: 'Signal writes',
-                value: latest == null ? '—' : '${latest.signalWrites}',
-                trend: latest == null
-                    ? '—'
-                    : '${latest.collectionMutations} mutations',
-                accent: OrefPalette.teal,
-                icon: Icons.bolt_rounded,
-              ),
-              _MetricTile(
-                label: 'Collections',
-                value: latest == null ? '—' : '${latest.collectionCount}',
-                trend: latest == null ? '—' : '${latest.batchWrites} batched',
-                accent: OrefPalette.indigo,
-                icon: Icons.grid_view_rounded,
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Expanded(child: _PerformanceList(samples: samples)),
-        ],
+            ),
+            const SizedBox(height: 16),
+            _AdaptiveWrap(
+              children: [
+                _MetricTile(
+                  label: 'Effect avg',
+                  value: latest == null
+                      ? '—'
+                      : '${latest.avgEffectDurationMs.toStringAsFixed(1)}ms',
+                  trend: latest == null ? '—' : '${latest.effectRuns} runs',
+                  accent: OrefPalette.pink,
+                  icon: Icons.speed_rounded,
+                ),
+                _MetricTile(
+                  label: 'Signal writes',
+                  value: latest == null ? '—' : '${latest.signalWrites}',
+                  trend: latest == null
+                      ? '—'
+                      : '${latest.collectionMutations} mutations',
+                  accent: OrefPalette.teal,
+                  icon: Icons.bolt_rounded,
+                ),
+                _MetricTile(
+                  label: 'Collections',
+                  value: latest == null ? '—' : '${latest.collectionCount}',
+                  trend: latest == null ? '—' : '${latest.batchWrites} batched',
+                  accent: OrefPalette.indigo,
+                  icon: Icons.grid_view_rounded,
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _PerformanceList(samples: samples),
+          ],
+        ),
       ),
     );
   }
@@ -2348,20 +2330,23 @@ class _PerformanceList extends StatelessWidget {
     return _GlassCard(
       padding: const EdgeInsets.all(0),
       child: samples.isEmpty
-          ? Center(
+          ? Padding(
+              padding: const EdgeInsets.all(16),
               child: Text(
                 'No performance samples yet.',
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
             )
-          : ListView.separated(
+          : Padding(
               padding: const EdgeInsets.all(16),
-              itemCount: samples.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
-              itemBuilder: (context, index) {
-                final sample = samples[index];
-                return _PerformanceRow(sample: sample);
-              },
+              child: Column(
+                children: [
+                  for (var index = 0; index < samples.length; index++) ...[
+                    _PerformanceRow(sample: samples[index]),
+                    if (index != samples.length - 1) const SizedBox(height: 12),
+                  ],
+                ],
+              ),
             ),
     );
   }
@@ -2423,218 +2408,210 @@ class _SettingsPanelState extends State<_SettingsPanel> {
     }
 
     return _ConnectionGuard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(
-                'Settings',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const Spacer(),
-              _ActionPill(
-                label: 'Refresh',
-                icon: Icons.refresh_rounded,
-                onTap: controller.refresh,
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Tune how diagnostics are collected.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.65),
+      child: _PanelScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  'Settings',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                const Spacer(),
+                _ActionPill(
+                  label: 'Refresh',
+                  icon: Icons.refresh_rounded,
+                  onTap: controller.refresh,
+                ),
+              ],
             ),
-          ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: SingleChildScrollView(
+            const SizedBox(height: 8),
+            Text(
+              'Tune how diagnostics are collected.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withOpacity(0.65),
+              ),
+            ),
+            const SizedBox(height: 16),
+            _GlassCard(
+              padding: const EdgeInsets.all(20),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _GlassCard(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Sampling',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 12),
-                        SwitchListTile.adaptive(
-                          value: _draft.enabled,
-                          onChanged: (value) {
-                            setState(() {
-                              _isEditing = true;
-                              _draft = _draft.copyWith(enabled: value);
-                            });
-                            controller.updateSettings(_draft);
-                            _isEditing = false;
-                          },
-                          title: const Text('Enable sampling'),
-                          subtitle: Text(
-                            'Collect timeline and performance samples.',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'Sample interval (${_draft.sampleIntervalMs}ms)',
-                          style: Theme.of(context).textTheme.labelLarge,
-                        ),
-                        Slider(
-                          value: _draft.sampleIntervalMs.toDouble(),
-                          min: 250,
-                          max: 5000,
-                          divisions: 19,
-                          label: '${_draft.sampleIntervalMs}ms',
-                          onChanged: (value) {
-                            setState(() {
-                              _isEditing = true;
-                              _draft = _draft.copyWith(
-                                sampleIntervalMs: value.round(),
-                              );
-                            });
-                          },
-                          onChangeEnd: (_) async {
-                            await controller.updateSettings(_draft);
-                            if (mounted) setState(() => _isEditing = false);
-                          },
-                        ),
-                      ],
+                  Text(
+                    'Sampling',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 12),
+                  SwitchListTile.adaptive(
+                    value: _draft.enabled,
+                    onChanged: (value) {
+                      setState(() {
+                        _isEditing = true;
+                        _draft = _draft.copyWith(enabled: value);
+                      });
+                      controller.updateSettings(_draft);
+                      _isEditing = false;
+                    },
+                    title: const Text('Enable sampling'),
+                    subtitle: Text(
+                      'Collect timeline and performance samples.',
+                      style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  _GlassCard(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Retention',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'Timeline limit (${_draft.timelineLimit})',
-                          style: Theme.of(context).textTheme.labelLarge,
-                        ),
-                        Slider(
-                          value: _draft.timelineLimit.toDouble(),
-                          min: 50,
-                          max: 500,
-                          divisions: 9,
-                          label: _draft.timelineLimit.toString(),
-                          onChanged: (value) {
-                            setState(() {
-                              _isEditing = true;
-                              _draft = _draft.copyWith(
-                                timelineLimit: value.round(),
-                              );
-                            });
-                          },
-                          onChangeEnd: (_) async {
-                            await controller.updateSettings(_draft);
-                            if (mounted) setState(() => _isEditing = false);
-                          },
-                        ),
-                        Text(
-                          'Batch limit (${_draft.batchLimit})',
-                          style: Theme.of(context).textTheme.labelLarge,
-                        ),
-                        Slider(
-                          value: _draft.batchLimit.toDouble(),
-                          min: 20,
-                          max: 300,
-                          divisions: 14,
-                          label: _draft.batchLimit.toString(),
-                          onChanged: (value) {
-                            setState(() {
-                              _isEditing = true;
-                              _draft = _draft.copyWith(
-                                batchLimit: value.round(),
-                              );
-                            });
-                          },
-                          onChangeEnd: (_) async {
-                            await controller.updateSettings(_draft);
-                            if (mounted) setState(() => _isEditing = false);
-                          },
-                        ),
-                        Text(
-                          'Performance samples (${_draft.performanceLimit})',
-                          style: Theme.of(context).textTheme.labelLarge,
-                        ),
-                        Slider(
-                          value: _draft.performanceLimit.toDouble(),
-                          min: 30,
-                          max: 300,
-                          divisions: 9,
-                          label: _draft.performanceLimit.toString(),
-                          onChanged: (value) {
-                            setState(() {
-                              _isEditing = true;
-                              _draft = _draft.copyWith(
-                                performanceLimit: value.round(),
-                              );
-                            });
-                          },
-                          onChangeEnd: (_) async {
-                            await controller.updateSettings(_draft);
-                            if (mounted) setState(() => _isEditing = false);
-                          },
-                        ),
-                        Text(
-                          'Value preview (${_draft.valuePreviewLength} chars)',
-                          style: Theme.of(context).textTheme.labelLarge,
-                        ),
-                        Slider(
-                          value: _draft.valuePreviewLength.toDouble(),
-                          min: 40,
-                          max: 240,
-                          divisions: 10,
-                          label: _draft.valuePreviewLength.toString(),
-                          onChanged: (value) {
-                            setState(() {
-                              _isEditing = true;
-                              _draft = _draft.copyWith(
-                                valuePreviewLength: value.round(),
-                              );
-                            });
-                          },
-                          onChangeEnd: (_) async {
-                            await controller.updateSettings(_draft);
-                            if (mounted) setState(() => _isEditing = false);
-                          },
-                        ),
-                      ],
-                    ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Sample interval (${_draft.sampleIntervalMs}ms)',
+                    style: Theme.of(context).textTheme.labelLarge,
                   ),
-                  const SizedBox(height: 16),
-                  _GlassCard(
-                    padding: const EdgeInsets.all(20),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            'Clear cached diagnostics and restart sampling.',
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                        ),
-                        _ActionPill(
-                          label: 'Clear history',
-                          icon: Icons.delete_sweep_rounded,
-                          onTap: controller.clearHistory,
-                        ),
-                      ],
-                    ),
+                  Slider(
+                    value: _draft.sampleIntervalMs.toDouble(),
+                    min: 250,
+                    max: 5000,
+                    divisions: 19,
+                    label: '${_draft.sampleIntervalMs}ms',
+                    onChanged: (value) {
+                      setState(() {
+                        _isEditing = true;
+                        _draft = _draft.copyWith(
+                          sampleIntervalMs: value.round(),
+                        );
+                      });
+                    },
+                    onChangeEnd: (_) async {
+                      await controller.updateSettings(_draft);
+                      if (mounted) setState(() => _isEditing = false);
+                    },
                   ),
                 ],
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: 16),
+            _GlassCard(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Retention',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Timeline limit (${_draft.timelineLimit})',
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
+                  Slider(
+                    value: _draft.timelineLimit.toDouble(),
+                    min: 50,
+                    max: 500,
+                    divisions: 9,
+                    label: _draft.timelineLimit.toString(),
+                    onChanged: (value) {
+                      setState(() {
+                        _isEditing = true;
+                        _draft = _draft.copyWith(timelineLimit: value.round());
+                      });
+                    },
+                    onChangeEnd: (_) async {
+                      await controller.updateSettings(_draft);
+                      if (mounted) setState(() => _isEditing = false);
+                    },
+                  ),
+                  Text(
+                    'Batch limit (${_draft.batchLimit})',
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
+                  Slider(
+                    value: _draft.batchLimit.toDouble(),
+                    min: 20,
+                    max: 300,
+                    divisions: 14,
+                    label: _draft.batchLimit.toString(),
+                    onChanged: (value) {
+                      setState(() {
+                        _isEditing = true;
+                        _draft = _draft.copyWith(batchLimit: value.round());
+                      });
+                    },
+                    onChangeEnd: (_) async {
+                      await controller.updateSettings(_draft);
+                      if (mounted) setState(() => _isEditing = false);
+                    },
+                  ),
+                  Text(
+                    'Performance samples (${_draft.performanceLimit})',
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
+                  Slider(
+                    value: _draft.performanceLimit.toDouble(),
+                    min: 30,
+                    max: 300,
+                    divisions: 9,
+                    label: _draft.performanceLimit.toString(),
+                    onChanged: (value) {
+                      setState(() {
+                        _isEditing = true;
+                        _draft = _draft.copyWith(
+                          performanceLimit: value.round(),
+                        );
+                      });
+                    },
+                    onChangeEnd: (_) async {
+                      await controller.updateSettings(_draft);
+                      if (mounted) setState(() => _isEditing = false);
+                    },
+                  ),
+                  Text(
+                    'Value preview (${_draft.valuePreviewLength} chars)',
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
+                  Slider(
+                    value: _draft.valuePreviewLength.toDouble(),
+                    min: 40,
+                    max: 240,
+                    divisions: 10,
+                    label: _draft.valuePreviewLength.toString(),
+                    onChanged: (value) {
+                      setState(() {
+                        _isEditing = true;
+                        _draft = _draft.copyWith(
+                          valuePreviewLength: value.round(),
+                        );
+                      });
+                    },
+                    onChangeEnd: (_) async {
+                      await controller.updateSettings(_draft);
+                      if (mounted) setState(() => _isEditing = false);
+                    },
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            _GlassCard(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Clear cached diagnostics and restart sampling.',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ),
+                  _ActionPill(
+                    label: 'Clear history',
+                    icon: Icons.delete_sweep_rounded,
+                    onTap: controller.clearHistory,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -2750,26 +2727,26 @@ class _CollectionsList extends StatelessWidget {
       child: Column(
         children: [
           if (!isCompact) const _CollectionsHeaderRow(),
-          Expanded(
-            child: entries.isEmpty
-                ? Center(
-                    child: Text(
-                      'No collection mutations match the current filters.',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  )
-                : ListView.separated(
-                    padding: const EdgeInsets.all(12),
-                    itemCount: entries.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 10),
-                    itemBuilder: (context, index) {
-                      return _CollectionRow(
-                        entry: entries[index],
-                        isCompact: isCompact,
-                      );
-                    },
-                  ),
-          ),
+          if (entries.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'No collection mutations match the current filters.',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                children: [
+                  for (var index = 0; index < entries.length; index++) ...[
+                    _CollectionRow(entry: entries[index], isCompact: isCompact),
+                    if (index != entries.length - 1) const SizedBox(height: 10),
+                  ],
+                ],
+              ),
+            ),
         ],
       ),
     );
@@ -2958,27 +2935,29 @@ class _EffectsPanelState extends State<_EffectsPanel> {
     }).toList();
 
     return _ConnectionGuard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _EffectsHeader(
-            typeFilter: _typeFilter,
-            scopeFilter: _scopeFilter,
-            typeFilters: typeFilters,
-            scopeFilters: scopeFilters,
-            onTypeChange: (value) => setState(() => _typeFilter = value),
-            onScopeChange: (value) => setState(() => _scopeFilter = value),
-            totalCount: entries.length,
-            filteredCount: filtered.length,
-            onExport: () => _exportData(
-              context,
-              'effects',
-              filtered.map((entry) => entry.toJson()).toList(),
+      child: _PanelScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _EffectsHeader(
+              typeFilter: _typeFilter,
+              scopeFilter: _scopeFilter,
+              typeFilters: typeFilters,
+              scopeFilters: scopeFilters,
+              onTypeChange: (value) => setState(() => _typeFilter = value),
+              onScopeChange: (value) => setState(() => _scopeFilter = value),
+              totalCount: entries.length,
+              filteredCount: filtered.length,
+              onExport: () => _exportData(
+                context,
+                'effects',
+                filtered.map((entry) => entry.toJson()).toList(),
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          Expanded(child: _EffectsTimeline(entries: filtered)),
-        ],
+            const SizedBox(height: 16),
+            _EffectsTimeline(entries: filtered),
+          ],
+        ),
       ),
     );
   }
@@ -3098,20 +3077,24 @@ class _EffectsTimeline extends StatelessWidget {
             ),
           ),
           if (entries.isEmpty)
-            Center(
+            Padding(
+              padding: const EdgeInsets.all(16),
               child: Text(
                 'No effects match the current filters.',
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
             )
           else
-            ListView.separated(
+            Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              itemCount: entries.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
-              itemBuilder: (context, index) {
-                return _EffectRow(entry: entries[index]);
-              },
+              child: Column(
+                children: [
+                  for (var index = 0; index < entries.length; index++) ...[
+                    _EffectRow(entry: entries[index]),
+                    if (index != entries.length - 1) const SizedBox(height: 12),
+                  ],
+                ],
+              ),
             ),
         ],
       ),
@@ -3335,30 +3318,31 @@ class _SignalList extends StatelessWidget {
       child: Column(
         children: [
           if (!isCompact) const _SignalTableHeader(),
-          Expanded(
-            child: entries.isEmpty
-                ? Center(
-                    child: Text(
-                      'No signals match the current filter.',
-                      style: Theme.of(context).textTheme.bodyMedium,
+          if (entries.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'No signals match the current filter.',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                children: [
+                  for (var index = 0; index < entries.length; index++) ...[
+                    _SignalRow(
+                      entry: entries[index],
+                      isSelected: selectedId == entries[index].id,
+                      isCompact: isCompact,
+                      onTap: () => onSelect(entries[index]),
                     ),
-                  )
-                : ListView.separated(
-                    padding: const EdgeInsets.all(12),
-                    itemCount: entries.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
-                    itemBuilder: (context, index) {
-                      final entry = entries[index];
-                      final isSelected = selectedId == entry.id;
-                      return _SignalRow(
-                        entry: entry,
-                        isSelected: isSelected,
-                        isCompact: isCompact,
-                        onTap: () => onSelect(entry),
-                      );
-                    },
-                  ),
-          ),
+                    if (index != entries.length - 1) const SizedBox(height: 8),
+                  ],
+                ],
+              ),
+            ),
         ],
       ),
     );
@@ -3550,21 +3534,21 @@ class _SignalDetail extends StatelessWidget {
 
     return _GlassCard(
       padding: const EdgeInsets.all(20),
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(entry!.label, style: textTheme.titleMedium),
-            const SizedBox(height: 8),
-            _StatusBadge(status: entry!.status),
-            const SizedBox(height: 16),
-            _InfoRow(label: 'Owner', value: entry!.owner),
-            _InfoRow(label: 'Scope', value: entry!.scope),
-            _InfoRow(label: 'Type', value: entry!.type),
-            _InfoRow(label: 'Value', value: entry!.value),
-            _InfoRow(label: 'Updated', value: _formatAge(entry!.updatedAt)),
-            _InfoRow(label: 'Listeners', value: entry!.listeners.toString()),
-            _InfoRow(label: 'Deps', value: entry!.dependencies.toString()),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(entry!.label, style: textTheme.titleMedium),
+          const SizedBox(height: 8),
+          _StatusBadge(status: entry!.status),
+          const SizedBox(height: 16),
+          _InfoRow(label: 'Owner', value: entry!.owner),
+          _InfoRow(label: 'Scope', value: entry!.scope),
+          _InfoRow(label: 'Type', value: entry!.type),
+          _InfoRow(label: 'Value', value: entry!.value),
+          _InfoRow(label: 'Updated', value: _formatAge(entry!.updatedAt)),
+          _InfoRow(label: 'Listeners', value: entry!.listeners.toString()),
+          _InfoRow(label: 'Deps', value: entry!.dependencies.toString()),
+          if (entry!.note.isNotEmpty) ...[
             const SizedBox(height: 12),
             Text(
               entry!.note,
@@ -3573,7 +3557,7 @@ class _SignalDetail extends StatelessWidget {
               ),
             ),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -3702,6 +3686,26 @@ class _PanelInfo {
   final String title;
   final String description;
   final List<String> bullets;
+}
+
+class _PanelScrollView extends StatelessWidget {
+  const _PanelScrollView({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: child,
+          ),
+        );
+      },
+    );
+  }
 }
 
 class _PanelPlaceholder extends StatelessWidget {
