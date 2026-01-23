@@ -232,49 +232,71 @@ class DevToolsSettings {
 }
 
 @immutable
-class SignalSample {
-  const SignalSample({
+class Sample {
+  const Sample({
     required this.id,
     required this.label,
-    required this.value,
     required this.type,
     required this.status,
     required this.owner,
     required this.scope,
     required this.updatedAt,
-    required this.listeners,
-    required this.dependencies,
     required this.note,
-    required this.writes,
   });
 
   final int id;
   final String label;
-  final String value;
   final String type;
   final String status;
   final String owner;
   final String scope;
   final int updatedAt;
-  final int listeners;
-  final int dependencies;
   final String note;
-  final int writes;
 
   Map<String, Object?> toJson() {
     return {
       'id': id,
       'label': label,
-      'value': value,
       'type': type,
       'status': status,
       'owner': owner,
       'scope': scope,
       'updatedAt': updatedAt,
+      'note': note,
+    };
+  }
+}
+
+@immutable
+class SignalSample extends Sample {
+  const SignalSample({
+    required this.value,
+    required this.listeners,
+    required this.dependencies,
+    required this.writes,
+    required super.id,
+    required super.label,
+    required super.type,
+    required super.status,
+    required super.owner,
+    required super.scope,
+    required super.updatedAt,
+    required super.note,
+  });
+
+  final String value;
+  final int listeners;
+  final int dependencies;
+  final int writes;
+
+  @override
+  Map<String, Object?> toJson() {
+    return {
+      'value': value,
       'listeners': listeners,
       'dependencies': dependencies,
-      'note': note,
       'writes': writes,
+      ...super.toJson(),
     };
   }
 
@@ -297,52 +319,38 @@ class SignalSample {
 }
 
 @immutable
-class ComputedSample {
+class ComputedSample extends Sample {
   const ComputedSample({
-    required this.id,
-    required this.label,
     required this.value,
-    required this.type,
-    required this.status,
-    required this.owner,
-    required this.scope,
-    required this.updatedAt,
     required this.listeners,
     required this.dependencies,
-    required this.note,
     required this.runs,
     required this.lastDurationMs,
+    required super.id,
+    required super.label,
+    required super.type,
+    required super.status,
+    required super.owner,
+    required super.scope,
+    required super.updatedAt,
+    required super.note,
   });
 
-  final int id;
-  final String label;
   final String value;
-  final String type;
-  final String status;
-  final String owner;
-  final String scope;
-  final int updatedAt;
   final int listeners;
   final int dependencies;
-  final String note;
   final int runs;
   final int lastDurationMs;
 
+  @override
   Map<String, Object?> toJson() {
     return {
-      'id': id,
-      'label': label,
       'value': value,
-      'type': type,
-      'status': status,
-      'owner': owner,
-      'scope': scope,
-      'updatedAt': updatedAt,
       'listeners': listeners,
       'dependencies': dependencies,
-      'note': note,
       'runs': runs,
       'lastDurationMs': lastDurationMs,
+      ...super.toJson(),
     };
   }
 
@@ -366,46 +374,32 @@ class ComputedSample {
 }
 
 @immutable
-class EffectSample {
+class EffectSample extends Sample {
   const EffectSample({
-    required this.id,
-    required this.label,
-    required this.type,
-    required this.scope,
-    required this.owner,
-    required this.updatedAt,
     required this.runs,
     required this.lastDurationMs,
     required this.isHot,
-    required this.status,
-    required this.note,
+    required super.id,
+    required super.label,
+    required super.type,
+    required super.status,
+    required super.owner,
+    required super.scope,
+    required super.updatedAt,
+    required super.note,
   });
 
-  final int id;
-  final String label;
-  final String type;
-  final String scope;
-  final String owner;
-  final int updatedAt;
   final int runs;
   final int lastDurationMs;
   final bool isHot;
-  final String status;
-  final String note;
 
+  @override
   Map<String, Object?> toJson() {
     return {
-      'id': id,
-      'label': label,
-      'type': type,
-      'scope': scope,
-      'owner': owner,
-      'updatedAt': updatedAt,
       'runs': runs,
       'lastDurationMs': lastDurationMs,
       'isHot': isHot,
-      'status': status,
-      'note': note,
+      ...super.toJson(),
     };
   }
 
@@ -427,46 +421,32 @@ class EffectSample {
 }
 
 @immutable
-class CollectionSample {
+class CollectionSample extends Sample {
   const CollectionSample({
-    required this.id,
-    required this.label,
-    required this.type,
     required this.operation,
-    required this.owner,
-    required this.scope,
-    required this.updatedAt,
     required this.deltas,
-    required this.note,
     required this.mutations,
-    required this.status,
+    required super.id,
+    required super.label,
+    required super.type,
+    required super.status,
+    required super.owner,
+    required super.scope,
+    required super.updatedAt,
+    required super.note,
   });
 
-  final int id;
-  final String label;
-  final String type;
   final String operation;
-  final String owner;
-  final String scope;
-  final int updatedAt;
   final List<CollectionDelta> deltas;
-  final String note;
   final int mutations;
-  final String status;
 
+  @override
   Map<String, Object?> toJson() {
     return {
-      'id': id,
-      'label': label,
-      'type': type,
       'operation': operation,
-      'owner': owner,
-      'scope': scope,
-      'updatedAt': updatedAt,
       'deltas': deltas.map((delta) => delta.toJson()).toList(),
-      'note': note,
       'mutations': mutations,
-      'status': status,
+      ...super.toJson(),
     };
   }
 
