@@ -31,7 +31,7 @@ dependencies:
   flutter:
     sdk: flutter
   devtools_extensions: ^0.4.0
-  google_fonts: ^6.2.1
+  google_fonts: 8.0.0
   vm_service: 15.0.2
   oref:
     path: ../../..
