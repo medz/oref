@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 
 class Protocol {
-  static const int version = 1;
+  static const int version = 2;
 
   static const String servicePrefix = 'ext.oref';
   static const String snapshotService = '$servicePrefix.snapshot';
@@ -18,41 +18,26 @@ class Snapshot {
     required this.protocolVersion,
     required this.timestamp,
     required this.settings,
-    required this.stats,
-    required this.signals,
-    required this.computed,
-    required this.effects,
-    required this.collections,
+    required this.samples,
     required this.batches,
     required this.timeline,
-    required this.performance,
   });
 
   final int protocolVersion;
   final int timestamp;
   final DevToolsSettings settings;
-  final Stats stats;
-  final List<SignalSample> signals;
-  final List<ComputedSample> computed;
-  final List<EffectSample> effects;
-  final List<CollectionSample> collections;
+  final List<Sample> samples;
   final List<BatchSample> batches;
   final List<TimelineEvent> timeline;
-  final List<PerformanceSample> performance;
 
   Map<String, Object?> toJson() {
     return {
       'protocolVersion': protocolVersion,
       'timestamp': timestamp,
       'settings': settings.toJson(),
-      'stats': stats.toJson(),
-      'signals': signals.map((signal) => signal.toJson()).toList(),
-      'computed': computed.map((entry) => entry.toJson()).toList(),
-      'effects': effects.map((entry) => entry.toJson()).toList(),
-      'collections': collections.map((entry) => entry.toJson()).toList(),
+      'samples': samples.map((entry) => entry.toJson()).toList(),
       'batches': batches.map((entry) => entry.toJson()).toList(),
       'timeline': timeline.map((event) => event.toJson()).toList(),
-      'performance': performance.map((sample) => sample.toJson()).toList(),
     };
   }
 
@@ -61,14 +46,9 @@ class Snapshot {
       protocolVersion: _readInt(json['protocolVersion'], fallback: 0),
       timestamp: _readInt(json['timestamp'], fallback: 0),
       settings: DevToolsSettings.fromJson(_readMap(json['settings'])),
-      stats: Stats.fromJson(_readMap(json['stats'])),
-      signals: _readList(json['signals'], SignalSample.fromJson),
-      computed: _readList(json['computed'], ComputedSample.fromJson),
-      effects: _readList(json['effects'], EffectSample.fromJson),
-      collections: _readList(json['collections'], CollectionSample.fromJson),
+      samples: _readList(json['samples'], Sample.fromJson),
       batches: _readList(json['batches'], BatchSample.fromJson),
       timeline: _readList(json['timeline'], TimelineEvent.fromJson),
-      performance: _readList(json['performance'], PerformanceSample.fromJson),
     );
   }
 
@@ -76,14 +56,9 @@ class Snapshot {
     protocolVersion: Protocol.version,
     timestamp: 0,
     settings: const DevToolsSettings(),
-    stats: const Stats(),
-    signals: const [],
-    computed: const [],
-    effects: const [],
-    collections: const [],
+    samples: const [],
     batches: const [],
     timeline: const [],
-    performance: const [],
   );
 
   static Snapshot? tryParse(String? payload) {
@@ -98,63 +73,6 @@ class Snapshot {
       }
     } catch (_) {}
     return null;
-  }
-}
-
-@immutable
-class Stats {
-  const Stats({
-    this.signals = 0,
-    this.computed = 0,
-    this.effects = 0,
-    this.collections = 0,
-    this.batches = 0,
-    this.timelineEvents = 0,
-    this.signalWrites = 0,
-    this.effectRuns = 0,
-    this.computedRuns = 0,
-    this.collectionMutations = 0,
-  });
-
-  final int signals;
-  final int computed;
-  final int effects;
-  final int collections;
-  final int batches;
-  final int timelineEvents;
-  final int signalWrites;
-  final int effectRuns;
-  final int computedRuns;
-  final int collectionMutations;
-
-  Map<String, Object?> toJson() {
-    return {
-      'signals': signals,
-      'computed': computed,
-      'effects': effects,
-      'collections': collections,
-      'batches': batches,
-      'timelineEvents': timelineEvents,
-      'signalWrites': signalWrites,
-      'effectRuns': effectRuns,
-      'computedRuns': computedRuns,
-      'collectionMutations': collectionMutations,
-    };
-  }
-
-  factory Stats.fromJson(Map<String, dynamic> json) {
-    return Stats(
-      signals: _readInt(json['signals'], fallback: 0),
-      computed: _readInt(json['computed'], fallback: 0),
-      effects: _readInt(json['effects'], fallback: 0),
-      collections: _readInt(json['collections'], fallback: 0),
-      batches: _readInt(json['batches'], fallback: 0),
-      timelineEvents: _readInt(json['timelineEvents'], fallback: 0),
-      signalWrites: _readInt(json['signalWrites'], fallback: 0),
-      effectRuns: _readInt(json['effectRuns'], fallback: 0),
-      computedRuns: _readInt(json['computedRuns'], fallback: 0),
-      collectionMutations: _readInt(json['collectionMutations'], fallback: 0),
-    );
   }
 }
 
@@ -232,237 +150,96 @@ class DevToolsSettings {
 }
 
 @immutable
-abstract class Sample {
+class Sample {
   const Sample({
     required this.id,
+    required this.kind,
     required this.label,
     required this.type,
-    required this.status,
     required this.owner,
     required this.scope,
     required this.updatedAt,
     required this.note,
+    this.status,
+    this.value,
+    this.listeners,
+    this.dependencies,
+    this.writes,
+    this.runs,
+    this.lastDurationMs,
+    this.operation,
+    this.deltas,
+    this.mutations,
   });
 
   final int id;
+  final String kind;
   final String label;
   final String type;
-  final String status;
   final String owner;
   final String scope;
   final int updatedAt;
   final String note;
+  final String? status;
+  final String? value;
+  final int? listeners;
+  final int? dependencies;
+  final int? writes;
+  final int? runs;
+  final int? lastDurationMs;
+  final String? operation;
+  final List<CollectionDelta>? deltas;
+  final int? mutations;
 
   Map<String, Object?> toJson() {
-    return {
+    final data = <String, Object?>{
       'id': id,
+      'kind': kind,
       'label': label,
       'type': type,
-      'status': status,
       'owner': owner,
       'scope': scope,
       'updatedAt': updatedAt,
       'note': note,
     };
-  }
-}
-
-@immutable
-class SignalSample extends Sample {
-  const SignalSample({
-    required this.value,
-    required this.listeners,
-    required this.dependencies,
-    required this.writes,
-    required super.id,
-    required super.label,
-    required super.type,
-    required super.status,
-    required super.owner,
-    required super.scope,
-    required super.updatedAt,
-    required super.note,
-  });
-
-  final String value;
-  final int listeners;
-  final int dependencies;
-  final int writes;
-
-  @override
-  Map<String, Object?> toJson() {
-    return {
-      'value': value,
-      'listeners': listeners,
-      'dependencies': dependencies,
-      'writes': writes,
-      ...super.toJson(),
-    };
+    if (status != null) data['status'] = status;
+    if (value != null) data['value'] = value;
+    if (listeners != null) data['listeners'] = listeners;
+    if (dependencies != null) data['dependencies'] = dependencies;
+    if (writes != null) data['writes'] = writes;
+    if (runs != null) data['runs'] = runs;
+    if (lastDurationMs != null) data['lastDurationMs'] = lastDurationMs;
+    if (operation != null) data['operation'] = operation;
+    if (deltas != null) {
+      data['deltas'] = deltas!.map((delta) => delta.toJson()).toList();
+    }
+    if (mutations != null) data['mutations'] = mutations;
+    return data;
   }
 
-  factory SignalSample.fromJson(Map<String, dynamic> json) {
-    return SignalSample(
+  factory Sample.fromJson(Map<String, dynamic> json) {
+    final deltasValue = json['deltas'];
+    return Sample(
       id: _readInt(json['id'], fallback: 0),
+      kind: _readString(json['kind']),
       label: _readString(json['label']),
-      value: _readString(json['value']),
       type: _readString(json['type']),
-      status: _readString(json['status'], fallback: 'Active'),
       owner: _readString(json['owner'], fallback: 'Global'),
       scope: _readString(json['scope'], fallback: 'Global'),
       updatedAt: _readInt(json['updatedAt'], fallback: 0),
-      listeners: _readInt(json['listeners'], fallback: 0),
-      dependencies: _readInt(json['dependencies'], fallback: 0),
       note: _readString(json['note']),
-      writes: _readInt(json['writes'], fallback: 0),
-    );
-  }
-}
-
-@immutable
-class ComputedSample extends Sample {
-  const ComputedSample({
-    required this.value,
-    required this.listeners,
-    required this.dependencies,
-    required this.runs,
-    required this.lastDurationMs,
-    required super.id,
-    required super.label,
-    required super.type,
-    required super.status,
-    required super.owner,
-    required super.scope,
-    required super.updatedAt,
-    required super.note,
-  });
-
-  final String value;
-  final int listeners;
-  final int dependencies;
-  final int runs;
-  final int lastDurationMs;
-
-  @override
-  Map<String, Object?> toJson() {
-    return {
-      'value': value,
-      'listeners': listeners,
-      'dependencies': dependencies,
-      'runs': runs,
-      'lastDurationMs': lastDurationMs,
-      ...super.toJson(),
-    };
-  }
-
-  factory ComputedSample.fromJson(Map<String, dynamic> json) {
-    return ComputedSample(
-      id: _readInt(json['id'], fallback: 0),
-      label: _readString(json['label']),
-      value: _readString(json['value']),
-      type: _readString(json['type']),
-      status: _readString(json['status'], fallback: 'Active'),
-      owner: _readString(json['owner'], fallback: 'Global'),
-      scope: _readString(json['scope'], fallback: 'Global'),
-      updatedAt: _readInt(json['updatedAt'], fallback: 0),
-      listeners: _readInt(json['listeners'], fallback: 0),
-      dependencies: _readInt(json['dependencies'], fallback: 0),
-      note: _readString(json['note']),
-      runs: _readInt(json['runs'], fallback: 0),
-      lastDurationMs: _readInt(json['lastDurationMs'], fallback: 0),
-    );
-  }
-}
-
-@immutable
-class EffectSample extends Sample {
-  const EffectSample({
-    required this.runs,
-    required this.lastDurationMs,
-    required this.isHot,
-    required super.id,
-    required super.label,
-    required super.type,
-    required super.status,
-    required super.owner,
-    required super.scope,
-    required super.updatedAt,
-    required super.note,
-  });
-
-  final int runs;
-  final int lastDurationMs;
-  final bool isHot;
-
-  @override
-  Map<String, Object?> toJson() {
-    return {
-      'runs': runs,
-      'lastDurationMs': lastDurationMs,
-      'isHot': isHot,
-      ...super.toJson(),
-    };
-  }
-
-  factory EffectSample.fromJson(Map<String, dynamic> json) {
-    return EffectSample(
-      id: _readInt(json['id'], fallback: 0),
-      label: _readString(json['label']),
-      type: _readString(json['type'], fallback: 'Effect'),
-      scope: _readString(json['scope'], fallback: 'Global'),
-      owner: _readString(json['owner'], fallback: 'Global'),
-      updatedAt: _readInt(json['updatedAt'], fallback: 0),
-      runs: _readInt(json['runs'], fallback: 0),
-      lastDurationMs: _readInt(json['lastDurationMs'], fallback: 0),
-      isHot: _readBool(json['isHot'], fallback: false),
-      status: _readString(json['status'], fallback: 'Active'),
-      note: _readString(json['note']),
-    );
-  }
-}
-
-@immutable
-class CollectionSample extends Sample {
-  const CollectionSample({
-    required this.operation,
-    required this.deltas,
-    required this.mutations,
-    required super.id,
-    required super.label,
-    required super.type,
-    required super.status,
-    required super.owner,
-    required super.scope,
-    required super.updatedAt,
-    required super.note,
-  });
-
-  final String operation;
-  final List<CollectionDelta> deltas;
-  final int mutations;
-
-  @override
-  Map<String, Object?> toJson() {
-    return {
-      'operation': operation,
-      'deltas': deltas.map((delta) => delta.toJson()).toList(),
-      'mutations': mutations,
-      ...super.toJson(),
-    };
-  }
-
-  factory CollectionSample.fromJson(Map<String, dynamic> json) {
-    return CollectionSample(
-      id: _readInt(json['id'], fallback: 0),
-      label: _readString(json['label']),
-      type: _readString(json['type'], fallback: 'Collection'),
-      operation: _readString(json['operation'], fallback: 'Idle'),
-      owner: _readString(json['owner'], fallback: 'Global'),
-      scope: _readString(json['scope'], fallback: 'Global'),
-      updatedAt: _readInt(json['updatedAt'], fallback: 0),
-      deltas: _readList(json['deltas'], CollectionDelta.fromJson),
-      note: _readString(json['note']),
-      mutations: _readInt(json['mutations'], fallback: 0),
-      status: _readString(json['status'], fallback: 'Active'),
+      status: _readOptionalString(json, 'status'),
+      value: _readOptionalString(json, 'value'),
+      listeners: _readOptionalInt(json, 'listeners'),
+      dependencies: _readOptionalInt(json, 'dependencies'),
+      writes: _readOptionalInt(json, 'writes'),
+      runs: _readOptionalInt(json, 'runs'),
+      lastDurationMs: _readOptionalInt(json, 'lastDurationMs'),
+      operation: _readOptionalString(json, 'operation'),
+      deltas: deltasValue == null
+          ? null
+          : _readList(deltasValue, CollectionDelta.fromJson),
+      mutations: _readOptionalInt(json, 'mutations'),
     );
   }
 }
@@ -566,70 +343,6 @@ class TimelineEvent {
   }
 }
 
-@immutable
-class PerformanceSample {
-  const PerformanceSample({
-    required this.timestamp,
-    required this.signalCount,
-    required this.computedCount,
-    required this.effectCount,
-    required this.collectionCount,
-    required this.signalWrites,
-    required this.computedRuns,
-    required this.effectRuns,
-    required this.collectionMutations,
-    required this.batchWrites,
-    required this.avgEffectDurationMs,
-  });
-
-  final int timestamp;
-  final int signalCount;
-  final int computedCount;
-  final int effectCount;
-  final int collectionCount;
-  final int signalWrites;
-  final int computedRuns;
-  final int effectRuns;
-  final int collectionMutations;
-  final int batchWrites;
-  final double avgEffectDurationMs;
-
-  Map<String, Object?> toJson() {
-    return {
-      'timestamp': timestamp,
-      'signalCount': signalCount,
-      'computedCount': computedCount,
-      'effectCount': effectCount,
-      'collectionCount': collectionCount,
-      'signalWrites': signalWrites,
-      'computedRuns': computedRuns,
-      'effectRuns': effectRuns,
-      'collectionMutations': collectionMutations,
-      'batchWrites': batchWrites,
-      'avgEffectDurationMs': avgEffectDurationMs,
-    };
-  }
-
-  factory PerformanceSample.fromJson(Map<String, dynamic> json) {
-    return PerformanceSample(
-      timestamp: _readInt(json['timestamp'], fallback: 0),
-      signalCount: _readInt(json['signalCount'], fallback: 0),
-      computedCount: _readInt(json['computedCount'], fallback: 0),
-      effectCount: _readInt(json['effectCount'], fallback: 0),
-      collectionCount: _readInt(json['collectionCount'], fallback: 0),
-      signalWrites: _readInt(json['signalWrites'], fallback: 0),
-      computedRuns: _readInt(json['computedRuns'], fallback: 0),
-      effectRuns: _readInt(json['effectRuns'], fallback: 0),
-      collectionMutations: _readInt(json['collectionMutations'], fallback: 0),
-      batchWrites: _readInt(json['batchWrites'], fallback: 0),
-      avgEffectDurationMs: _readDouble(
-        json['avgEffectDurationMs'],
-        fallback: 0,
-      ),
-    );
-  }
-}
-
 String _readString(Object? value, {String fallback = ''}) {
   if (value is String) return value;
   if (value == null) return fallback;
@@ -640,13 +353,6 @@ int _readInt(Object? value, {required int fallback}) {
   if (value is int) return value;
   if (value is num) return value.toInt();
   if (value is String) return int.tryParse(value) ?? fallback;
-  return fallback;
-}
-
-double _readDouble(Object? value, {required double fallback}) {
-  if (value is double) return value;
-  if (value is num) return value.toDouble();
-  if (value is String) return double.tryParse(value) ?? fallback;
   return fallback;
 }
 
@@ -675,6 +381,20 @@ List<T> _readList<T>(Object? value, T Function(Map<String, dynamic>) parser) {
         .toList();
   }
   return <T>[];
+}
+
+String? _readOptionalString(Map<String, dynamic> json, String key) {
+  if (!json.containsKey(key)) return null;
+  final value = json[key];
+  if (value == null) return null;
+  return _readString(value);
+}
+
+int? _readOptionalInt(Map<String, dynamic> json, String key) {
+  if (!json.containsKey(key)) return null;
+  final value = json[key];
+  if (value == null) return null;
+  return _readInt(value, fallback: 0);
 }
 
 bool? _parseBool(String? value) {

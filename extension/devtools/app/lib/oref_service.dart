@@ -8,6 +8,76 @@ import 'package:vm_service/vm_service.dart';
 
 enum OrefServiceStatus { disconnected, connecting, unavailable, ready, error }
 
+class UiPerformanceSample {
+  const UiPerformanceSample({
+    required this.timestamp,
+    required this.signalCount,
+    required this.computedCount,
+    required this.effectCount,
+    required this.collectionCount,
+    required this.signalWrites,
+    required this.computedRuns,
+    required this.effectRuns,
+    required this.collectionMutations,
+    required this.batchWrites,
+    required this.avgEffectDurationMs,
+  });
+
+  final int timestamp;
+  final int signalCount;
+  final int computedCount;
+  final int effectCount;
+  final int collectionCount;
+  final int signalWrites;
+  final int computedRuns;
+  final int effectRuns;
+  final int collectionMutations;
+  final int batchWrites;
+  final double avgEffectDurationMs;
+
+  Map<String, Object?> toJson() {
+    return {
+      'timestamp': timestamp,
+      'signalCount': signalCount,
+      'computedCount': computedCount,
+      'effectCount': effectCount,
+      'collectionCount': collectionCount,
+      'signalWrites': signalWrites,
+      'computedRuns': computedRuns,
+      'effectRuns': effectRuns,
+      'collectionMutations': collectionMutations,
+      'batchWrites': batchWrites,
+      'avgEffectDurationMs': avgEffectDurationMs,
+    };
+  }
+}
+
+class _SnapshotTotals {
+  const _SnapshotTotals({
+    required this.signalCount,
+    required this.computedCount,
+    required this.effectCount,
+    required this.collectionCount,
+    required this.signalWrites,
+    required this.computedRuns,
+    required this.effectRuns,
+    required this.collectionMutations,
+    required this.batchWrites,
+    required this.avgEffectDurationMs,
+  });
+
+  final int signalCount;
+  final int computedCount;
+  final int effectCount;
+  final int collectionCount;
+  final int signalWrites;
+  final int computedRuns;
+  final int effectRuns;
+  final int collectionMutations;
+  final int batchWrites;
+  final double avgEffectDurationMs;
+}
+
 class OrefDevToolsController extends ChangeNotifier {
   OrefDevToolsController({Duration pollInterval = const Duration(seconds: 1)})
     : _pollInterval = pollInterval {
@@ -20,11 +90,13 @@ class OrefDevToolsController extends ChangeNotifier {
   late final VoidCallback _connectionListener;
 
   oref.Snapshot? snapshot;
+  List<UiPerformanceSample> performance = const [];
   OrefServiceStatus status = OrefServiceStatus.disconnected;
   String? errorMessage;
 
   Timer? _pollTimer;
   Timer? _retryTimer;
+  _SnapshotTotals? _lastTotals;
 
   bool get connected => serviceManager.connectedState.value.connected;
   bool get isReady => status == OrefServiceStatus.ready;
@@ -53,6 +125,8 @@ class OrefDevToolsController extends ChangeNotifier {
     if (!connected) return;
     try {
       await _callExtension(oref.Protocol.clearService);
+      performance = const [];
+      _lastTotals = null;
       await _fetchSnapshot();
     } catch (error) {
       _setError(error);
@@ -69,14 +143,9 @@ class OrefDevToolsController extends ChangeNotifier {
           protocolVersion: snapshot!.protocolVersion,
           timestamp: snapshot!.timestamp,
           settings: settings,
-          stats: snapshot!.stats,
-          signals: snapshot!.signals,
-          computed: snapshot!.computed,
-          effects: snapshot!.effects,
-          collections: snapshot!.collections,
+          samples: snapshot!.samples,
           batches: snapshot!.batches,
           timeline: snapshot!.timeline,
-          performance: snapshot!.performance,
         );
         notifyListeners();
       }
@@ -91,6 +160,104 @@ class OrefDevToolsController extends ChangeNotifier {
     _pollTimer?.cancel();
     _retryTimer?.cancel();
     super.dispose();
+  }
+
+  void _updatePerformance(oref.Snapshot snapshot) {
+    final totals = _collectTotals(snapshot);
+    final previous = _lastTotals;
+    int delta(int current, int? before) {
+      if (before == null) return current;
+      if (current >= before) return current - before;
+      return current;
+    }
+
+    final sample = UiPerformanceSample(
+      timestamp: snapshot.timestamp,
+      signalCount: totals.signalCount,
+      computedCount: totals.computedCount,
+      effectCount: totals.effectCount,
+      collectionCount: totals.collectionCount,
+      signalWrites: delta(totals.signalWrites, previous?.signalWrites),
+      computedRuns: delta(totals.computedRuns, previous?.computedRuns),
+      effectRuns: delta(totals.effectRuns, previous?.effectRuns),
+      collectionMutations: delta(
+        totals.collectionMutations,
+        previous?.collectionMutations,
+      ),
+      batchWrites: delta(totals.batchWrites, previous?.batchWrites),
+      avgEffectDurationMs: totals.avgEffectDurationMs,
+    );
+
+    final next = [...performance, sample];
+    final limit = snapshot.settings.performanceLimit;
+    if (limit > 0 && next.length > limit) {
+      next.removeRange(0, next.length - limit);
+    }
+    performance = next;
+    _lastTotals = totals;
+  }
+
+  _SnapshotTotals _collectTotals(oref.Snapshot snapshot) {
+    int signalCount = 0;
+    int computedCount = 0;
+    int effectCount = 0;
+    int collectionCount = 0;
+    int signalWrites = 0;
+    int computedRuns = 0;
+    int effectRuns = 0;
+    int collectionMutations = 0;
+    int batchWrites = 0;
+    int effectDurationSum = 0;
+    int effectDurationCount = 0;
+
+    for (final sample in snapshot.samples) {
+      switch (sample.kind) {
+        case 'signal':
+          signalCount++;
+          signalWrites += sample.writes ?? 0;
+          break;
+        case 'computed':
+          computedCount++;
+          computedRuns += sample.runs ?? 0;
+          break;
+        case 'effect':
+          effectCount++;
+          effectRuns += sample.runs ?? 0;
+          final duration = sample.lastDurationMs;
+          if (duration != null && duration > 0) {
+            effectDurationSum += duration;
+            effectDurationCount++;
+          }
+          break;
+        case 'collection':
+          collectionCount++;
+          collectionMutations += sample.mutations ?? 0;
+          break;
+        default:
+          break;
+      }
+    }
+
+    for (final batch in snapshot.batches) {
+      batchWrites += batch.writeCount;
+    }
+
+    final avgEffectDurationMs = effectDurationCount == 0
+        ? 0.0
+        : effectDurationSum / effectDurationCount;
+
+    return _SnapshotTotals(
+      signalCount: signalCount,
+      computedCount: computedCount,
+      effectCount: effectCount,
+      collectionCount: collectionCount,
+      signalWrites: signalWrites,
+      computedRuns: computedRuns,
+      effectRuns: effectRuns,
+      collectionMutations: collectionMutations,
+      batchWrites: batchWrites,
+      avgEffectDurationMs: avgEffectDurationMs,
+    );
   }
 
   void _handleConnection() {
@@ -119,6 +286,7 @@ class OrefDevToolsController extends ChangeNotifier {
     try {
       final payload = await _callExtension(oref.Protocol.snapshotService);
       snapshot = oref.Snapshot.fromJson(payload);
+      _updatePerformance(snapshot!);
       status = OrefServiceStatus.ready;
       errorMessage = null;
       notifyListeners();

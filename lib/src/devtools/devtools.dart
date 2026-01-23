@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as developer;
 
@@ -8,12 +7,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 import 'protocol.dart';
-import 'test_env.dart' as test_env;
-
-bool _isRunningInTest() {
-  return const bool.fromEnvironment('FLUTTER_TEST') ||
-      test_env.isFlutterTestEnv;
-}
 
 void configure({
   bool? enabled,
@@ -361,8 +354,6 @@ class _DevTools implements DevToolsBinding {
 
   final List<TimelineEvent> _timeline = [];
   final List<BatchSample> _batches = [];
-  final List<PerformanceSample> _performance = [];
-
   final List<_BatchSession> _batchStack = [];
 
   int _nextSignalId = 1;
@@ -375,15 +366,6 @@ class _DevTools implements DevToolsBinding {
   bool _initialized = false;
   bool _extensionsRegistered = false;
   DevToolsSettings _settings = const DevToolsSettings();
-  Timer? _samplingTimer;
-
-  int _signalWrites = 0;
-  int _computedRuns = 0;
-  int _effectRuns = 0;
-  int _collectionMutations = 0;
-  int _batchWrites = 0;
-  int _effectDurationTotalMs = 0;
-  int _effectDurationCount = 0;
 
   bool _shouldTrack() {
     if (!_initialized) {
@@ -397,9 +379,6 @@ class _DevTools implements DevToolsBinding {
     if (kReleaseMode) return;
     _initialized = true;
     _registerExtensions();
-    if (!_isRunningInTest()) {
-      _startSampling();
-    }
   }
 
   void _configure({
@@ -419,12 +398,6 @@ class _DevTools implements DevToolsBinding {
       valuePreviewLength: valuePreviewLength,
     );
     _settings = updated;
-    if (_settings.enabled && !_isRunningInTest()) {
-      _startSampling();
-    } else {
-      _samplingTimer?.cancel();
-      _samplingTimer = null;
-    }
   }
 
   SignalHandle _bindSignal(
@@ -486,7 +459,6 @@ class _DevTools implements DevToolsBinding {
     record.value = _previewValue(value);
     record.updatedAt = _nowMs();
     record.writes++;
-    _signalWrites++;
 
     _timeline.add(
       TimelineEvent(
@@ -501,7 +473,6 @@ class _DevTools implements DevToolsBinding {
     _trimList(_timeline, _settings.timelineLimit);
 
     if (alien_preset.getBatchDepth() > 0) {
-      _batchWrites++;
       if (_batchStack.isNotEmpty) {
         _batchStack.last.writeCount++;
       }
@@ -575,7 +546,6 @@ class _DevTools implements DevToolsBinding {
     record.updatedAt = _nowMs();
     record.runs++;
     record.lastDurationMs = durationMs;
-    _computedRuns++;
 
     _timeline.add(
       TimelineEvent(
@@ -643,10 +613,6 @@ class _DevTools implements DevToolsBinding {
     record.updatedAt = _nowMs();
     record.runs++;
     record.lastDurationMs = durationMs;
-    record.isHot = durationMs > 16 || record.runs >= 8;
-    _effectRuns++;
-    _effectDurationTotalMs += durationMs;
-    _effectDurationCount++;
 
     _timeline.add(
       TimelineEvent(
@@ -734,7 +700,6 @@ class _DevTools implements DevToolsBinding {
     record.deltas = deltas;
     record.mutations++;
     if (note != null) record.note = note;
-    _collectionMutations++;
 
     _timeline.add(
       TimelineEvent(
@@ -795,44 +760,32 @@ class _DevTools implements DevToolsBinding {
         protocolVersion: Protocol.version,
         timestamp: _nowMs(),
         settings: _settings,
-        stats: const Stats(),
-        signals: const [],
-        computed: const [],
-        effects: const [],
-        collections: const [],
+        samples: const [],
         batches: const [],
         timeline: const [],
-        performance: const [],
       );
     }
 
     _purgeCollected();
+    final samples = <Sample>[
+      ..._signals.values.map(_signalToSample),
+      ..._computed.values.map(_computedToSample),
+      ..._effects.values.map(_effectToSample),
+      ..._collections.values.map(_collectionToSample),
+    ];
     return Snapshot(
       protocolVersion: Protocol.version,
       timestamp: _nowMs(),
       settings: _settings,
-      stats: _buildStats(),
-      signals: _signals.values.map(_signalToProtocol).toList(),
-      computed: _computed.values.map(_computedToProtocol).toList(),
-      effects: _effects.values.map(_effectToProtocol).toList(),
-      collections: _collections.values.map(_collectionToProtocol).toList(),
+      samples: samples,
       batches: List<BatchSample>.from(_batches),
       timeline: List<TimelineEvent>.from(_timeline),
-      performance: List<PerformanceSample>.from(_performance),
     );
   }
 
   void _clearHistory() {
     _timeline.clear();
     _batches.clear();
-    _performance.clear();
-    _signalWrites = 0;
-    _computedRuns = 0;
-    _effectRuns = 0;
-    _collectionMutations = 0;
-    _batchWrites = 0;
-    _effectDurationTotalMs = 0;
-    _effectDurationCount = 0;
   }
 
   void _registerExtensions() {
@@ -883,68 +836,14 @@ class _DevTools implements DevToolsBinding {
     }
   }
 
-  void _startSampling() {
-    _samplingTimer?.cancel();
-    if (!_settings.enabled || _isRunningInTest()) return;
-    _samplingTimer = Timer.periodic(
-      Duration(milliseconds: _settings.sampleIntervalMs),
-      (_) => _recordPerformanceSample(),
-    );
-  }
-
-  void _recordPerformanceSample() {
-    if (!_shouldTrack()) return;
-    final now = _nowMs();
-    final avgEffect = _effectDurationCount == 0
-        ? 0.0
-        : _effectDurationTotalMs / _effectDurationCount;
-    final sample = PerformanceSample(
-      timestamp: now,
-      signalCount: _signals.length,
-      computedCount: _computed.length,
-      effectCount: _effects.length,
-      collectionCount: _collections.length,
-      signalWrites: _signalWrites,
-      computedRuns: _computedRuns,
-      effectRuns: _effectRuns,
-      collectionMutations: _collectionMutations,
-      batchWrites: _batchWrites,
-      avgEffectDurationMs: avgEffect,
-    );
-    _performance.add(sample);
-    _trimList(_performance, _settings.performanceLimit);
-
-    _signalWrites = 0;
-    _computedRuns = 0;
-    _effectRuns = 0;
-    _collectionMutations = 0;
-    _batchWrites = 0;
-    _effectDurationTotalMs = 0;
-    _effectDurationCount = 0;
-  }
-
-  Stats _buildStats() {
-    return Stats(
-      signals: _signals.length,
-      computed: _computed.length,
-      effects: _effects.length,
-      collections: _collections.length,
-      batches: _batches.length,
-      timelineEvents: _timeline.length,
-      signalWrites: _signalWrites,
-      effectRuns: _effectRuns,
-      computedRuns: _computedRuns,
-      collectionMutations: _collectionMutations,
-    );
-  }
-
-  SignalSample _signalToProtocol(_SignalRecord record) {
+  Sample _signalToSample(_SignalRecord record) {
     final node = record.node.target;
     if (node == null) {
       record.disposed = true;
     }
-    return SignalSample(
+    return Sample(
       id: record.id,
+      kind: 'signal',
       label: record.label,
       owner: record.owner,
       scope: record.scope,
@@ -959,13 +858,14 @@ class _DevTools implements DevToolsBinding {
     );
   }
 
-  ComputedSample _computedToProtocol(_ComputedRecord record) {
+  Sample _computedToSample(_ComputedRecord record) {
     final node = record.node.target;
     if (node == null) {
       record.disposed = true;
     }
-    return ComputedSample(
+    return Sample(
       id: record.id,
+      kind: 'computed',
       label: record.label,
       owner: record.owner,
       scope: record.scope,
@@ -981,13 +881,14 @@ class _DevTools implements DevToolsBinding {
     );
   }
 
-  EffectSample _effectToProtocol(_EffectRecord record) {
+  Sample _effectToSample(_EffectRecord record) {
     final node = record.node.target;
     if (node == null) {
       record.disposed = true;
     }
-    return EffectSample(
+    return Sample(
       id: record.id,
+      kind: 'effect',
       label: record.label,
       owner: record.owner,
       scope: record.scope,
@@ -995,19 +896,19 @@ class _DevTools implements DevToolsBinding {
       updatedAt: record.updatedAt,
       runs: record.runs,
       lastDurationMs: record.lastDurationMs,
-      isHot: record.isHot,
       status: record.disposed ? 'Disposed' : 'Active',
       note: record.note,
     );
   }
 
-  CollectionSample _collectionToProtocol(_CollectionRecord record) {
+  Sample _collectionToSample(_CollectionRecord record) {
     final collection = record.collection.target;
     if (collection == null) {
       record.disposed = true;
     }
-    return CollectionSample(
+    return Sample(
       id: record.id,
+      kind: 'collection',
       label: record.label,
       owner: record.owner,
       scope: record.scope,
@@ -1194,7 +1095,6 @@ class _EffectRecord {
   int updatedAt = 0;
   int runs = 0;
   int lastDurationMs = 0;
-  bool isHot = false;
   bool disposed = false;
 }
 

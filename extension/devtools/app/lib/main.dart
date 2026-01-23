@@ -9,6 +9,10 @@ import 'package:oref/devtools.dart';
 
 import 'oref_service.dart';
 
+List<Sample> _samplesByKind(List<Sample> samples, String kind) {
+  return samples.where((sample) => sample.kind == kind).toList();
+}
+
 void main() {
   runApp(const DevToolsExtension(child: OrefDevToolsApp()));
 }
@@ -739,13 +743,13 @@ class _OverviewPanel extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final controller = OrefDevToolsScope.of(context);
     final snapshot = controller.snapshot;
-    final stats = snapshot?.stats;
-    final signals = snapshot?.signals ?? const <SignalSample>[];
-    final computed = snapshot?.computed ?? const <ComputedSample>[];
-    final effects = snapshot?.effects ?? const <EffectSample>[];
-    final collections = snapshot?.collections ?? const <CollectionSample>[];
+    final samples = snapshot?.samples ?? const <Sample>[];
+    final signals = _samplesByKind(samples, 'signal');
+    final computed = _samplesByKind(samples, 'computed');
+    final effects = _samplesByKind(samples, 'effect');
+    final collections = _samplesByKind(samples, 'collection');
     final batches = snapshot?.batches ?? const <BatchSample>[];
-    final performance = snapshot?.performance ?? const <PerformanceSample>[];
+    final performance = controller.performance;
     final settings = snapshot?.settings ?? const DevToolsSettings();
     final canInteract = controller.connected;
 
@@ -767,23 +771,23 @@ class _OverviewPanel extends StatelessWidget {
 
     final topSignals = summarizeTop(
       signals,
-      (entry) => entry.writes,
-      (entry) => '${entry.label} (${entry.writes})',
+      (entry) => entry.writes ?? 0,
+      (entry) => '${entry.label} (${entry.writes ?? 0})',
     );
     final topComputed = summarizeTop(
       computed,
-      (entry) => entry.runs,
-      (entry) => '${entry.label} (${entry.runs})',
+      (entry) => entry.runs ?? 0,
+      (entry) => '${entry.label} (${entry.runs ?? 0})',
     );
     final hotEffects = summarizeTop(
       effects,
-      (entry) => entry.lastDurationMs,
-      (entry) => '${entry.label} (${entry.lastDurationMs}ms)',
+      (entry) => entry.lastDurationMs ?? 0,
+      (entry) => '${entry.label} (${entry.lastDurationMs ?? 0}ms)',
     );
     final busyCollections = summarizeTop(
       collections,
-      (entry) => entry.mutations,
-      (entry) => '${entry.label} (${entry.mutations})',
+      (entry) => entry.mutations ?? 0,
+      (entry) => '${entry.label} (${entry.mutations ?? 0})',
     );
 
     final totalNodes = signals.length + computed.length + effects.length;
@@ -792,10 +796,10 @@ class _OverviewPanel extends StatelessWidget {
         computed.where((entry) => entry.status != 'Disposed').length +
         effects.where((entry) => entry.status != 'Disposed').length;
     final watchedNodes =
-        signals.where((entry) => entry.listeners > 0).length +
-        computed.where((entry) => entry.listeners > 0).length;
+        signals.where((entry) => (entry.listeners ?? 0) > 0).length +
+        computed.where((entry) => (entry.listeners ?? 0) > 0).length;
 
-    int activityScore(PerformanceSample sample) {
+    int activityScore(UiPerformanceSample sample) {
       return sample.signalWrites +
           sample.computedRuns +
           sample.effectRuns +
@@ -840,29 +844,29 @@ class _OverviewPanel extends StatelessWidget {
             children: [
               _MetricTile(
                 label: 'Signals',
-                value: _formatCount(stats?.signals),
-                trend: _formatDelta(stats?.signalWrites, suffix: 'upd'),
+                value: _formatCount(signals.length),
+                trend: _formatDelta(lastSample?.signalWrites, suffix: 'upd'),
                 accent: OrefPalette.teal,
                 icon: Icons.bubble_chart_rounded,
               ),
               _MetricTile(
                 label: 'Computed',
-                value: _formatCount(stats?.computed),
-                trend: _formatDelta(stats?.computedRuns, suffix: 'runs'),
+                value: _formatCount(computed.length),
+                trend: _formatDelta(lastSample?.computedRuns, suffix: 'runs'),
                 accent: OrefPalette.indigo,
                 icon: Icons.schema_rounded,
               ),
               _MetricTile(
                 label: 'Effects',
-                value: _formatCount(stats?.effects),
-                trend: _formatDelta(stats?.effectRuns, suffix: 'runs'),
+                value: _formatCount(effects.length),
+                trend: _formatDelta(lastSample?.effectRuns, suffix: 'runs'),
                 accent: OrefPalette.pink,
                 icon: Icons.auto_awesome_motion_rounded,
               ),
               _MetricTile(
                 label: 'Batches',
-                value: _formatCount(stats?.batches),
-                trend: _formatDelta(stats?.signalWrites, suffix: 'writes'),
+                value: _formatCount(batches.length),
+                trend: _formatDelta(lastSample?.batchWrites, suffix: 'writes'),
                 accent: OrefPalette.coral,
                 icon: Icons.layers_rounded,
               ),
@@ -962,11 +966,11 @@ class _OverviewPanel extends StatelessWidget {
                       ),
                       _InfoRow(
                         label: 'Signals',
-                        value: _formatCount(stats?.signals),
+                        value: _formatCount(signals.length),
                       ),
                       _InfoRow(
                         label: 'Effects',
-                        value: _formatCount(stats?.effects),
+                        value: _formatCount(effects.length),
                       ),
                       _InfoRow(
                         label: 'Last update',
@@ -1131,8 +1135,10 @@ class _SignalsPanelState extends State<_SignalsPanel> {
         child: LayoutBuilder(
           builder: (context, constraints) {
             final controller = OrefDevToolsScope.of(context);
-            final entries =
-                controller.snapshot?.signals ?? const <SignalSample>[];
+            final entries = _samplesByKind(
+              controller.snapshot?.samples ?? const <Sample>[],
+              'signal',
+            );
             final isSplit = constraints.maxWidth >= 980;
             final filtered = _filterSignals(entries);
             final selected = entries.firstWhereOrNull(
@@ -1199,13 +1205,13 @@ class _SignalsPanelState extends State<_SignalsPanel> {
     );
   }
 
-  List<SignalSample> _filterSignals(List<SignalSample> entries) {
+  List<Sample> _filterSignals(List<Sample> entries) {
     final query = _searchController.text.trim().toLowerCase();
     final filtered = entries.where((entry) {
       final matchesQuery =
           query.isEmpty || entry.label.toLowerCase().contains(query);
-      final matchesStatus =
-          _statusFilter == 'All' || entry.status == _statusFilter;
+      final status = entry.status ?? 'Active';
+      final matchesStatus = _statusFilter == 'All' || status == _statusFilter;
       return matchesQuery && matchesStatus;
     }).toList();
     filtered.sort(
@@ -1268,8 +1274,10 @@ class _ComputedPanelState extends State<_ComputedPanel> {
         child: LayoutBuilder(
           builder: (context, constraints) {
             final controller = OrefDevToolsScope.of(context);
-            final entries =
-                controller.snapshot?.computed ?? const <ComputedSample>[];
+            final entries = _samplesByKind(
+              controller.snapshot?.samples ?? const <Sample>[],
+              'computed',
+            );
             final isSplit = constraints.maxWidth >= 980;
             final filtered = _filterComputed(entries);
             final selected = entries.firstWhereOrNull(
@@ -1336,13 +1344,13 @@ class _ComputedPanelState extends State<_ComputedPanel> {
     );
   }
 
-  List<ComputedSample> _filterComputed(List<ComputedSample> entries) {
+  List<Sample> _filterComputed(List<Sample> entries) {
     final query = _searchController.text.trim().toLowerCase();
     final filtered = entries.where((entry) {
       final matchesQuery =
           query.isEmpty || entry.label.toLowerCase().contains(query);
-      final matchesStatus =
-          _statusFilter == 'All' || entry.status == _statusFilter;
+      final status = entry.status ?? 'Active';
+      final matchesStatus = _statusFilter == 'All' || status == _statusFilter;
       return matchesQuery && matchesStatus;
     }).toList();
     filtered.sort(
@@ -1457,14 +1465,14 @@ class _ComputedList extends StatelessWidget {
     required this.onSelect,
   });
 
-  final List<ComputedSample> entries;
+  final List<Sample> entries;
   final int? selectedId;
   final bool isCompact;
   final _SortKey sortKey;
   final bool sortAscending;
   final VoidCallback onSortName;
   final VoidCallback onSortUpdated;
-  final ValueChanged<ComputedSample> onSelect;
+  final ValueChanged<Sample> onSelect;
 
   @override
   Widget build(BuildContext context) {
@@ -1593,7 +1601,7 @@ class _ComputedRow extends StatelessWidget {
     required this.onTap,
   });
 
-  final ComputedSample entry;
+  final Sample entry;
   final bool isSelected;
   final bool isCompact;
   final VoidCallback onTap;
@@ -1632,13 +1640,13 @@ class _ComputedRow extends StatelessWidget {
                       spacing: 8,
                       runSpacing: 6,
                       children: [
-                        _StatusBadge(status: entry.status),
+                        _StatusBadge(status: entry.status ?? 'Active'),
                         _GlassPill(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 10,
                             vertical: 6,
                           ),
-                          child: Text('${entry.runs} runs'),
+                          child: Text('${entry.runs ?? 0} runs'),
                         ),
                         _GlassPill(
                           padding: const EdgeInsets.symmetric(
@@ -1651,7 +1659,7 @@ class _ComputedRow extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      entry.value,
+                      entry.value ?? '',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
@@ -1676,7 +1684,7 @@ class _ComputedRow extends StatelessWidget {
                     Expanded(
                       flex: 2,
                       child: Text(
-                        entry.value,
+                        entry.value ?? '',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.center,
@@ -1686,12 +1694,15 @@ class _ComputedRow extends StatelessWidget {
                       flex: 2,
                       child: Align(
                         alignment: Alignment.center,
-                        child: _StatusBadge(status: entry.status),
+                        child: _StatusBadge(status: entry.status ?? 'Active'),
                       ),
                     ),
                     Expanded(
                       flex: 2,
-                      child: Text('${entry.runs}', textAlign: TextAlign.center),
+                      child: Text(
+                        '${entry.runs ?? 0}',
+                        textAlign: TextAlign.center,
+                      ),
                     ),
                     Expanded(
                       flex: 2,
@@ -1712,7 +1723,7 @@ class _ComputedRow extends StatelessWidget {
 class _ComputedDetail extends StatelessWidget {
   const _ComputedDetail({required this.entry});
 
-  final ComputedSample? entry;
+  final Sample? entry;
 
   @override
   Widget build(BuildContext context) {
@@ -1737,17 +1748,17 @@ class _ComputedDetail extends StatelessWidget {
         children: [
           Text(entry!.label, style: textTheme.titleMedium),
           const SizedBox(height: 8),
-          _StatusBadge(status: entry!.status),
+          _StatusBadge(status: entry!.status ?? 'Active'),
           const SizedBox(height: 16),
           _InfoRow(label: 'Owner', value: entry!.owner),
           _InfoRow(label: 'Scope', value: entry!.scope),
           _InfoRow(label: 'Type', value: entry!.type),
-          _InfoRow(label: 'Value', value: entry!.value),
+          _InfoRow(label: 'Value', value: entry!.value ?? ''),
           _InfoRow(label: 'Updated', value: _formatAge(entry!.updatedAt)),
-          _InfoRow(label: 'Runs', value: entry!.runs.toString()),
-          _InfoRow(label: 'Last run', value: '${entry!.lastDurationMs}ms'),
-          _InfoRow(label: 'Listeners', value: entry!.listeners.toString()),
-          _InfoRow(label: 'Deps', value: entry!.dependencies.toString()),
+          _InfoRow(label: 'Runs', value: '${entry!.runs ?? 0}'),
+          _InfoRow(label: 'Last run', value: '${entry!.lastDurationMs ?? 0}ms'),
+          _InfoRow(label: 'Listeners', value: '${entry!.listeners ?? 0}'),
+          _InfoRow(label: 'Deps', value: '${entry!.dependencies ?? 0}'),
           if (entry!.note.isNotEmpty) ...[
             const SizedBox(height: 12),
             Text(entry!.note, style: textTheme.bodySmall),
@@ -1794,18 +1805,21 @@ class _CollectionsPanelState extends State<_CollectionsPanel> {
   @override
   Widget build(BuildContext context) {
     final controller = OrefDevToolsScope.of(context);
-    final entries =
-        controller.snapshot?.collections ?? const <CollectionSample>[];
+    final entries = _samplesByKind(
+      controller.snapshot?.samples ?? const <Sample>[],
+      'collection',
+    );
     final typeFilters = _buildFilterOptions(entries.map((entry) => entry.type));
     final opFilters = _buildFilterOptions(
-      entries.map((entry) => entry.operation),
+      entries.map((entry) => entry.operation ?? 'Idle'),
     );
     final filtered = entries.where((entry) {
       final query = _searchController.text.trim().toLowerCase();
       final matchesQuery =
           query.isEmpty || entry.label.toLowerCase().contains(query);
       final matchesType = _typeFilter == 'All' || entry.type == _typeFilter;
-      final matchesOp = _opFilter == 'All' || entry.operation == _opFilter;
+      final operation = entry.operation ?? 'Idle';
+      final matchesOp = _opFilter == 'All' || operation == _opFilter;
       return matchesQuery && matchesType && matchesOp;
     }).toList();
     filtered.sort(
@@ -2364,8 +2378,7 @@ class _PerformancePanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = OrefDevToolsScope.of(context);
-    final samples =
-        controller.snapshot?.performance ?? const <PerformanceSample>[];
+    final samples = controller.performance;
     final latest = samples.isNotEmpty ? samples.last : null;
 
     return _ConnectionGuard(
@@ -2451,7 +2464,7 @@ class _PerformancePanel extends StatelessWidget {
 class _PerformanceList extends StatelessWidget {
   const _PerformanceList({required this.samples});
 
-  final List<PerformanceSample> samples;
+  final List<UiPerformanceSample> samples;
 
   @override
   Widget build(BuildContext context) {
@@ -2483,7 +2496,7 @@ class _PerformanceList extends StatelessWidget {
 class _PerformanceRow extends StatelessWidget {
   const _PerformanceRow({required this.sample});
 
-  final PerformanceSample sample;
+  final UiPerformanceSample sample;
 
   @override
   Widget build(BuildContext context) {
@@ -2904,7 +2917,7 @@ class _CollectionsList extends StatelessWidget {
     required this.onSortUpdated,
   });
 
-  final List<CollectionSample> entries;
+  final List<Sample> entries;
   final bool isCompact;
   final _SortKey sortKey;
   final bool sortAscending;
@@ -3028,12 +3041,13 @@ class _CollectionsHeaderRow extends StatelessWidget {
 class _CollectionRow extends StatelessWidget {
   const _CollectionRow({required this.entry, required this.isCompact});
 
-  final CollectionSample entry;
+  final Sample entry;
   final bool isCompact;
 
   @override
   Widget build(BuildContext context) {
-    final tone = _collectionOpColors[entry.operation] ?? OrefPalette.teal;
+    final tone =
+        _collectionOpColors[entry.operation ?? 'Idle'] ?? OrefPalette.teal;
     final textTheme = Theme.of(context).textTheme;
 
     return _GlassCard(
@@ -3066,7 +3080,7 @@ class _CollectionRow extends StatelessWidget {
                           vertical: 6,
                         ),
                         color: tone.withValues(alpha: 0.22),
-                        child: Text(entry.operation),
+                        child: Text(entry.operation ?? 'Idle'),
                       ),
                       _GlassPill(
                         padding: const EdgeInsets.symmetric(
@@ -3111,7 +3125,7 @@ class _CollectionRow extends StatelessWidget {
                           vertical: 6,
                         ),
                         color: tone.withValues(alpha: 0.22),
-                        child: Text(entry.operation),
+                        child: Text(entry.operation ?? 'Idle'),
                       ),
                     ),
                   ),
@@ -3133,7 +3147,8 @@ class _CollectionRow extends StatelessWidget {
               spacing: 8,
               runSpacing: 8,
               children: [
-                for (final delta in entry.deltas) _DiffToken(delta: delta),
+                for (final delta in entry.deltas ?? const [])
+                  _DiffToken(delta: delta),
               ],
             ),
             if (entry.note.isNotEmpty) ...[
@@ -3176,7 +3191,10 @@ class _EffectsPanelState extends State<_EffectsPanel> {
   @override
   Widget build(BuildContext context) {
     final controller = OrefDevToolsScope.of(context);
-    final entries = controller.snapshot?.effects ?? const <EffectSample>[];
+    final entries = _samplesByKind(
+      controller.snapshot?.samples ?? const <Sample>[],
+      'effect',
+    );
     final typeFilters = _buildFilterOptions(entries.map((entry) => entry.type));
     final scopeFilters = _buildFilterOptions(
       entries.map((entry) => entry.scope),
@@ -3310,7 +3328,7 @@ class _EffectsHeader extends StatelessWidget {
 class _EffectsTimeline extends StatelessWidget {
   const _EffectsTimeline({required this.entries});
 
-  final List<EffectSample> entries;
+  final List<Sample> entries;
 
   @override
   Widget build(BuildContext context) {
@@ -3356,11 +3374,14 @@ class _EffectsTimeline extends StatelessWidget {
 class _EffectRow extends StatelessWidget {
   const _EffectRow({required this.entry});
 
-  final EffectSample entry;
+  final Sample entry;
 
   @override
   Widget build(BuildContext context) {
     final tone = _effectColors[entry.type] ?? OrefPalette.teal;
+    final runs = entry.runs ?? 0;
+    final duration = entry.lastDurationMs ?? 0;
+    final isHot = duration > 16 || runs >= 8;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -3392,7 +3413,7 @@ class _EffectRow extends StatelessWidget {
                         style: Theme.of(context).textTheme.titleSmall,
                       ),
                     ),
-                    if (entry.isHot) const _HotBadge(),
+                    if (isHot) const _HotBadge(),
                   ],
                 ),
                 const SizedBox(height: 6),
@@ -3427,17 +3448,17 @@ class _EffectRow extends StatelessWidget {
                         horizontal: 10,
                         vertical: 6,
                       ),
-                      child: Text('Runs ${entry.runs}'),
+                      child: Text('Runs $runs'),
                     ),
                     _GlassPill(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 10,
                         vertical: 6,
                       ),
-                      color: entry.lastDurationMs > 16
+                      color: duration > 16
                           ? OrefPalette.coral.withValues(alpha: 0.2)
                           : OrefPalette.lime.withValues(alpha: 0.2),
-                      child: Text('${entry.lastDurationMs}ms'),
+                      child: Text('${duration}ms'),
                     ),
                   ],
                 ),
@@ -3545,14 +3566,14 @@ class _SignalList extends StatelessWidget {
     required this.onSelect,
   });
 
-  final List<SignalSample> entries;
+  final List<Sample> entries;
   final int? selectedId;
   final bool isCompact;
   final _SortKey sortKey;
   final bool sortAscending;
   final VoidCallback onSortName;
   final VoidCallback onSortUpdated;
-  final ValueChanged<SignalSample> onSelect;
+  final ValueChanged<Sample> onSelect;
 
   @override
   Widget build(BuildContext context) {
@@ -3681,7 +3702,7 @@ class _SignalRow extends StatelessWidget {
     required this.onTap,
   });
 
-  final SignalSample entry;
+  final Sample entry;
   final bool isSelected;
   final bool isCompact;
   final VoidCallback onTap;
@@ -3727,7 +3748,7 @@ class _SignalRow extends StatelessWidget {
                           ),
                           child: Text(entry.type),
                         ),
-                        _StatusBadge(status: entry.status),
+                        _StatusBadge(status: entry.status ?? 'Active'),
                         _GlassPill(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 10,
@@ -3739,7 +3760,7 @@ class _SignalRow extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      entry.value,
+                      entry.value ?? '',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
@@ -3764,7 +3785,7 @@ class _SignalRow extends StatelessWidget {
                     Expanded(
                       flex: 2,
                       child: Text(
-                        entry.value,
+                        entry.value ?? '',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.center,
@@ -3778,7 +3799,7 @@ class _SignalRow extends StatelessWidget {
                       flex: 2,
                       child: Align(
                         alignment: Alignment.center,
-                        child: _StatusBadge(status: entry.status),
+                        child: _StatusBadge(status: entry.status ?? 'Active'),
                       ),
                     ),
                     Expanded(
@@ -3799,7 +3820,7 @@ class _SignalRow extends StatelessWidget {
 class _SignalDetail extends StatelessWidget {
   const _SignalDetail({required this.entry});
 
-  final SignalSample? entry;
+  final Sample? entry;
 
   @override
   Widget build(BuildContext context) {
@@ -3824,15 +3845,15 @@ class _SignalDetail extends StatelessWidget {
         children: [
           Text(entry!.label, style: textTheme.titleMedium),
           const SizedBox(height: 8),
-          _StatusBadge(status: entry!.status),
+          _StatusBadge(status: entry!.status ?? 'Active'),
           const SizedBox(height: 16),
           _InfoRow(label: 'Owner', value: entry!.owner),
           _InfoRow(label: 'Scope', value: entry!.scope),
           _InfoRow(label: 'Type', value: entry!.type),
-          _InfoRow(label: 'Value', value: entry!.value),
+          _InfoRow(label: 'Value', value: entry!.value ?? ''),
           _InfoRow(label: 'Updated', value: _formatAge(entry!.updatedAt)),
-          _InfoRow(label: 'Listeners', value: entry!.listeners.toString()),
-          _InfoRow(label: 'Deps', value: entry!.dependencies.toString()),
+          _InfoRow(label: 'Listeners', value: '${entry!.listeners ?? 0}'),
+          _InfoRow(label: 'Deps', value: '${entry!.dependencies ?? 0}'),
           if (entry!.note.isNotEmpty) ...[
             const SizedBox(height: 12),
             Text(entry!.note, style: textTheme.bodySmall),
