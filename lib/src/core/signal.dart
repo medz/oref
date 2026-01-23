@@ -31,18 +31,19 @@ alien.WritableSignal<T> signal<T>(
 }) {
   if (context == null) {
     final signal = _SignalImpl(initialValue);
-    registerSignal(
+    final handle = devtools.bindSignal(
       signal,
       debugLabel: debugLabel,
       debugOwner: debugOwner,
       debugScope: debugScope,
       debugNote: debugNote,
     );
+    signal.attachDevTools(handle);
     return signal;
   }
 
   final signal = useMemoized(context, () => _SignalImpl(initialValue));
-  final registered = registerSignal(
+  final handle = devtools.bindSignal(
     signal,
     context: context,
     debugLabel: debugLabel,
@@ -50,8 +51,9 @@ alien.WritableSignal<T> signal<T>(
     debugScope: debugScope,
     debugNote: debugNote,
   );
-  if (registered) {
-    registerElementDisposer(context, () => markSignalDisposed(signal));
+  signal.attachDevTools(handle);
+  if (handle.isNew) {
+    registerElementDisposer(context, handle.dispose);
   }
   return signal;
 }
@@ -65,9 +67,15 @@ class _SignalImpl<T> extends alien.SignalNode<T>
         currentValue: initialValue,
       );
 
+  SignalHandle? _devtools;
+
+  void attachDevTools(SignalHandle handle) {
+    _devtools = handle;
+  }
+
   @override
   void set(T newValue) {
-    recordSignalWrite(this, newValue);
+    _devtools?.write(newValue);
     super.set(newValue);
   }
 

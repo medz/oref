@@ -19,18 +19,19 @@ alien.Computed<T> computed<T>(
 }) {
   if (context == null) {
     final computed = _OrefComputed<T>(getter);
-    registerComputed(
+    final handle = devtools.bindComputed(
       computed,
       debugLabel: debugLabel,
       debugOwner: debugOwner,
       debugScope: debugScope,
       debugNote: debugNote,
     );
+    computed.attachDevTools(handle);
     return computed;
   }
 
   final c = useMemoized(context, () => _OrefComputed<T>(getter));
-  final registered = registerComputed(
+  final handle = devtools.bindComputed(
     c,
     context: context,
     debugLabel: debugLabel,
@@ -38,8 +39,9 @@ alien.Computed<T> computed<T>(
     debugScope: debugScope,
     debugNote: debugNote,
   );
-  if (registered) {
-    registerElementDisposer(context, () => markComputedDisposed(c));
+  c.attachDevTools(handle);
+  if (handle.isNew) {
+    registerElementDisposer(context, handle.dispose);
   }
   assert(() {
     c.fn = getter;
@@ -55,6 +57,11 @@ class _OrefComputed<T> extends alien.ComputedNode<T>
   _OrefComputed(this.fn) : super(flags: .none, getter: fn);
 
   T Function(T?) fn;
+  ComputedHandle? _devtools;
+
+  void attachDevTools(ComputedHandle handle) {
+    _devtools = handle;
+  }
 
   @override
   T Function(T?) get getter => fn;
@@ -64,7 +71,7 @@ class _OrefComputed<T> extends alien.ComputedNode<T>
     final stopwatch = Stopwatch()..start();
     final changed = super.didUpdate();
     stopwatch.stop();
-    recordComputedRun(this, currentValue, stopwatch.elapsedMilliseconds);
+    _devtools?.run(currentValue, stopwatch.elapsedMilliseconds);
     return changed;
   }
 
@@ -77,7 +84,7 @@ class _OrefComputed<T> extends alien.ComputedNode<T>
     final stopwatch = Stopwatch()..start();
     final value = super.get();
     stopwatch.stop();
-    recordComputedRun(this, currentValue, stopwatch.elapsedMilliseconds);
+    _devtools?.run(currentValue, stopwatch.elapsedMilliseconds);
     return value;
   }
 
@@ -132,18 +139,19 @@ WritableComputed<T> writableComputed<T>(
 }) {
   if (context == null) {
     final computed = _OrefWritableComputed(get, set);
-    registerComputed(
+    final handle = devtools.bindComputed(
       computed,
       debugLabel: debugLabel,
       debugOwner: debugOwner,
       debugScope: debugScope,
       debugNote: debugNote,
     );
+    computed.attachDevTools(handle);
     return computed;
   }
 
   final c = useMemoized(context, () => _OrefWritableComputed(get, set));
-  final registered = registerComputed(
+  final handle = devtools.bindComputed(
     c,
     context: context,
     debugLabel: debugLabel,
@@ -151,8 +159,9 @@ WritableComputed<T> writableComputed<T>(
     debugScope: debugScope,
     debugNote: debugNote,
   );
-  if (registered) {
-    registerElementDisposer(context, () => markComputedDisposed(c));
+  c.attachDevTools(handle);
+  if (handle.isNew) {
+    registerElementDisposer(context, handle.dispose);
   }
   assert(() {
     c.fn = get;

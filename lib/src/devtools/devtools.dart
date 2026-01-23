@@ -35,144 +35,319 @@ void configure({
 
 DevToolsSettings get settings => _DevTools._instance._settings;
 
-bool registerSignal(
-  alien_preset.SignalNode node, {
-  BuildContext? context,
-  String? debugLabel,
-  Object? debugOwner,
-  String? debugScope,
-  String? debugNote,
-}) {
-  return _DevTools._instance._registerSignal(
-    node,
-    context: context,
-    debugLabel: debugLabel,
-    debugOwner: debugOwner,
-    debugScope: debugScope,
-    debugNote: debugNote,
-  );
+abstract class DevToolsBinding {
+  SignalHandle bindSignal(
+    alien_preset.SignalNode node, {
+    BuildContext? context,
+    String? debugLabel,
+    Object? debugOwner,
+    String? debugScope,
+    String? debugNote,
+  });
+
+  ComputedHandle bindComputed(
+    alien_preset.ComputedNode node, {
+    BuildContext? context,
+    String? debugLabel,
+    Object? debugOwner,
+    String? debugScope,
+    String? debugNote,
+  });
+
+  EffectHandle bindEffect(
+    alien_preset.EffectNode node, {
+    BuildContext? context,
+    String? debugLabel,
+    Object? debugOwner,
+    String? debugScope,
+    String? debugType,
+    String? debugNote,
+  });
+
+  CollectionHandle bindCollection(
+    Object collection, {
+    BuildContext? context,
+    required String type,
+    String? debugLabel,
+    Object? debugOwner,
+    String? debugScope,
+    String? debugNote,
+  });
+
+  void batchStart();
+  void batchEnd();
 }
 
-void markSignalDisposed(alien_preset.SignalNode node) {
-  _DevTools._instance._markSignalDisposed(node);
+abstract class SignalHandle {
+  bool get isNew;
+  void write(Object? value);
+  void dispose();
 }
 
-void recordSignalWrite(alien_preset.SignalNode node, Object? value) {
-  _DevTools._instance._recordSignalWrite(node, value);
+abstract class ComputedHandle {
+  bool get isNew;
+  void run(Object? value, int durationMs);
+  void dispose();
 }
 
-bool registerComputed(
-  alien_preset.ComputedNode node, {
-  BuildContext? context,
-  String? debugLabel,
-  Object? debugOwner,
-  String? debugScope,
-  String? debugNote,
-}) {
-  return _DevTools._instance._registerComputed(
-    node,
-    context: context,
-    debugLabel: debugLabel,
-    debugOwner: debugOwner,
-    debugScope: debugScope,
-    debugNote: debugNote,
-  );
+abstract class EffectHandle {
+  bool get isNew;
+  void run(int durationMs);
+  void dispose();
 }
 
-void markComputedDisposed(alien_preset.ComputedNode node) {
-  _DevTools._instance._markComputedDisposed(node);
+abstract class CollectionHandle {
+  bool get isNew;
+  void mutate({
+    required String operation,
+    required List<CollectionDelta> deltas,
+    String? note,
+  });
+  void dispose();
 }
 
-void recordComputedRun(
-  alien_preset.ComputedNode node,
-  Object? value,
-  int durationMs,
-) {
-  _DevTools._instance._recordComputedRun(node, value, durationMs);
+const SignalHandle _noopSignalHandle = _NoopSignalHandle();
+const ComputedHandle _noopComputedHandle = _NoopComputedHandle();
+const EffectHandle _noopEffectHandle = _NoopEffectHandle();
+const CollectionHandle _noopCollectionHandle = _NoopCollectionHandle();
+
+final DevToolsBinding devtools = _DevTools._instance;
+
+class _NoopSignalHandle implements SignalHandle {
+  const _NoopSignalHandle();
+
+  @override
+  bool get isNew => false;
+
+  @override
+  void write(Object? value) {}
+
+  @override
+  void dispose() {}
 }
 
-bool registerEffect(
-  alien_preset.EffectNode node, {
-  BuildContext? context,
-  String? debugLabel,
-  Object? debugOwner,
-  String? debugScope,
-  String? debugType,
-  String? debugNote,
-}) {
-  return _DevTools._instance._registerEffect(
-    node,
-    context: context,
-    debugLabel: debugLabel,
-    debugOwner: debugOwner,
-    debugScope: debugScope,
-    debugType: debugType,
-    debugNote: debugNote,
-  );
+class _NoopComputedHandle implements ComputedHandle {
+  const _NoopComputedHandle();
+
+  @override
+  bool get isNew => false;
+
+  @override
+  void run(Object? value, int durationMs) {}
+
+  @override
+  void dispose() {}
 }
 
-void recordEffectRun(alien_preset.EffectNode node, int durationMs) {
-  _DevTools._instance._recordEffectRun(node, durationMs);
+class _NoopEffectHandle implements EffectHandle {
+  const _NoopEffectHandle();
+
+  @override
+  bool get isNew => false;
+
+  @override
+  void run(int durationMs) {}
+
+  @override
+  void dispose() {}
 }
 
-void markEffectDisposed(alien_preset.EffectNode node) {
-  _DevTools._instance._markEffectDisposed(node);
+class _NoopCollectionHandle implements CollectionHandle {
+  const _NoopCollectionHandle();
+
+  @override
+  bool get isNew => false;
+
+  @override
+  void mutate({
+    required String operation,
+    required List<CollectionDelta> deltas,
+    String? note,
+  }) {}
+
+  @override
+  void dispose() {}
 }
 
-bool registerCollection(
-  Object collection, {
-  BuildContext? context,
-  required String type,
-  String? debugLabel,
-  Object? debugOwner,
-  String? debugScope,
-  String? debugNote,
-}) {
-  return _DevTools._instance._registerCollection(
-    collection,
-    context: context,
-    type: type,
-    debugLabel: debugLabel,
-    debugOwner: debugOwner,
-    debugScope: debugScope,
-    debugNote: debugNote,
-  );
+class _SignalHandle implements SignalHandle {
+  _SignalHandle(this._devtools, this._node, {required this.isNew});
+
+  final _DevTools _devtools;
+  final alien_preset.SignalNode _node;
+
+  @override
+  final bool isNew;
+
+  @override
+  void write(Object? value) {
+    _devtools._recordSignalWrite(_node, value);
+  }
+
+  @override
+  void dispose() {
+    _devtools._markSignalDisposed(_node);
+  }
 }
 
-void markCollectionDisposed(Object collection) {
-  _DevTools._instance._markCollectionDisposed(collection);
+class _ComputedHandle implements ComputedHandle {
+  _ComputedHandle(this._devtools, this._node, {required this.isNew});
+
+  final _DevTools _devtools;
+  final alien_preset.ComputedNode _node;
+
+  @override
+  final bool isNew;
+
+  @override
+  void run(Object? value, int durationMs) {
+    _devtools._recordComputedRun(_node, value, durationMs);
+  }
+
+  @override
+  void dispose() {
+    _devtools._markComputedDisposed(_node);
+  }
 }
 
-void recordCollectionMutation(
-  Object collection, {
-  required String operation,
-  required List<CollectionDelta> deltas,
-  String? note,
-}) {
-  _DevTools._instance._recordCollectionMutation(
-    collection,
-    operation: operation,
-    deltas: deltas,
-    note: note,
-  );
+class _EffectHandle implements EffectHandle {
+  _EffectHandle(this._devtools, this._node, {required this.isNew});
+
+  final _DevTools _devtools;
+  final alien_preset.EffectNode _node;
+
+  @override
+  final bool isNew;
+
+  @override
+  void run(int durationMs) {
+    _devtools._recordEffectRun(_node, durationMs);
+  }
+
+  @override
+  void dispose() {
+    _devtools._markEffectDisposed(_node);
+  }
 }
 
-void recordBatchStart() {
-  _DevTools._instance._recordBatchStart();
+class _CollectionHandle implements CollectionHandle {
+  _CollectionHandle(this._devtools, this._collection, {required this.isNew});
+
+  final _DevTools _devtools;
+  final Object _collection;
+
+  @override
+  final bool isNew;
+
+  @override
+  void mutate({
+    required String operation,
+    required List<CollectionDelta> deltas,
+    String? note,
+  }) {
+    _devtools._recordCollectionMutation(
+      _collection,
+      operation: operation,
+      deltas: deltas,
+      note: note,
+    );
+  }
+
+  @override
+  void dispose() {
+    _devtools._markCollectionDisposed(_collection);
+  }
 }
 
-void recordBatchEnd() {
-  _DevTools._instance._recordBatchEnd();
-}
-
-Snapshot snapshot() => _DevTools._instance._snapshot();
-
-void clearHistory() => _DevTools._instance._clearHistory();
-
-class _DevTools {
+class _DevTools implements DevToolsBinding {
   _DevTools._();
 
   static final _DevTools _instance = _DevTools._();
+
+  @override
+  SignalHandle bindSignal(
+    alien_preset.SignalNode node, {
+    BuildContext? context,
+    String? debugLabel,
+    Object? debugOwner,
+    String? debugScope,
+    String? debugNote,
+  }) {
+    return _bindSignal(
+      node,
+      context: context,
+      debugLabel: debugLabel,
+      debugOwner: debugOwner,
+      debugScope: debugScope,
+      debugNote: debugNote,
+    );
+  }
+
+  @override
+  ComputedHandle bindComputed(
+    alien_preset.ComputedNode node, {
+    BuildContext? context,
+    String? debugLabel,
+    Object? debugOwner,
+    String? debugScope,
+    String? debugNote,
+  }) {
+    return _bindComputed(
+      node,
+      context: context,
+      debugLabel: debugLabel,
+      debugOwner: debugOwner,
+      debugScope: debugScope,
+      debugNote: debugNote,
+    );
+  }
+
+  @override
+  EffectHandle bindEffect(
+    alien_preset.EffectNode node, {
+    BuildContext? context,
+    String? debugLabel,
+    Object? debugOwner,
+    String? debugScope,
+    String? debugType,
+    String? debugNote,
+  }) {
+    return _bindEffect(
+      node,
+      context: context,
+      debugLabel: debugLabel,
+      debugOwner: debugOwner,
+      debugScope: debugScope,
+      debugType: debugType,
+      debugNote: debugNote,
+    );
+  }
+
+  @override
+  CollectionHandle bindCollection(
+    Object collection, {
+    BuildContext? context,
+    required String type,
+    String? debugLabel,
+    Object? debugOwner,
+    String? debugScope,
+    String? debugNote,
+  }) {
+    return _bindCollection(
+      collection,
+      context: context,
+      type: type,
+      debugLabel: debugLabel,
+      debugOwner: debugOwner,
+      debugScope: debugScope,
+      debugNote: debugNote,
+    );
+  }
+
+  @override
+  void batchStart() => _recordBatchStart();
+
+  @override
+  void batchEnd() => _recordBatchEnd();
 
   final Expando<int> _signalIds = Expando<int>('oref_signal');
   final Expando<int> _computedIds = Expando<int>('oref_computed');
@@ -252,7 +427,7 @@ class _DevTools {
     }
   }
 
-  bool _registerSignal(
+  SignalHandle _bindSignal(
     alien_preset.SignalNode node, {
     BuildContext? context,
     String? debugLabel,
@@ -260,15 +435,29 @@ class _DevTools {
     String? debugScope,
     String? debugNote,
   }) {
-    if (!_shouldTrack()) return false;
+    if (!_shouldTrack()) return _noopSignalHandle;
     final existing = _signalIds[node];
-    if (existing != null) return false;
+    if (existing != null) {
+      final record = _signals[existing];
+      if (record != null) {
+        if (debugLabel != null) record.label = debugLabel;
+        if (debugOwner != null || context != null) {
+          record.owner = _describeOwner(debugOwner, context);
+        }
+        if (debugScope != null || context != null) {
+          record.scope = _describeScope(debugScope, context);
+        }
+        if (debugNote != null) record.note = debugNote;
+        record.type = _describeNodeType(node, fallback: 'Signal');
+      }
+      return _SignalHandle(this, node, isNew: false);
+    }
 
     final id = _nextSignalId++;
     _signalIds[node] = id;
     final record = _SignalRecord(
       id: id,
-      node: WeakReference<alien_system.ReactiveNode>(node),
+      node: WeakReference<alien_preset.SignalNode>(node),
       label: debugLabel ?? 'signal#$id',
       owner: _describeOwner(debugOwner, context),
       scope: _describeScope(debugScope, context),
@@ -279,7 +468,7 @@ class _DevTools {
     record.updatedAt = record.createdAt;
     record.value = _previewValue(node.currentValue);
     _signals[id] = record;
-    return true;
+    return _SignalHandle(this, node, isNew: true);
   }
 
   void _markSignalDisposed(alien_preset.SignalNode node) {
@@ -290,7 +479,9 @@ class _DevTools {
 
   void _recordSignalWrite(alien_preset.SignalNode node, Object? value) {
     if (!_shouldTrack()) return;
-    final record = _signals[_signalIds[node] ?? _registerSignalFallback(node)];
+    final id = _signalIds[node] ?? _ensureSignalRecord(node);
+    if (id == -1) return;
+    final record = _signals[id];
     if (record == null) return;
     record.value = _previewValue(value);
     record.updatedAt = _nowMs();
@@ -317,7 +508,7 @@ class _DevTools {
     }
   }
 
-  bool _registerComputed(
+  ComputedHandle _bindComputed(
     alien_preset.ComputedNode node, {
     BuildContext? context,
     String? debugLabel,
@@ -325,15 +516,29 @@ class _DevTools {
     String? debugScope,
     String? debugNote,
   }) {
-    if (!_shouldTrack()) return false;
+    if (!_shouldTrack()) return _noopComputedHandle;
     final existing = _computedIds[node];
-    if (existing != null) return false;
+    if (existing != null) {
+      final record = _computed[existing];
+      if (record != null) {
+        if (debugLabel != null) record.label = debugLabel;
+        if (debugOwner != null || context != null) {
+          record.owner = _describeOwner(debugOwner, context);
+        }
+        if (debugScope != null || context != null) {
+          record.scope = _describeScope(debugScope, context);
+        }
+        if (debugNote != null) record.note = debugNote;
+        record.type = _describeNodeType(node, fallback: 'Computed');
+      }
+      return _ComputedHandle(this, node, isNew: false);
+    }
 
     final id = _nextComputedId++;
     _computedIds[node] = id;
     final record = _ComputedRecord(
       id: id,
-      node: WeakReference<alien_system.ReactiveNode>(node),
+      node: WeakReference<alien_preset.ComputedNode>(node),
       label: debugLabel ?? 'computed#$id',
       owner: _describeOwner(debugOwner, context),
       scope: _describeScope(debugScope, context),
@@ -347,7 +552,7 @@ class _DevTools {
       record.value = _previewValue(currentValue);
     }
     _computed[id] = record;
-    return true;
+    return _ComputedHandle(this, node, isNew: true);
   }
 
   void _markComputedDisposed(alien_preset.ComputedNode node) {
@@ -362,8 +567,9 @@ class _DevTools {
     int durationMs,
   ) {
     if (!_shouldTrack()) return;
-    final record =
-        _computed[_computedIds[node] ?? _registerComputedFallback(node)];
+    final id = _computedIds[node] ?? _ensureComputedRecord(node);
+    if (id == -1) return;
+    final record = _computed[id];
     if (record == null) return;
     record.value = _previewValue(value);
     record.updatedAt = _nowMs();
@@ -384,7 +590,7 @@ class _DevTools {
     _trimList(_timeline, _settings.timelineLimit);
   }
 
-  bool _registerEffect(
+  EffectHandle _bindEffect(
     alien_preset.EffectNode node, {
     BuildContext? context,
     String? debugLabel,
@@ -393,15 +599,29 @@ class _DevTools {
     String? debugType,
     String? debugNote,
   }) {
-    if (!_shouldTrack()) return false;
+    if (!_shouldTrack()) return _noopEffectHandle;
     final existing = _effectIds[node];
-    if (existing != null) return false;
+    if (existing != null) {
+      final record = _effects[existing];
+      if (record != null) {
+        if (debugLabel != null) record.label = debugLabel;
+        if (debugOwner != null || context != null) {
+          record.owner = _describeOwner(debugOwner, context);
+        }
+        if (debugScope != null || context != null) {
+          record.scope = _describeScope(debugScope, context);
+        }
+        if (debugNote != null) record.note = debugNote;
+        if (debugType != null) record.type = debugType;
+      }
+      return _EffectHandle(this, node, isNew: false);
+    }
 
     final id = _nextEffectId++;
     _effectIds[node] = id;
     final record = _EffectRecord(
       id: id,
-      node: WeakReference<alien_system.ReactiveNode>(node),
+      node: WeakReference<alien_preset.EffectNode>(node),
       label: debugLabel ?? 'effect#$id',
       owner: _describeOwner(debugOwner, context),
       scope: _describeScope(debugScope, context),
@@ -411,12 +631,14 @@ class _DevTools {
     );
     record.updatedAt = record.createdAt;
     _effects[id] = record;
-    return true;
+    return _EffectHandle(this, node, isNew: true);
   }
 
   void _recordEffectRun(alien_preset.EffectNode node, int durationMs) {
     if (!_shouldTrack()) return;
-    final record = _effects[_effectIds[node] ?? _registerEffectFallback(node)];
+    final id = _effectIds[node] ?? _ensureEffectRecord(node);
+    if (id == -1) return;
+    final record = _effects[id];
     if (record == null) return;
     record.updatedAt = _nowMs();
     record.runs++;
@@ -445,7 +667,7 @@ class _DevTools {
     _effects[id]?.disposed = true;
   }
 
-  bool _registerCollection(
+  CollectionHandle _bindCollection(
     Object collection, {
     BuildContext? context,
     required String type,
@@ -454,7 +676,7 @@ class _DevTools {
     String? debugScope,
     String? debugNote,
   }) {
-    if (!_shouldTrack()) return false;
+    if (!_shouldTrack()) return _noopCollectionHandle;
     final existing = _collectionIds[collection];
     if (existing != null) {
       final record = _collections[existing];
@@ -469,7 +691,7 @@ class _DevTools {
         }
         if (debugNote != null) record.note = debugNote;
       }
-      return false;
+      return _CollectionHandle(this, collection, isNew: false);
     }
 
     final id = _nextCollectionId++;
@@ -486,7 +708,7 @@ class _DevTools {
     );
     record.updatedAt = record.createdAt;
     _collections[id] = record;
-    return true;
+    return _CollectionHandle(this, collection, isNew: true);
   }
 
   void _markCollectionDisposed(Object collection) {
@@ -502,9 +724,10 @@ class _DevTools {
     String? note,
   }) {
     if (!_shouldTrack()) return;
-    final record =
-        _collections[_collectionIds[collection] ??
-            _registerCollectionFallback(collection)];
+    final id =
+        _collectionIds[collection] ?? _ensureCollectionRecord(collection);
+    if (id == -1) return;
+    final record = _collections[id];
     if (record == null) return;
     record.operation = operation;
     record.updatedAt = _nowMs();
@@ -798,24 +1021,93 @@ class _DevTools {
     );
   }
 
-  int _registerSignalFallback(alien_preset.SignalNode node) {
-    _registerSignal(node);
-    return _signalIds[node] ?? -1;
+  int _ensureSignalRecord(alien_preset.SignalNode node) {
+    final existing = _signalIds[node];
+    if (existing != null) return existing;
+    if (!_shouldTrack()) return -1;
+    final id = _nextSignalId++;
+    _signalIds[node] = id;
+    final record = _SignalRecord(
+      id: id,
+      node: WeakReference<alien_preset.SignalNode>(node),
+      label: 'signal#$id',
+      owner: 'Global',
+      scope: 'Global',
+      type: _describeNodeType(node, fallback: 'Signal'),
+      createdAt: _nowMs(),
+      note: '',
+    );
+    record.updatedAt = record.createdAt;
+    record.value = _previewValue(node.currentValue);
+    _signals[id] = record;
+    return id;
   }
 
-  int _registerComputedFallback(alien_preset.ComputedNode node) {
-    _registerComputed(node);
-    return _computedIds[node] ?? -1;
+  int _ensureComputedRecord(alien_preset.ComputedNode node) {
+    final existing = _computedIds[node];
+    if (existing != null) return existing;
+    if (!_shouldTrack()) return -1;
+    final id = _nextComputedId++;
+    _computedIds[node] = id;
+    final record = _ComputedRecord(
+      id: id,
+      node: WeakReference<alien_preset.ComputedNode>(node),
+      label: 'computed#$id',
+      owner: 'Global',
+      scope: 'Global',
+      type: _describeNodeType(node, fallback: 'Computed'),
+      createdAt: _nowMs(),
+      note: '',
+    );
+    record.updatedAt = record.createdAt;
+    final currentValue = node.currentValue;
+    if (currentValue != null) {
+      record.value = _previewValue(currentValue);
+    }
+    _computed[id] = record;
+    return id;
   }
 
-  int _registerEffectFallback(alien_preset.EffectNode node) {
-    _registerEffect(node);
-    return _effectIds[node] ?? -1;
+  int _ensureEffectRecord(alien_preset.EffectNode node) {
+    final existing = _effectIds[node];
+    if (existing != null) return existing;
+    if (!_shouldTrack()) return -1;
+    final id = _nextEffectId++;
+    _effectIds[node] = id;
+    final record = _EffectRecord(
+      id: id,
+      node: WeakReference<alien_preset.EffectNode>(node),
+      label: 'effect#$id',
+      owner: 'Global',
+      scope: 'Global',
+      type: 'Effect',
+      createdAt: _nowMs(),
+      note: '',
+    );
+    record.updatedAt = record.createdAt;
+    _effects[id] = record;
+    return id;
   }
 
-  int _registerCollectionFallback(Object collection) {
-    _registerCollection(collection, type: 'Collection');
-    return _collectionIds[collection] ?? -1;
+  int _ensureCollectionRecord(Object collection) {
+    final existing = _collectionIds[collection];
+    if (existing != null) return existing;
+    if (!_shouldTrack()) return -1;
+    final id = _nextCollectionId++;
+    _collectionIds[collection] = id;
+    final record = _CollectionRecord(
+      id: id,
+      collection: WeakReference<Object>(collection),
+      label: 'collection#$id',
+      owner: 'Global',
+      scope: 'Global',
+      type: 'Collection',
+      createdAt: _nowMs(),
+      note: '',
+    );
+    record.updatedAt = record.createdAt;
+    _collections[id] = record;
+    return id;
   }
 
   void _purgeCollected() {
@@ -839,7 +1131,7 @@ class _SignalRecord {
   });
 
   final int id;
-  final WeakReference<alien_system.ReactiveNode> node;
+  final WeakReference<alien_preset.SignalNode> node;
   final int createdAt;
   String label;
   String owner;
@@ -865,7 +1157,7 @@ class _ComputedRecord {
   });
 
   final int id;
-  final WeakReference<alien_system.ReactiveNode> node;
+  final WeakReference<alien_preset.ComputedNode> node;
   final int createdAt;
   String label;
   String owner;
@@ -892,7 +1184,7 @@ class _EffectRecord {
   });
 
   final int id;
-  final WeakReference<alien_system.ReactiveNode> node;
+  final WeakReference<alien_preset.EffectNode> node;
   final int createdAt;
   String label;
   String owner;

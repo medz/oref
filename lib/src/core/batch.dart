@@ -16,10 +16,10 @@ import '../devtools/devtools.dart';
 T batch<T>(T Function() getter) {
   try {
     startBatch();
-    recordBatchStart();
+    devtools.batchStart();
     return getter();
   } finally {
     endBatch();
-    recordBatchEnd();
+    devtools.batchEnd();
   }
 }

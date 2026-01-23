@@ -13,21 +13,22 @@ class ReactiveMap<K, V> extends MapBase<K, V>
     implements Map<K, V> {
   /// Creates a new [ReactiveMap]
   ReactiveMap(Map<K, V> source) : _source = source {
-    registerCollection(this, type: 'Map');
+    _devtools = devtools.bindCollection(this, type: 'Map');
   }
 
   /// Creates a widget scoped [ReactiveMap].
   factory ReactiveMap.scoped(BuildContext context, Map<K, V> source) {
     final map = useMemoized(context, () => ReactiveMap(source));
-    registerCollection(map, context: context, type: 'Map');
+    map._devtools = devtools.bindCollection(map, context: context, type: 'Map');
     if (!map._devtoolsDisposerRegistered) {
-      registerElementDisposer(context, () => markCollectionDisposed(map));
+      registerElementDisposer(context, map._devtools.dispose);
       map._devtoolsDisposerRegistered = true;
     }
     return map;
   }
 
   final Map<K, V> _source;
+  late CollectionHandle _devtools;
   bool _devtoolsDisposerRegistered = false;
 
   @override
@@ -48,8 +49,7 @@ class ReactiveMap<K, V> extends MapBase<K, V>
     final previous = _source[key];
     _source[key] = value;
     trigger();
-    recordCollectionMutation(
-      this,
+    _devtools.mutate(
       operation: exists ? 'Replace' : 'Add',
       deltas: [
         CollectionDelta(
@@ -66,8 +66,7 @@ class ReactiveMap<K, V> extends MapBase<K, V>
   void clear() {
     _source.clear();
     trigger();
-    recordCollectionMutation(
-      this,
+    _devtools.mutate(
       operation: 'Clear',
       deltas: const [CollectionDelta(kind: 'remove', label: 'all entries')],
     );
@@ -79,8 +78,7 @@ class ReactiveMap<K, V> extends MapBase<K, V>
     final result = _source.remove(key);
     trigger();
     if (existed) {
-      recordCollectionMutation(
-        this,
+      _devtools.mutate(
         operation: 'Remove',
         deltas: [CollectionDelta(kind: 'remove', label: '$key')],
       );
@@ -98,8 +96,7 @@ class ReactiveMap<K, V> extends MapBase<K, V>
 
     if (shouldTrigger) {
       trigger();
-      recordCollectionMutation(
-        this,
+      _devtools.mutate(
         operation: 'Add',
         deltas: [CollectionDelta(kind: 'add', label: '$key: $result')],
       );
