@@ -1,5 +1,9 @@
 ## Unreleased
 
+### Features
+
+- add analyzer plugin hook rules, fixes, and assists for context usage and hook order.
+
 ### Bug Fixes
 
 - fix(async): ensure AsyncData re-fetches when dependencies change during a pending request.
