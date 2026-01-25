@@ -7,21 +7,21 @@ import 'package:analyzer/error/error.dart';
 
 import '../utils/utils.dart';
 
-class HookDisallowContextOutsideBuildRule extends AnalysisRule {
+class DisallowContextOutsideBuildRule extends AnalysisRule {
   static const LintCode code = LintCode(
-    'hook_disallow_context_outside_build',
-    'Hooks that rely on BuildContext must be called inside a widget build.',
+    'disallow_context_outside_build',
+    'Hooks that rely on BuildContext must be called inside build scopes.',
     correctionMessage:
-        'Move the hook into build, or pass null if the hook allows it.',
+        'Move the hook into a build scope, or pass null if the hook allows it.',
     severity: DiagnosticSeverity.ERROR,
-    uniqueName: 'LintCode.hook_disallow_context_outside_build',
+    uniqueName: 'LintCode.disallow_context_outside_build',
   );
 
-  HookDisallowContextOutsideBuildRule()
+  DisallowContextOutsideBuildRule()
     : super(
-        name: 'hook_disallow_context_outside_build',
+        name: 'disallow_context_outside_build',
         description:
-            'Require Oref hooks that use BuildContext to run inside build.',
+            'Require Oref hooks that use BuildContext to run inside build scopes.',
       );
 
   @override
@@ -33,17 +33,17 @@ class HookDisallowContextOutsideBuildRule extends AnalysisRule {
     RuleContext context,
   ) {
     final skip = shouldSkipHookLint(context);
-    var visitor = _HookDisallowContextOutsideBuildVisitor(this, skip);
+    var visitor = _DisallowContextOutsideBuildVisitor(this, skip);
     registry.addMethodInvocation(this, visitor);
     registry.addInstanceCreationExpression(this, visitor);
   }
 }
 
-class _HookDisallowContextOutsideBuildVisitor extends SimpleAstVisitor<void> {
+class _DisallowContextOutsideBuildVisitor extends SimpleAstVisitor<void> {
   final AnalysisRule rule;
   final bool skip;
 
-  _HookDisallowContextOutsideBuildVisitor(this.rule, this.skip);
+  _DisallowContextOutsideBuildVisitor(this.rule, this.skip);
 
   @override
   void visitMethodInvocation(MethodInvocation node) {
@@ -54,7 +54,7 @@ class _HookDisallowContextOutsideBuildVisitor extends SimpleAstVisitor<void> {
     if (hook == null) {
       return;
     }
-    if (enclosingBuildMethod(node) != null) {
+    if (enclosingHookScope(node) != null) {
       return;
     }
 
@@ -70,7 +70,7 @@ class _HookDisallowContextOutsideBuildVisitor extends SimpleAstVisitor<void> {
     if (hook == null) {
       return;
     }
-    if (enclosingBuildMethod(node) != null) {
+    if (enclosingHookScope(node) != null) {
       return;
     }
 

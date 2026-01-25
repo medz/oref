@@ -34,17 +34,17 @@ class AddBuildContextArgumentAssist extends ResolvedCorrectionProducer {
       return;
     }
 
-    final buildMethod = enclosingBuildMethod(methodInvocation);
-    if (buildMethod == null) {
+    final scope = enclosingHookScope(methodInvocation);
+    if (scope == null) {
       return;
     }
 
-    if (isInsideControlFlow(methodInvocation, buildMethod) ||
-        isInsideNestedFunction(methodInvocation, buildMethod)) {
+    if (isInsideControlFlow(methodInvocation, scope.node) ||
+        isInsideNestedFunction(methodInvocation, scope.node)) {
       return;
     }
 
-    final contextName = buildContextParameterName(buildMethod);
+    final contextName = hookScopeContextName(scope);
     if (contextName == null) {
       return;
     }

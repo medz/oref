@@ -7,20 +7,20 @@ import 'package:analyzer/error/error.dart';
 
 import '../utils/utils.dart';
 
-class HookInNestedFunctionRule extends AnalysisRule {
+class NoHooksInControlFlowRule extends AnalysisRule {
   static const LintCode code = LintCode(
-    'hook_in_nested_function',
-    'Hooks must not be called inside nested functions in build.',
-    correctionMessage: 'Move the hook to the top level of build.',
+    'no_hooks_in_control_flow',
+    'Hooks must be called unconditionally at the top level of build scopes.',
+    correctionMessage: 'Move the hook out of the control flow.',
     severity: DiagnosticSeverity.ERROR,
-    uniqueName: 'LintCode.hook_in_nested_function',
+    uniqueName: 'LintCode.no_hooks_in_control_flow',
   );
 
-  HookInNestedFunctionRule()
+  NoHooksInControlFlowRule()
     : super(
-        name: 'hook_in_nested_function',
+        name: 'no_hooks_in_control_flow',
         description:
-            'Disallow calling Oref hooks inside nested functions in build.',
+            'Disallow calling Oref hooks inside control flow in build scopes.',
       );
 
   @override
@@ -32,17 +32,17 @@ class HookInNestedFunctionRule extends AnalysisRule {
     RuleContext context,
   ) {
     final skip = shouldSkipHookLint(context);
-    var visitor = _HookInNestedFunctionVisitor(this, skip);
+    var visitor = _NoHooksInControlFlowVisitor(this, skip);
     registry.addMethodInvocation(this, visitor);
     registry.addInstanceCreationExpression(this, visitor);
   }
 }
 
-class _HookInNestedFunctionVisitor extends SimpleAstVisitor<void> {
+class _NoHooksInControlFlowVisitor extends SimpleAstVisitor<void> {
   final AnalysisRule rule;
   final bool skip;
 
-  _HookInNestedFunctionVisitor(this.rule, this.skip);
+  _NoHooksInControlFlowVisitor(this.rule, this.skip);
 
   @override
   void visitMethodInvocation(MethodInvocation node) {
@@ -53,11 +53,14 @@ class _HookInNestedFunctionVisitor extends SimpleAstVisitor<void> {
     if (hook == null) {
       return;
     }
-    final buildMethod = enclosingBuildMethod(node);
-    if (buildMethod == null) {
+    final scope = enclosingHookScope(node);
+    if (scope == null) {
       return;
     }
-    if (!isInsideNestedFunction(node, buildMethod)) {
+    if (isInsideNestedFunction(node, scope.node)) {
+      return;
+    }
+    if (!isInsideControlFlow(node, scope.node)) {
       return;
     }
     rule.reportAtNode(node.methodName);
@@ -72,11 +75,14 @@ class _HookInNestedFunctionVisitor extends SimpleAstVisitor<void> {
     if (hook == null) {
       return;
     }
-    final buildMethod = enclosingBuildMethod(node);
-    if (buildMethod == null) {
+    final scope = enclosingHookScope(node);
+    if (scope == null) {
       return;
     }
-    if (!isInsideNestedFunction(node, buildMethod)) {
+    if (isInsideNestedFunction(node, scope.node)) {
+      return;
+    }
+    if (!isInsideControlFlow(node, scope.node)) {
       return;
     }
     rule.reportAtNode(node.constructorName);

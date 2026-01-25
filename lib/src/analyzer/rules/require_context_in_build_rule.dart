@@ -7,20 +7,20 @@ import 'package:analyzer/error/error.dart';
 
 import '../utils/utils.dart';
 
-class HookRequiresContextInBuildRule extends AnalysisRule {
+class RequireContextInBuildRule extends AnalysisRule {
   static const LintCode code = LintCode(
-    'hook_requires_context_in_build',
-    'Hook calls in a widget build method must pass context.',
+    'require_context_in_build',
+    'Hook calls inside build scopes must pass context.',
     correctionMessage: 'Pass the build context as the first argument.',
     severity: DiagnosticSeverity.ERROR,
-    uniqueName: 'LintCode.hook_requires_context_in_build',
+    uniqueName: 'LintCode.require_context_in_build',
   );
 
-  HookRequiresContextInBuildRule()
+  RequireContextInBuildRule()
     : super(
-        name: 'hook_requires_context_in_build',
+        name: 'require_context_in_build',
         description:
-            'Require BuildContext when using Oref hooks in widget builds.',
+            'Require BuildContext when using Oref hooks in build scopes.',
       );
 
   @override
@@ -32,16 +32,16 @@ class HookRequiresContextInBuildRule extends AnalysisRule {
     RuleContext context,
   ) {
     final skip = shouldSkipHookLint(context);
-    var visitor = _HookRequiresContextInBuildVisitor(this, skip);
+    var visitor = _RequireContextInBuildVisitor(this, skip);
     registry.addMethodInvocation(this, visitor);
   }
 }
 
-class _HookRequiresContextInBuildVisitor extends SimpleAstVisitor<void> {
+class _RequireContextInBuildVisitor extends SimpleAstVisitor<void> {
   final AnalysisRule rule;
   final bool skip;
 
-  _HookRequiresContextInBuildVisitor(this.rule, this.skip);
+  _RequireContextInBuildVisitor(this.rule, this.skip);
 
   @override
   void visitMethodInvocation(MethodInvocation node) {
@@ -53,13 +53,13 @@ class _HookRequiresContextInBuildVisitor extends SimpleAstVisitor<void> {
       return;
     }
 
-    final buildMethod = enclosingBuildMethod(node);
-    if (buildMethod == null) {
+    final scope = enclosingHookScope(node);
+    if (scope == null) {
       return;
     }
 
-    if (isInsideControlFlow(node, buildMethod) ||
-        isInsideNestedFunction(node, buildMethod)) {
+    if (isInsideControlFlow(node, scope.node) ||
+        isInsideNestedFunction(node, scope.node)) {
       return;
     }
 

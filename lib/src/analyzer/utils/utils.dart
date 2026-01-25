@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:analyzer/analysis_rule/rule_context.dart';
 import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/dart/ast/token.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 
@@ -41,6 +42,16 @@ class HookCall {
   final bool isOptionalContext;
 
   bool get isRequiredContext => !isOptionalContext;
+}
+
+class HookScope {
+  HookScope.build(this.buildMethod) : builderFunction = null;
+  HookScope.builder(this.builderFunction) : buildMethod = null;
+
+  final MethodDeclaration? buildMethod;
+  final FunctionExpression? builderFunction;
+
+  AstNode get node => buildMethod ?? builderFunction!;
 }
 
 HookCall? matchHookInvocation(MethodInvocation node) {
@@ -126,15 +137,58 @@ Expression? firstPositionalArgument(ArgumentList argumentList) {
   return null;
 }
 
+FormalParameter? _firstPositionalFormalParameter(
+  FormalParameterList? parameterList,
+) {
+  if (parameterList == null) {
+    return null;
+  }
+  for (final parameter in parameterList.parameters) {
+    if (parameter.isNamed) {
+      continue;
+    }
+    return parameter;
+  }
+  return null;
+}
+
+FormalParameterElement? _firstPositionalParameter(
+  List<FormalParameterElement> parameters,
+) {
+  for (final parameter in parameters) {
+    if (parameter.isNamed) {
+      continue;
+    }
+    return parameter;
+  }
+  return null;
+}
+
+HookScope? enclosingHookScope(AstNode node) {
+  AstNode? current = node;
+  while (current != null) {
+    if (current is MethodDeclaration &&
+        current.name.lexeme == 'build' &&
+        isWidgetBuildMethod(current)) {
+      return HookScope.build(current);
+    }
+    if (current is FunctionExpression && isHookBuilderFunction(current)) {
+      return HookScope.builder(current);
+    }
+    if (current is FunctionDeclaration) {
+      final function = current.functionExpression;
+      if (isHookBuilderFunction(function)) {
+        return HookScope.builder(function);
+      }
+    }
+    current = current.parent;
+  }
+  return null;
+}
+
 MethodDeclaration? enclosingBuildMethod(AstNode node) {
-  final method = node.thisOrAncestorOfType<MethodDeclaration>();
-  if (method == null || method.name.lexeme != 'build') {
-    return null;
-  }
-  if (!isWidgetBuildMethod(method)) {
-    return null;
-  }
-  return method;
+  final scope = enclosingHookScope(node);
+  return scope?.buildMethod;
 }
 
 bool isWidgetBuildMethod(MethodDeclaration method) {
@@ -162,6 +216,20 @@ bool isWidgetBuildMethod(MethodDeclaration method) {
   return false;
 }
 
+bool isHookBuilderFunction(FunctionExpression node) {
+  final type = node.staticType;
+  if (type is! FunctionType) {
+    return false;
+  }
+
+  final firstParam = _firstPositionalParameter(type.formalParameters);
+  if (firstParam == null || !isBuildContextType(firstParam.type)) {
+    return false;
+  }
+
+  return isWidgetType(type.returnType);
+}
+
 bool isInsideControlFlow(AstNode node, AstNode stopAt) {
   AstNode? current = node.parent;
   while (current != null && current != stopAt) {
@@ -173,7 +241,11 @@ bool isInsideControlFlow(AstNode node, AstNode stopAt) {
         current is WhileStatement ||
         current is DoStatement ||
         current is SwitchStatement ||
-        current is SwitchExpression) {
+        current is SwitchExpression ||
+        (current is BinaryExpression &&
+            (current.operator.type == TokenType.AMPERSAND_AMPERSAND ||
+                current.operator.type == TokenType.BAR_BAR ||
+                current.operator.type == TokenType.QUESTION_QUESTION))) {
       return true;
     }
     current = current.parent;
@@ -229,19 +301,46 @@ bool isBuildContextType(DartType? type) {
   return false;
 }
 
+bool isWidgetType(DartType? type) {
+  if (type == null || type.isDartCoreNull) {
+    return false;
+  }
+  if (type is InterfaceType) {
+    if (_isFlutterWidgetType(type)) {
+      return true;
+    }
+    for (final supertype in type.allSupertypes) {
+      if (_isFlutterWidgetType(supertype)) {
+        return true;
+      }
+    }
+    return false;
+  }
+  if (type is TypeParameterType) {
+    return isWidgetType(type.bound);
+  }
+  return false;
+}
+
 String? buildContextParameterName(MethodDeclaration method) {
-  final parameters = method.parameters?.parameters;
-  if (parameters == null || parameters.isEmpty) {
+  return buildContextParameterNameFromParameters(method.parameters);
+}
+
+String? buildContextParameterNameFromParameters(
+  FormalParameterList? parameters,
+) {
+  final parameter = _firstPositionalFormalParameter(parameters);
+  if (parameter == null) {
     return null;
   }
 
-  FormalParameter parameter = parameters.first;
-  if (parameter is DefaultFormalParameter) {
-    parameter = parameter.parameter;
+  FormalParameter unwrapped = parameter;
+  if (unwrapped is DefaultFormalParameter) {
+    unwrapped = unwrapped.parameter;
   }
 
-  final element = parameter.declaredFragment?.element;
-  final name = parameter.name?.lexeme;
+  final element = unwrapped.declaredFragment?.element;
+  final name = unwrapped.name?.lexeme;
   if (name == null) {
     return null;
   }
@@ -249,6 +348,246 @@ String? buildContextParameterName(MethodDeclaration method) {
     return null;
   }
   return name;
+}
+
+String? hookScopeContextName(HookScope scope) {
+  if (scope.buildMethod != null) {
+    return buildContextParameterName(scope.buildMethod!);
+  }
+  if (scope.builderFunction != null) {
+    return buildContextParameterNameFromParameters(
+      scope.builderFunction!.parameters,
+    );
+  }
+  return null;
+}
+
+bool isOrefFunctionInvocation(MethodInvocation node, String name) {
+  final element = node.methodName.element;
+  if (element is! ExecutableElement) {
+    return false;
+  }
+  if (element.name != name) {
+    return false;
+  }
+  return _isOrefLibrary(element.library.uri);
+}
+
+int? positionalArgumentIndex(Expression expression, ArgumentList argumentList) {
+  var index = 0;
+  for (final argument in argumentList.arguments) {
+    if (argument is NamedExpression) {
+      continue;
+    }
+    if (identical(argument, expression)) {
+      return index;
+    }
+    index++;
+  }
+  return null;
+}
+
+bool isComputedGetterFunction(FunctionExpression node) {
+  final argumentContainer = _argumentContainer(node);
+  if (argumentContainer == null) {
+    return false;
+  }
+
+  if (argumentContainer is NamedExpression) {
+    return false;
+  }
+
+  final argumentList = argumentContainer.parent;
+  if (argumentList is! ArgumentList) {
+    return false;
+  }
+
+  final invocation = argumentList.parent;
+  if (invocation is! MethodInvocation) {
+    return false;
+  }
+  if (!isOrefFunctionInvocation(invocation, 'computed')) {
+    return false;
+  }
+
+  final index = positionalArgumentIndex(argumentContainer, argumentList);
+  return index == 1;
+}
+
+bool isWritableComputedGetterFunction(FunctionExpression node) {
+  final argumentContainer = _argumentContainer(node);
+  if (argumentContainer is! NamedExpression) {
+    return false;
+  }
+  if (argumentContainer.name.label.name != 'get') {
+    return false;
+  }
+
+  final argumentList = argumentContainer.parent;
+  if (argumentList is! ArgumentList) {
+    return false;
+  }
+
+  final invocation = argumentList.parent;
+  if (invocation is! MethodInvocation) {
+    return false;
+  }
+  return isOrefFunctionInvocation(invocation, 'writableComputed');
+}
+
+bool isInsideEffectCallback(AstNode node) {
+  return _isInsideCallback(node, _isEffectCallbackFunction);
+}
+
+bool isInsideEffectScopeCallback(AstNode node) {
+  return _isInsideCallback(node, _isEffectScopeCallbackFunction);
+}
+
+bool isInsideComputedGetter(AstNode node) {
+  AstNode? current = node.parent;
+  while (current != null) {
+    if (current is FunctionExpression) {
+      if (isComputedGetterFunction(current) ||
+          isWritableComputedGetterFunction(current)) {
+        return true;
+      }
+    }
+    if (current is FunctionDeclaration) {
+      final function = current.functionExpression;
+      if (isComputedGetterFunction(function) ||
+          isWritableComputedGetterFunction(function)) {
+        return true;
+      }
+    }
+    current = current.parent;
+  }
+  return false;
+}
+
+bool _isInsideCallback(
+  AstNode node,
+  bool Function(FunctionExpression) predicate,
+) {
+  AstNode? current = node.parent;
+  while (current != null) {
+    if (current is FunctionExpression && predicate(current)) {
+      return true;
+    }
+    if (current is FunctionDeclaration) {
+      final function = current.functionExpression;
+      if (predicate(function)) {
+        return true;
+      }
+    }
+    current = current.parent;
+  }
+  return false;
+}
+
+bool _isEffectCallbackFunction(FunctionExpression node) {
+  return _isCallbackArgument(node, 'effect', positionalIndex: 1);
+}
+
+bool _isEffectScopeCallbackFunction(FunctionExpression node) {
+  return _isCallbackArgument(node, 'effectScope', positionalIndex: 1);
+}
+
+bool _isCallbackArgument(
+  FunctionExpression node,
+  String methodName, {
+  int? positionalIndex,
+  String? named,
+}) {
+  final argumentContainer = _argumentContainer(node);
+  if (argumentContainer == null) {
+    return false;
+  }
+
+  final argumentList = argumentContainer.parent;
+  if (argumentList is! ArgumentList) {
+    return false;
+  }
+
+  final invocation = argumentList.parent;
+  if (invocation is! MethodInvocation) {
+    return false;
+  }
+  if (!isOrefFunctionInvocation(invocation, methodName)) {
+    return false;
+  }
+
+  if (named != null) {
+    return argumentContainer is NamedExpression &&
+        argumentContainer.name.label.name == named;
+  }
+
+  if (positionalIndex != null) {
+    if (argumentContainer is NamedExpression) {
+      return false;
+    }
+    return positionalArgumentIndex(argumentContainer, argumentList) ==
+        positionalIndex;
+  }
+
+  return false;
+}
+
+Expression? _argumentContainer(FunctionExpression node) {
+  final parent = node.parent;
+  if (parent is NamedExpression) {
+    return parent;
+  }
+  if (parent is ArgumentList) {
+    return node;
+  }
+  if (parent is ParenthesizedExpression &&
+      parent.parent is ArgumentList &&
+      parent.expression == node) {
+    return parent;
+  }
+  return parent is Expression ? parent : null;
+}
+
+bool isWritableSignalType(DartType? type) {
+  if (type == null || type.isDartCoreNull) {
+    return false;
+  }
+  if (type is InterfaceType) {
+    if (_isWritableSignalElement(type.element)) {
+      return true;
+    }
+    for (final supertype in type.allSupertypes) {
+      if (_isWritableSignalElement(supertype.element)) {
+        return true;
+      }
+    }
+    return false;
+  }
+  if (type is TypeParameterType) {
+    return isWritableSignalType(type.bound);
+  }
+  return false;
+}
+
+bool _isWritableSignalElement(InterfaceElement element) {
+  if (element.name != 'WritableSignal' && element.name != 'WritableComputed') {
+    return false;
+  }
+  final uri = element.library.uri;
+  return uri.scheme == 'package' &&
+      (uri.path.startsWith('oref/') || uri.path.startsWith('alien_signals/'));
+}
+
+DartType? methodInvocationTargetType(MethodInvocation node) {
+  final target = node.target;
+  if (target != null) {
+    return target.staticType;
+  }
+  final parent = node.parent;
+  if (parent is CascadeExpression) {
+    return parent.target.staticType;
+  }
+  return null;
 }
 
 bool shouldSkipHookLint(RuleContext context) {

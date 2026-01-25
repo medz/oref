@@ -2,7 +2,7 @@
 
 ### Features
 
-- add analyzer plugin hook rules, fixes, and assists for context usage and hook order.
+- add analyzer plugin lint rules, fixes, and assists for context usage, hook ordering, computed purity, and lifecycle helpers.
 
 ### Bug Fixes
 
