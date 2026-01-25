@@ -25,6 +25,9 @@ dependencies:
   flutter:
     sdk: flutter
   alien_signals: ^2.1.2
+  analysis_server_plugin: ^0.3.7
+  analyzer: ^10.0.1
+  analyzer_plugin: ^0.14.1
 
 dev_dependencies:
   flutter_test:
