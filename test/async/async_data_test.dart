@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:oref/oref.dart';
 
@@ -221,6 +223,73 @@ void main() {
       await Future.delayed(Duration(milliseconds: 20));
       expect(data.data, equals(10));
       expect(callCount, equals(2));
+    });
+
+    test('refetches when signal changes during pending request', () async {
+      int callCount = 0;
+      final query = signal(null, 1);
+      final completers = <int, Completer<int>>{};
+
+      final data = useAsyncData(null, () {
+        final value = query();
+        callCount++;
+        final completer = Completer<int>();
+        completers[value] = completer;
+        return completer.future;
+      });
+
+      await Future.delayed(Duration.zero);
+      expect(data.status, equals(AsyncStatus.pending));
+      expect(callCount, equals(1));
+
+      query.set(2);
+      await Future.delayed(Duration.zero);
+
+      completers[1]!.complete(1);
+      await Future.delayed(Duration.zero);
+
+      expect(callCount, equals(2));
+      expect(data.status, equals(AsyncStatus.pending));
+
+      completers[2]!.complete(2);
+      await Future.delayed(Duration.zero);
+
+      expect(data.status, equals(AsyncStatus.success));
+      expect(data.data, equals(2));
+    });
+
+    test('refetches when computed changes during pending request', () async {
+      int callCount = 0;
+      final source = signal(null, 1);
+      final query = computed(null, (_) => source());
+      final completers = <int, Completer<int>>{};
+
+      final data = useAsyncData(null, () {
+        final value = query();
+        callCount++;
+        final completer = Completer<int>();
+        completers[value] = completer;
+        return completer.future;
+      });
+
+      await Future.delayed(Duration.zero);
+      expect(data.status, equals(AsyncStatus.pending));
+      expect(callCount, equals(1));
+
+      source.set(2);
+      await Future.delayed(Duration.zero);
+
+      completers[1]!.complete(1);
+      await Future.delayed(Duration.zero);
+
+      expect(callCount, equals(2));
+      expect(data.status, equals(AsyncStatus.pending));
+
+      completers[2]!.complete(2);
+      await Future.delayed(Duration.zero);
+
+      expect(data.status, equals(AsyncStatus.success));
+      expect(data.data, equals(2));
     });
 
     test('batch updates status and data', () async {

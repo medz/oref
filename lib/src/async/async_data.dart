@@ -60,6 +60,8 @@ class _AsyncDataExecutor<T> {
   late final alien.ReactiveNode node;
 
   bool isInitialized = false;
+  int _runId = 0;
+  int? _queuedAfterRunId;
   late Completer<T?> completer = Completer.sync()..complete(null);
 
   void ensureInitialized(BuildContext? context) {
@@ -79,8 +81,14 @@ class _AsyncDataExecutor<T> {
 
   void schedule() async {
     if (oref.untrack(status.call) == AsyncStatus.pending) {
+      _queuedAfterRunId = _runId;
       return;
-    } else if (completer.isCompleted) {
+    }
+
+    final runId = ++_runId;
+    _queuedAfterRunId = null;
+
+    if (completer.isCompleted) {
       completer = Completer();
       // Attach error handler to prevent unhandled exceptions
       // Using unawaited to indicate we intentionally don't await this
@@ -104,13 +112,24 @@ class _AsyncDataExecutor<T> {
       });
 
       completer.completeError(error, stackTrace);
+    } finally {
+      if (_queuedAfterRunId == runId) {
+        _queuedAfterRunId = null;
+        Future.microtask(schedule).ignore();
+      }
     }
   }
 
   Future<R> scoped<R>(FutureOr<R> Function() run) async {
     final prevSub = alien.setActiveSub(node);
     try {
-      return await run();
+      final result = run();
+      if (result is Future) {
+        alien.setActiveSub(prevSub);
+        return await result;
+      }
+
+      return result;
     } finally {
       alien.setActiveSub(prevSub);
     }

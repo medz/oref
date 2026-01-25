@@ -1,3 +1,9 @@
+## Unreleased
+
+### Bug Fixes
+
+- fix(async): ensure AsyncData re-fetches when dependencies change during a pending request.
+
 ## 2.7.0
 
 ### Features
