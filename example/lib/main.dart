@@ -13,9 +13,6 @@ class ExampleApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     signal(null, 0);
-    void send() {
-      signal(context, 0);
-    }
 
     return MaterialApp(
       title: 'Oref Examples',
@@ -23,7 +20,7 @@ class ExampleApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
         useMaterial3: true,
       ),
-      home: TextButton(onPressed: send, child: Text('x')),
+      home: const ExampleHome(),
     );
   }
 }
