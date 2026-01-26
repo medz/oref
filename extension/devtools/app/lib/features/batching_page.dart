@@ -6,6 +6,7 @@ import '../app/scopes.dart';
 import '../shared/utils/helpers.dart';
 import '../shared/widgets/adaptive_wrap.dart';
 import '../shared/widgets/glass.dart';
+import '../shared/widgets/inline_empty_state.dart';
 import '../shared/widgets/metric_tile.dart';
 import '../shared/widgets/page_header.dart';
 import '../shared/widgets/panel.dart';
@@ -103,21 +104,18 @@ class _BatchList extends StatelessWidget {
         children: [
           if (!isCompact) const _BatchHeaderRow(),
           if (batches.isEmpty)
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                'No batches recorded yet.',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
+            const InlineEmptyState(
+              message: 'No batches recorded yet.',
+              padding: EdgeInsets.all(16),
             )
           else
             Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
                   for (var index = 0; index < batches.length; index++) ...[
                     _BatchRow(batch: batches[index], isCompact: isCompact),
-                    if (index != batches.length - 1) const SizedBox(height: 10),
+                    if (index != batches.length - 1) const SizedBox(height: 12),
                   ],
                 ],
               ),
