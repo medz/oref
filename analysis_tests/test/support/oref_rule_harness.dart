@@ -29,9 +29,13 @@ class Signal<T> {
   set value(T v) {}
 }
 
-class WritableSignal<T> extends Signal<T> {}
+class WritableSignal<T> extends Signal<T> {
+  void set(T v) {}
+}
 
-class WritableComputed<T> extends Signal<T> {}
+class WritableComputed<T> extends Signal<T> {
+  void set(T v) {}
+}
 
 Signal<T> signal<T>(BuildContext? context, T value) => Signal<T>();
 
@@ -39,12 +43,18 @@ T computed<T>(BuildContext? context, T Function() compute) => compute();
 
 T writableComputed<T>(BuildContext? context, T Function() compute) => compute();
 
-void effect(BuildContext? context, void Function() fn) {}
+Object effect(BuildContext? context, void Function() fn) => Object();
 
-void effectScope(BuildContext? context, void Function() fn) {}
+Object effectScope(BuildContext? context, void Function() fn) => Object();
 
-T useAsyncData<T>(BuildContext? context, Future<T> Function() fn) =>
-    throw UnimplementedError();
+Object useAsyncData<T>(BuildContext? context, Future<T> Function() fn) =>
+    Object();
+
+void onEffectCleanup(void Function() fn) {}
+
+void onEffectDispose(void Function() fn) {}
+
+void onScopeDispose(void Function() fn) {}
 
 T watch<T>(BuildContext context, T Function() fn) => fn();
 
