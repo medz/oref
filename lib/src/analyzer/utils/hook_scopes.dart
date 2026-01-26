@@ -176,22 +176,21 @@ bool isBuildContextExpression(Expression? expression) {
   if (expression == null) {
     return false;
   }
+  final staticType = expression.staticType;
+  if (staticType != null && isBuildContextType(staticType)) {
+    return true;
+  }
+  // Fallback for unresolved types: keep a lightweight name heuristic.
   if (expression is SimpleIdentifier) {
-    if (expression.name == 'context') {
-      return true;
-    }
+    return expression.name == 'context';
   }
   if (expression is PrefixedIdentifier) {
-    if (expression.identifier.name == 'context') {
-      return true;
-    }
+    return expression.identifier.name == 'context';
   }
   if (expression is PropertyAccess) {
-    if (expression.propertyName.name == 'context') {
-      return true;
-    }
+    return expression.propertyName.name == 'context';
   }
-  return isBuildContextType(expression.staticType);
+  return false;
 }
 
 String? buildContextParameterName(MethodDeclaration method) {
