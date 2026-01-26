@@ -10,8 +10,8 @@ import '../utils/utils.dart';
 class AvoidHooksInControlFlowRule extends AnalysisRule {
   static const LintCode code = LintCode(
     'avoid_hooks_in_control_flow',
-    'Call {0} unconditionally at the top level of a build scope.',
-    correctionMessage: 'Move {0} out of the control flow.',
+    'Call {0} unconditionally at the top level of the {1} scope.',
+    correctionMessage: 'Move {0} out of control flow in the {1} scope.',
     severity: DiagnosticSeverity.ERROR,
     uniqueName: 'oref.lint.avoid_hooks_in_control_flow',
   );
@@ -98,7 +98,8 @@ class _AvoidHooksInControlFlowVisitor extends SimpleAstVisitor<void> {
     if (!isInsideControlFlow(node, scope.node)) {
       return;
     }
-    rule.reportAtNode(target, arguments: [hookName]);
+    final scopeLabel = hookScopeLabel(scope, customHooks: customHooks);
+    rule.reportAtNode(target, arguments: [hookName, scopeLabel]);
   }
 
   String _hookName(AstNode node) {

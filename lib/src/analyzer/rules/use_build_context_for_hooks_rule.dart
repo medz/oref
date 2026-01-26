@@ -10,8 +10,8 @@ import '../utils/utils.dart';
 class UseBuildContextForHooksRule extends AnalysisRule {
   static const LintCode code = LintCode(
     'use_build_context_for_hooks',
-    'In a build scope, {0} must receive BuildContext as the first argument.',
-    correctionMessage: 'Pass the build context as the first argument to {0}.',
+    'In the {2} scope, {0} must receive {1} as the first argument.',
+    correctionMessage: 'Pass {1} as the first argument to {0}.',
     severity: DiagnosticSeverity.ERROR,
     uniqueName: 'oref.lint.use_build_context_for_hooks',
   );
@@ -70,9 +70,11 @@ class _UseBuildContextForHooksVisitor extends SimpleAstVisitor<void> {
       return;
     }
 
+    final contextName = hookScopeContextName(scope) ?? 'context';
+    final scopeLabel = hookScopeLabel(scope, customHooks: customHooks);
     rule.reportAtNode(
       contextArgument ?? node.argumentList,
-      arguments: [hook.name],
+      arguments: [hook.name, contextName, scopeLabel],
     );
   }
 }
