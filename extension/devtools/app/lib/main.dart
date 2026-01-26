@@ -35,6 +35,7 @@ part 'widgets/mini_chart.dart';
 part 'widgets/sparkline.dart';
 part 'widgets/timeline_row.dart';
 part 'widgets/info_row.dart';
+part 'widgets/hot_badge.dart';
 part 'widgets/metric_tile.dart';
 part 'widgets/panel_placeholder.dart';
 part 'widgets/panel_scroll_view.dart';
@@ -2805,19 +2806,6 @@ class _EffectRow extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _HotBadge extends StatelessWidget {
-  const _HotBadge();
-
-  @override
-  Widget build(BuildContext context) {
-    return _GlassPill(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      color: OrefPalette.coral.withValues(alpha: 0.25),
-      child: Text('HOT', style: Theme.of(context).textTheme.labelMedium),
     );
   }
 }
