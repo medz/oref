@@ -58,6 +58,7 @@ part 'widgets/computed_detail.dart';
 part 'widgets/batch_list.dart';
 part 'widgets/batch_header_row.dart';
 part 'widgets/batch_row.dart';
+part 'widgets/timeline_list.dart';
 part 'widgets/panel_placeholder.dart';
 part 'widgets/panel_scroll_view.dart';
 part 'widgets/panel_state_cards.dart';
@@ -1103,38 +1104,6 @@ class _TimelinePanel extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-}
-
-class _TimelineList extends StatelessWidget {
-  const _TimelineList({required this.events});
-
-  final List<TimelineEvent> events;
-
-  @override
-  Widget build(BuildContext context) {
-    return _GlassCard(
-      padding: const EdgeInsets.all(0),
-      child: events.isEmpty
-          ? Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                'No timeline events yet.',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-            )
-          : Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  for (var index = 0; index < events.length; index++) ...[
-                    _TimelineEventRow(event: events[index]),
-                    if (index != events.length - 1) const SizedBox(height: 12),
-                  ],
-                ],
-              ),
-            ),
     );
   }
 }
