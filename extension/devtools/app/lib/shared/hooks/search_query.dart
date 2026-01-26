@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:oref/oref.dart' as oref;
 
@@ -12,21 +14,31 @@ SearchQueryState useSearchQueryState(
   BuildContext context, {
   required String debugLabel,
   String initialValue = '',
+  Duration debounce = Duration.zero,
 }) {
   final controller = oref.useMemoized(
     context,
     () => TextEditingController(text: initialValue),
   );
   final query = oref.signal(context, initialValue, debugLabel: debugLabel);
+  Timer? debounceTimer;
   final listener = oref.useMemoized(context, () {
     void handle() {
-      query.set(controller.text);
+      if (debounce == Duration.zero) {
+        query.set(controller.text);
+        return;
+      }
+      debounceTimer?.cancel();
+      debounceTimer = Timer(debounce, () {
+        query.set(controller.text);
+      });
     }
 
     controller.addListener(handle);
     return handle;
   });
   oref.onUnmounted(context, () {
+    debounceTimer?.cancel();
     controller.removeListener(listener);
     controller.dispose();
   });
