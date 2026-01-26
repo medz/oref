@@ -51,6 +51,7 @@ part 'widgets/effects_header.dart';
 part 'widgets/effects_timeline.dart';
 part 'widgets/effect_row.dart';
 part 'widgets/computed_header.dart';
+part 'widgets/computed_list.dart';
 part 'widgets/panel_placeholder.dart';
 part 'widgets/panel_scroll_view.dart';
 part 'widgets/panel_state_cards.dart';
@@ -747,71 +748,6 @@ class _ComputedPanel extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-}
-
-class _ComputedList extends StatelessWidget {
-  const _ComputedList({
-    required this.entries,
-    required this.selectedId,
-    required this.isCompact,
-    required this.sortKey,
-    required this.sortAscending,
-    required this.onSortName,
-    required this.onSortUpdated,
-    required this.onSelect,
-  });
-
-  final List<Sample> entries;
-  final int? selectedId;
-  final bool isCompact;
-  final _SortKey sortKey;
-  final bool sortAscending;
-  final VoidCallback onSortName;
-  final VoidCallback onSortUpdated;
-  final ValueChanged<Sample> onSelect;
-
-  @override
-  Widget build(BuildContext context) {
-    return _GlassCard(
-      padding: const EdgeInsets.all(0),
-      child: Column(
-        children: [
-          if (!isCompact)
-            _ComputedTableHeader(
-              sortKey: sortKey,
-              sortAscending: sortAscending,
-              onSortName: onSortName,
-              onSortUpdated: onSortUpdated,
-            ),
-          if (entries.isEmpty)
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                'No computed values match the current filter.',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-            )
-          else
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                children: [
-                  for (var index = 0; index < entries.length; index++) ...[
-                    _ComputedRow(
-                      entry: entries[index],
-                      isSelected: selectedId == entries[index].id,
-                      isCompact: isCompact,
-                      onTap: () => onSelect(entries[index]),
-                    ),
-                    if (index != entries.length - 1) const SizedBox(height: 8),
-                  ],
-                ],
-              ),
-            ),
-        ],
-      ),
     );
   }
 }
