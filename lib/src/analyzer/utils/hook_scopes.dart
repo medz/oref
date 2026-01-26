@@ -238,14 +238,19 @@ String hookScopeLabel(HookScope scope, {CustomHookRegistry? customHooks}) {
   if (scope.buildMethod != null) {
     return 'build';
   }
+
   final builderFunction = scope.builderFunction;
-  if (builderFunction != null && customHooks != null) {
+  if (builderFunction != null) {
     final parent = builderFunction.parent;
-    if (parent is FunctionDeclaration &&
-        customHooks.isCustomHookFunctionDeclaration(parent)) {
-      return 'hook';
-    }
-    if (customHooks.isCustomHookFunctionExpression(builderFunction)) {
+    if ((parent is FunctionDeclaration &&
+            isCustomHookFunctionDeclaration(
+              parent,
+              customHooks: customHooks,
+            )) ||
+        isCustomHookFunctionExpression(
+          builderFunction,
+          customHooks: customHooks,
+        )) {
       return 'hook';
     }
   }
