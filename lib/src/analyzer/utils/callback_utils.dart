@@ -151,5 +151,6 @@ Expression? _argumentContainer(FunctionExpression node) {
       parent.expression == node) {
     return parent;
   }
+  // Fallback for uncommon wrappers; callers must still validate the container.
   return parent is Expression ? parent : null;
 }
