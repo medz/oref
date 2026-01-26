@@ -26,6 +26,7 @@ part 'sorting.dart';
 part 'filters.dart';
 part 'status_styles.dart';
 part 'color_maps.dart';
+part 'effects_timeline_constants.dart';
 part 'widgets/adaptive_wrap.dart';
 part 'widgets/action_buttons.dart';
 part 'widgets/action_pill.dart';
@@ -218,11 +219,3 @@ class OrefPalette {
   static const Color deepBlue = Color(0xFF0C141C);
   static const Color lightBlue = Color(0xFFE7F3FF);
 }
-
-const double _effectsTimelineDotSize = 14;
-const double _effectsTimelineLineWidth = 2;
-const double _effectsTimelineHorizontalPadding = 16;
-const double _effectsTimelineLineLeft =
-    _effectsTimelineHorizontalPadding +
-    _effectsTimelineDotSize / 2 -
-    _effectsTimelineLineWidth / 2;
