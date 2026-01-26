@@ -22,6 +22,7 @@ part 'utils/helpers.dart';
 part 'widgets/action_pill.dart';
 part 'widgets/filter_chip.dart';
 part 'widgets/glass_input.dart';
+part 'widgets/panel_scroll_view.dart';
 part 'widgets/sort_header_cell.dart';
 part 'widgets/status_badge.dart';
 
@@ -3195,26 +3196,6 @@ class _PanelInfo {
   final String title;
   final String description;
   final List<String> bullets;
-}
-
-class _PanelScrollView extends StatelessWidget {
-  const _PanelScrollView({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return SingleChildScrollView(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: constraints.maxHeight),
-            child: child,
-          ),
-        );
-      },
-    );
-  }
 }
 
 class _PanelPlaceholder extends StatelessWidget {
