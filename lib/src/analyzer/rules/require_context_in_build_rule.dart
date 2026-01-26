@@ -32,7 +32,8 @@ class RequireContextInBuildRule extends AnalysisRule {
     RuleContext context,
   ) {
     final skip = shouldSkipHookLint(context);
-    var visitor = _RequireContextInBuildVisitor(this, skip);
+    final customHooks = buildCustomHookRegistry(context);
+    var visitor = _RequireContextInBuildVisitor(this, skip, customHooks);
     registry.addMethodInvocation(this, visitor);
   }
 }
@@ -40,8 +41,9 @@ class RequireContextInBuildRule extends AnalysisRule {
 class _RequireContextInBuildVisitor extends SimpleAstVisitor<void> {
   final AnalysisRule rule;
   final bool skip;
+  final CustomHookRegistry customHooks;
 
-  _RequireContextInBuildVisitor(this.rule, this.skip);
+  _RequireContextInBuildVisitor(this.rule, this.skip, this.customHooks);
 
   @override
   void visitMethodInvocation(MethodInvocation node) {
@@ -53,7 +55,7 @@ class _RequireContextInBuildVisitor extends SimpleAstVisitor<void> {
       return;
     }
 
-    final scope = enclosingHookScope(node);
+    final scope = enclosingHookScope(node, customHooks: customHooks);
     if (scope == null) {
       return;
     }

@@ -33,7 +33,8 @@ class DisallowContextOutsideBuildRule extends AnalysisRule {
     RuleContext context,
   ) {
     final skip = shouldSkipHookLint(context);
-    var visitor = _DisallowContextOutsideBuildVisitor(this, skip);
+    final customHooks = buildCustomHookRegistry(context);
+    var visitor = _DisallowContextOutsideBuildVisitor(this, skip, customHooks);
     registry.addMethodInvocation(this, visitor);
     registry.addInstanceCreationExpression(this, visitor);
   }
@@ -42,8 +43,9 @@ class DisallowContextOutsideBuildRule extends AnalysisRule {
 class _DisallowContextOutsideBuildVisitor extends SimpleAstVisitor<void> {
   final AnalysisRule rule;
   final bool skip;
+  final CustomHookRegistry customHooks;
 
-  _DisallowContextOutsideBuildVisitor(this.rule, this.skip);
+  _DisallowContextOutsideBuildVisitor(this.rule, this.skip, this.customHooks);
 
   @override
   void visitMethodInvocation(MethodInvocation node) {
@@ -54,7 +56,7 @@ class _DisallowContextOutsideBuildVisitor extends SimpleAstVisitor<void> {
     if (hook == null) {
       return;
     }
-    if (enclosingHookScope(node) != null) {
+    if (enclosingHookScope(node, customHooks: customHooks) != null) {
       return;
     }
 
@@ -70,7 +72,7 @@ class _DisallowContextOutsideBuildVisitor extends SimpleAstVisitor<void> {
     if (hook == null) {
       return;
     }
-    if (enclosingHookScope(node) != null) {
+    if (enclosingHookScope(node, customHooks: customHooks) != null) {
       return;
     }
 

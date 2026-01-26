@@ -32,8 +32,10 @@ class NoHooksInNestedFunctionsRule extends AnalysisRule {
     RuleContext context,
   ) {
     final skip = shouldSkipHookLint(context);
-    var visitor = _NoHooksInNestedFunctionsVisitor(this, skip);
+    final customHooks = buildCustomHookRegistry(context);
+    var visitor = _NoHooksInNestedFunctionsVisitor(this, skip, customHooks);
     registry.addMethodInvocation(this, visitor);
+    registry.addFunctionExpressionInvocation(this, visitor);
     registry.addInstanceCreationExpression(this, visitor);
   }
 }
@@ -41,8 +43,9 @@ class NoHooksInNestedFunctionsRule extends AnalysisRule {
 class _NoHooksInNestedFunctionsVisitor extends SimpleAstVisitor<void> {
   final AnalysisRule rule;
   final bool skip;
+  final CustomHookRegistry customHooks;
 
-  _NoHooksInNestedFunctionsVisitor(this.rule, this.skip);
+  _NoHooksInNestedFunctionsVisitor(this.rule, this.skip, this.customHooks);
 
   @override
   void visitMethodInvocation(MethodInvocation node) {
@@ -50,17 +53,25 @@ class _NoHooksInNestedFunctionsVisitor extends SimpleAstVisitor<void> {
       return;
     }
     final hook = matchHookInvocation(node);
-    if (hook == null) {
+    if (hook != null) {
+      _reportIfNeeded(node, node.methodName);
       return;
     }
-    final scope = enclosingHookScope(node);
-    if (scope == null) {
+    if (!customHooks.isCustomHookInvocation(node)) {
       return;
     }
-    if (!isInsideNestedFunction(node, scope.node)) {
+    _reportIfNeeded(node, node.methodName);
+  }
+
+  @override
+  void visitFunctionExpressionInvocation(FunctionExpressionInvocation node) {
+    if (skip) {
       return;
     }
-    rule.reportAtNode(node.methodName);
+    if (!customHooks.isCustomHookInvocationExpression(node)) {
+      return;
+    }
+    _reportIfNeeded(node, customHookInvocationNameNode(node));
   }
 
   @override
@@ -72,13 +83,17 @@ class _NoHooksInNestedFunctionsVisitor extends SimpleAstVisitor<void> {
     if (hook == null) {
       return;
     }
-    final scope = enclosingHookScope(node);
+    _reportIfNeeded(node, node.constructorName);
+  }
+
+  void _reportIfNeeded(AstNode node, AstNode target) {
+    final scope = enclosingHookScope(node, customHooks: customHooks);
     if (scope == null) {
       return;
     }
     if (!isInsideNestedFunction(node, scope.node)) {
       return;
     }
-    rule.reportAtNode(node.constructorName);
+    rule.reportAtNode(target);
   }
 }

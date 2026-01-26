@@ -3,6 +3,7 @@
 ### Features
 
 - add analyzer plugin lint rules, fixes, and assists for context usage, hook ordering, computed purity, and lifecycle helpers.
+- enforce custom hook composition rules so custom hooks only run in build scopes or other custom hooks.
 
 ### Bug Fixes
 
