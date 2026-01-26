@@ -22,6 +22,7 @@ part 'utils/helpers.dart';
 part 'widgets/action_pill.dart';
 part 'widgets/filter_chip.dart';
 part 'widgets/glass_input.dart';
+part 'widgets/sort_header_cell.dart';
 part 'widgets/status_badge.dart';
 
 void main() {
@@ -3179,48 +3180,6 @@ class _SignalDetail extends StatelessWidget {
             Text(entry!.note, style: textTheme.bodySmall),
           ],
         ],
-      ),
-    );
-  }
-}
-
-class _SortHeaderCell extends StatelessWidget {
-  const _SortHeaderCell({
-    required this.label,
-    required this.isActive,
-    required this.ascending,
-    required this.onTap,
-    required this.style,
-  });
-
-  final String label;
-  final bool isActive;
-  final bool ascending;
-  final VoidCallback onTap;
-  final TextStyle? style;
-
-  @override
-  Widget build(BuildContext context) {
-    final icon = ascending ? Icons.arrow_drop_up : Icons.arrow_drop_down;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(6),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          child: SizedBox(
-            width: double.infinity,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(label, style: style),
-                if (isActive) Icon(icon, size: 16),
-              ],
-            ),
-          ),
-        ),
       ),
     );
   }
