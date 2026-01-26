@@ -25,6 +25,7 @@ part 'panel_info.dart';
 part 'sorting.dart';
 part 'filters.dart';
 part 'status_styles.dart';
+part 'color_maps.dart';
 part 'widgets/adaptive_wrap.dart';
 part 'widgets/action_buttons.dart';
 part 'widgets/action_pill.dart';
@@ -225,33 +226,3 @@ const double _effectsTimelineLineLeft =
     _effectsTimelineHorizontalPadding +
     _effectsTimelineDotSize / 2 -
     _effectsTimelineLineWidth / 2;
-
-const _effectColors = {
-  'UI': OrefPalette.teal,
-  'Network': OrefPalette.indigo,
-  'Persist': OrefPalette.coral,
-  'Analytics': OrefPalette.pink,
-  'Effect': OrefPalette.teal,
-};
-
-const _collectionOpColors = {
-  'Add': OrefPalette.lime,
-  'Remove': OrefPalette.coral,
-  'Replace': OrefPalette.indigo,
-  'Clear': OrefPalette.pink,
-  'Resize': OrefPalette.indigo,
-};
-
-const _deltaStyles = {
-  'add': OrefPalette.lime,
-  'remove': OrefPalette.coral,
-  'update': OrefPalette.indigo,
-};
-
-const _timelineColors = {
-  'signal': OrefPalette.teal,
-  'computed': OrefPalette.indigo,
-  'effect': OrefPalette.pink,
-  'collection': OrefPalette.coral,
-  'batch': OrefPalette.lime,
-};
