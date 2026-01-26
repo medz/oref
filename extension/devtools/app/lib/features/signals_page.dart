@@ -15,6 +15,7 @@ import '../shared/widgets/page_header.dart';
 import '../shared/widgets/panel.dart';
 import '../shared/widgets/sort_header_cell.dart';
 import '../shared/widgets/status_badge.dart';
+import '../shared/widgets/table_header_row.dart';
 
 class SignalsPage extends StatelessWidget {
   const SignalsPage({super.key});
@@ -179,6 +180,7 @@ SignalsState useSignalsState(BuildContext context) {
   final searchState = useSearchQueryState(
     context,
     debugLabel: 'signals.search',
+    debounce: const Duration(milliseconds: 200),
   );
   final statusFilter = oref.signal(
     context,
@@ -288,15 +290,7 @@ class _SignalTableHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final labelStyle = Theme.of(context).textTheme.labelSmall;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: Theme.of(context).dividerColor.withValues(alpha: 0.4),
-          ),
-        ),
-      ),
+    return TableHeaderRow(
       child: Row(
         children: [
           Expanded(
@@ -480,9 +474,9 @@ class _SignalDetail extends StatelessWidget {
       return GlassCard(
         padding: const EdgeInsets.all(20),
         child: Center(
-          child: Text(
-            'Select a signal to view details.',
-            style: Theme.of(context).textTheme.bodyMedium,
+          child: InlineEmptyState(
+            message: 'Select a signal to view details.',
+            padding: EdgeInsets.zero,
           ),
         ),
       );
