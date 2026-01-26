@@ -24,6 +24,7 @@ part 'nav_items.dart';
 part 'panel_info.dart';
 part 'sorting.dart';
 part 'filters.dart';
+part 'status_styles.dart';
 part 'widgets/adaptive_wrap.dart';
 part 'widgets/action_buttons.dart';
 part 'widgets/action_pill.dart';
@@ -224,18 +225,6 @@ const double _effectsTimelineLineLeft =
     _effectsTimelineHorizontalPadding +
     _effectsTimelineDotSize / 2 -
     _effectsTimelineLineWidth / 2;
-
-class _StatusStyle {
-  const _StatusStyle(this.color);
-
-  final Color color;
-}
-
-const _statusStyles = {
-  'Active': _StatusStyle(OrefPalette.lime),
-  'Dirty': _StatusStyle(OrefPalette.coral),
-  'Disposed': _StatusStyle(Color(0xFF8B97A8)),
-};
 
 const _effectColors = {
   'UI': OrefPalette.teal,
