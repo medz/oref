@@ -10,6 +10,7 @@ import '../shared/widgets/inline_empty_state.dart';
 import '../shared/widgets/metric_tile.dart';
 import '../shared/widgets/page_header.dart';
 import '../shared/widgets/panel.dart';
+import '../shared/widgets/table_header_row.dart';
 
 class BatchingPage extends StatelessWidget {
   const BatchingPage({super.key});
@@ -133,15 +134,7 @@ class _BatchHeaderRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final labelStyle = Theme.of(context).textTheme.labelSmall;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: Theme.of(context).dividerColor.withValues(alpha: 0.4),
-          ),
-        ),
-      ),
+    return TableHeaderRow(
       child: Row(
         children: [
           Expanded(
