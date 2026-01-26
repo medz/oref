@@ -17,3 +17,7 @@ jobs:
         working-directory: example
       - run: flutter test
         working-directory: example
+      - run: dart pub get
+        working-directory: analysis_tests
+      - run: dart test
+        working-directory: analysis_tests

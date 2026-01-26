@@ -18,13 +18,13 @@ environment:
   sdk: ^3.10.0
   flutter: ">=1.17.0"
 
-workspace:
-  - example
-
 dependencies:
   flutter:
     sdk: flutter
   alien_signals: ^2.1.2
+  analyzer: ^10.0.1
+  analysis_server_plugin: ^0.3.7
+  analyzer_plugin: ^0.14.1
 
 dev_dependencies:
   flutter_test:
