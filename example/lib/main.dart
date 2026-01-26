@@ -12,8 +12,6 @@ class ExampleApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    signal(null, 0);
-
     return MaterialApp(
       title: 'Oref Examples',
       theme: ThemeData(
