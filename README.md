@@ -39,7 +39,7 @@ You can install by editing your `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  oref: ^2.7.0
+  oref: <version>
 ```
 
 Or install by running this command:
@@ -88,7 +88,7 @@ Enable the plugin in your `analysis_options.yaml`:
 
 ```yaml
 plugins:
-  oref: ^2.7.0
+  oref: <version>
 ```
 
 Suppress a diagnostic in code (optional):
