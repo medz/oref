@@ -6,10 +6,10 @@ import '../app/constants.dart';
 import '../app/palette.dart';
 import '../app/scopes.dart';
 import '../shared/utils/helpers.dart';
-import '../shared/widgets/actions.dart';
-import '../shared/widgets/filter_chip.dart';
+import '../shared/widgets/filter_group.dart';
 import '../shared/widgets/glass.dart';
-import '../shared/widgets/live_badge.dart';
+import '../shared/widgets/inline_empty_state.dart';
+import '../shared/widgets/page_header.dart';
 import '../shared/widgets/panel.dart';
 
 class TimelinePage extends StatelessWidget {
@@ -46,71 +46,33 @@ class TimelinePage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
+                PageHeader(
+                  title: 'Timeline',
+                  description:
+                      'Correlate signal updates with effects, batches, and collections.',
+                  totalCount: events.length,
+                  filteredCount: filtered.length,
+                  countText: '${filtered.length} events',
+                  onExport: () => exportData(
+                    context,
+                    'timeline',
+                    filtered.map((event) => event.toJson()).toList(),
+                  ),
                   children: [
-                    Text(
-                      'Timeline',
-                      style: Theme.of(context).textTheme.headlineSmall,
+                    FilterGroup(
+                      label: 'Type',
+                      filters: typeFilters,
+                      selectedFilter: state.typeFilter(),
+                      onFilterChange: (value) => state.typeFilter.set(value),
                     ),
-                    const SizedBox(width: 12),
-                    const LiveBadge(),
-                    const Spacer(),
-                    GlassPill(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      child: Text('${filtered.length} events'),
+                    const SizedBox(height: 12),
+                    FilterGroup(
+                      label: 'Severity',
+                      filters: severityFilters,
+                      selectedFilter: state.severityFilter(),
+                      onFilterChange: (value) =>
+                          state.severityFilter.set(value),
                     ),
-                    const SizedBox(width: 12),
-                    ActionPill(
-                      label: 'Export',
-                      icon: Icons.download_rounded,
-                      onTap: () => exportData(
-                        context,
-                        'timeline',
-                        filtered.map((event) => event.toJson()).toList(),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Correlate signal updates with effects, batches, and collections.',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    Text(
-                      'Type',
-                      style: Theme.of(context).textTheme.labelMedium,
-                    ),
-                    for (final filter in typeFilters)
-                      FilterChipButton(
-                        label: filter,
-                        isSelected: filter == state.typeFilter(),
-                        onTap: () => state.typeFilter.set(filter),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    Text(
-                      'Severity',
-                      style: Theme.of(context).textTheme.labelMedium,
-                    ),
-                    for (final filter in severityFilters)
-                      FilterChipButton(
-                        label: filter,
-                        isSelected: filter == state.severityFilter(),
-                        onTap: () => state.severityFilter.set(filter),
-                      ),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -155,12 +117,9 @@ class _TimelineList extends StatelessWidget {
     return GlassCard(
       padding: const EdgeInsets.all(0),
       child: events.isEmpty
-          ? Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                'No timeline events yet.',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
+          ? const InlineEmptyState(
+              message: 'No timeline events yet.',
+              padding: EdgeInsets.all(16),
             )
           : Padding(
               padding: const EdgeInsets.all(16),

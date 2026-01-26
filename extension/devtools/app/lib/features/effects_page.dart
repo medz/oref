@@ -6,10 +6,10 @@ import '../app/constants.dart';
 import '../app/palette.dart';
 import '../app/scopes.dart';
 import '../shared/utils/helpers.dart';
-import '../shared/widgets/actions.dart';
-import '../shared/widgets/filter_chip.dart';
+import '../shared/widgets/filter_group.dart';
 import '../shared/widgets/glass.dart';
-import '../shared/widgets/live_badge.dart';
+import '../shared/widgets/inline_empty_state.dart';
+import '../shared/widgets/page_header.dart';
 import '../shared/widgets/panel.dart';
 
 class EffectsPage extends StatelessWidget {
@@ -46,13 +46,10 @@ class EffectsPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _EffectsHeader(
-                  typeFilter: state.typeFilter(),
-                  scopeFilter: state.scopeFilter(),
-                  typeFilters: typeFilters,
-                  scopeFilters: scopeFilters,
-                  onTypeChange: (value) => state.typeFilter.set(value),
-                  onScopeChange: (value) => state.scopeFilter.set(value),
+                PageHeader(
+                  title: 'Effects',
+                  description:
+                      'Monitor effect lifecycle, timings, and hot paths.',
                   totalCount: entries.length,
                   filteredCount: filtered.length,
                   onExport: () => exportData(
@@ -60,6 +57,27 @@ class EffectsPage extends StatelessWidget {
                     'effects',
                     filtered.map((entry) => entry.toJson()).toList(),
                   ),
+                  children: [
+                    FilterGroup(
+                      label: 'Type',
+                      filters: typeFilters,
+                      selectedFilter: state.typeFilter(),
+                      onFilterChange: state.typeFilter.set,
+                      spacing: 8,
+                      runSpacing: 8,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                    ),
+                    const SizedBox(height: 12),
+                    FilterGroup(
+                      label: 'Scope',
+                      filters: scopeFilters,
+                      selectedFilter: state.scopeFilter(),
+                      onFilterChange: state.scopeFilter.set,
+                      spacing: 8,
+                      runSpacing: 8,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 16),
                 _EffectsTimeline(entries: filtered),
@@ -93,94 +111,6 @@ EffectsState useEffectsState(BuildContext context) {
   return EffectsState(typeFilter: typeFilter, scopeFilter: scopeFilter);
 }
 
-class _EffectsHeader extends StatelessWidget {
-  const _EffectsHeader({
-    required this.typeFilter,
-    required this.scopeFilter,
-    required this.typeFilters,
-    required this.scopeFilters,
-    required this.onTypeChange,
-    required this.onScopeChange,
-    required this.totalCount,
-    required this.filteredCount,
-    required this.onExport,
-  });
-
-  final String typeFilter;
-  final String scopeFilter;
-  final List<String> typeFilters;
-  final List<String> scopeFilters;
-  final ValueChanged<String> onTypeChange;
-  final ValueChanged<String> onScopeChange;
-  final int totalCount;
-  final int filteredCount;
-  final VoidCallback onExport;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Text('Effects', style: textTheme.headlineSmall),
-            const SizedBox(width: 12),
-            const LiveBadge(),
-            const Spacer(),
-            GlassPill(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              child: Text('$filteredCount / $totalCount'),
-            ),
-            const SizedBox(width: 12),
-            ActionPill(
-              label: 'Export',
-              icon: Icons.download_rounded,
-              onTap: onExport,
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Monitor effect lifecycle, timings, and hot paths.',
-          style: textTheme.bodyMedium,
-        ),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            Text('Type', style: textTheme.labelMedium),
-            for (final filter in typeFilters)
-              FilterChipButton(
-                label: filter,
-                isSelected: filter == typeFilter,
-                onTap: () => onTypeChange(filter),
-              ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            Text('Scope', style: textTheme.labelMedium),
-            for (final filter in scopeFilters)
-              FilterChipButton(
-                label: filter,
-                isSelected: filter == scopeFilter,
-                onTap: () => onScopeChange(filter),
-              ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
 class _EffectsTimeline extends StatelessWidget {
   const _EffectsTimeline({required this.entries});
 
@@ -202,12 +132,8 @@ class _EffectsTimeline extends StatelessWidget {
             ),
           ),
           if (entries.isEmpty)
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                'No effects match the current filters.',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
+            const InlineEmptyState(
+              message: 'No effects match the current filters.',
             )
           else
             Padding(

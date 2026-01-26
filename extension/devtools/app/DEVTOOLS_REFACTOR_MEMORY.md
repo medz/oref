@@ -1,7 +1,7 @@
 # DevTools Refactor Memory
 
 Start time: 2026-01-27 02:21:38 +0800
-Last updated: 2026-01-27 02:53:16 +0800
+Last updated: 2026-01-27 03:02:28 +0800
 
 **Must work continuously for at least six hours! No stopping is allowed! Continuous iteration and optimization!**
 
@@ -64,3 +64,5 @@ RAW:
 - 2026-01-27 02:48:05 +0800 (Iteration start): Tasks assigned: PageHeader rollout, FilterGroup rollout, EmptyState rollout, list chrome consistency.
 - 2026-01-27 02:52:07 +0800 (Latest changes): Rolled out PageHeader to signals/computed, applied FilterGroup on effects, added InlineEmptyState on timeline/performance, and introduced TableHeaderRow plus collections header updates.
 - 2026-01-27 02:53:16 +0800 (Latest changes): Rolled PageHeader into collections/batching/performance and added countText support.
+- 2026-01-27 03:02:23 +0800 (Latest changes): Applied PageHeader to overview/timeline/settings; applied FilterGroup to signals/computed/collections; applied InlineEmptyState to computed/effects/collections; collections now has private _TableHeaderRow and shared table_header_row (to be removed); untracked filter_group.dart added; pending: PageHeader for batching/performance, list chrome consistency, cleanup shared table_header_row.
+- 2026-01-27 03:02:28 +0800 (Latest changes): Completed FilterGroup rollout on computed/collections/effects/timeline and switched collections header to shared TableHeaderRow.

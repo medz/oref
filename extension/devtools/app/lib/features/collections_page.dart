@@ -7,8 +7,9 @@ import '../app/palette.dart';
 import '../app/scopes.dart';
 import '../shared/hooks/search_query.dart';
 import '../shared/utils/helpers.dart';
-import '../shared/widgets/filter_chip.dart';
+import '../shared/widgets/filter_group.dart';
 import '../shared/widgets/glass.dart';
+import '../shared/widgets/inline_empty_state.dart';
 import '../shared/widgets/page_header.dart';
 import '../shared/widgets/panel.dart';
 import '../shared/widgets/sort_header_cell.dart';
@@ -61,40 +62,24 @@ class CollectionsPage extends StatelessWidget {
                           hintText: 'Search collections...',
                         ),
                         const SizedBox(height: 12),
-                        Wrap(
+                        FilterGroup(
+                          label: 'Type',
+                          filters: typeFilters,
+                          selectedFilter: state.typeFilter(),
+                          onFilterChange: state.typeFilter.set,
                           spacing: 8,
                           runSpacing: 8,
                           crossAxisAlignment: WrapCrossAlignment.center,
-                          children: [
-                            Text(
-                              'Type',
-                              style: Theme.of(context).textTheme.labelMedium,
-                            ),
-                            for (final filter in typeFilters)
-                              FilterChipButton(
-                                label: filter,
-                                isSelected: filter == state.typeFilter(),
-                                onTap: () => state.typeFilter.set(filter),
-                              ),
-                          ],
                         ),
                         const SizedBox(height: 12),
-                        Wrap(
+                        FilterGroup(
+                          label: 'Op',
+                          filters: opFilters,
+                          selectedFilter: state.opFilter(),
+                          onFilterChange: state.opFilter.set,
                           spacing: 8,
                           runSpacing: 8,
                           crossAxisAlignment: WrapCrossAlignment.center,
-                          children: [
-                            Text(
-                              'Op',
-                              style: Theme.of(context).textTheme.labelMedium,
-                            ),
-                            for (final filter in opFilters)
-                              FilterChipButton(
-                                label: filter,
-                                isSelected: filter == state.opFilter(),
-                                onTap: () => state.opFilter.set(filter),
-                              ),
-                          ],
                         ),
                       ],
                     ),
@@ -240,12 +225,8 @@ class _CollectionsList extends StatelessWidget {
               onSortUpdated: onSortUpdated,
             ),
           if (entries.isEmpty)
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                'No collection mutations match the current filters.',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
+            const InlineEmptyState(
+              message: 'No collection mutations match the current filters.',
             )
           else
             Padding(

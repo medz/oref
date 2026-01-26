@@ -7,9 +7,10 @@ import '../app/palette.dart';
 import '../app/scopes.dart';
 import '../shared/hooks/search_query.dart';
 import '../shared/utils/helpers.dart';
-import '../shared/widgets/filter_chip.dart';
+import '../shared/widgets/filter_group.dart';
 import '../shared/widgets/glass.dart';
 import '../shared/widgets/info_row.dart';
+import '../shared/widgets/inline_empty_state.dart';
 import '../shared/widgets/page_header.dart';
 import '../shared/widgets/panel.dart';
 import '../shared/widgets/sort_header_cell.dart';
@@ -71,17 +72,14 @@ class ComputedPage extends StatelessWidget {
                           hintText: 'Search computed values...',
                         ),
                         const SizedBox(height: 12),
-                        Wrap(
+                        FilterGroup(
+                          label: 'Status',
+                          filters: signalFilters,
+                          selectedFilter: state.statusFilter(),
+                          onFilterChange: state.statusFilter.set,
                           spacing: 8,
                           runSpacing: 8,
-                          children: [
-                            for (final filter in signalFilters)
-                              FilterChipButton(
-                                label: filter,
-                                isSelected: filter == state.statusFilter(),
-                                onTap: () => state.statusFilter.set(filter),
-                              ),
-                          ],
+                          crossAxisAlignment: WrapCrossAlignment.center,
                         ),
                       ],
                     ),
@@ -247,12 +245,8 @@ class _ComputedList extends StatelessWidget {
               onSortUpdated: onSortUpdated,
             ),
           if (entries.isEmpty)
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                'No computed values match the current filter.',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
+            const InlineEmptyState(
+              message: 'No computed values match the current filter.',
             )
           else
             Padding(
