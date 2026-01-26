@@ -33,6 +33,7 @@ part 'widgets/health_bar.dart';
 part 'widgets/chart_placeholder.dart';
 part 'widgets/mini_chart.dart';
 part 'widgets/sparkline.dart';
+part 'widgets/timeline_row.dart';
 part 'widgets/metric_tile.dart';
 part 'widgets/panel_placeholder.dart';
 part 'widgets/panel_scroll_view.dart';
@@ -3210,49 +3211,6 @@ class _PanelInfo {
   final String title;
   final String description;
   final List<String> bullets;
-}
-
-class _TimelineRow extends StatelessWidget {
-  const _TimelineRow({required this.event});
-
-  final TimelineEvent event;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 10,
-            height: 10,
-            margin: const EdgeInsets.only(top: 6),
-            decoration: BoxDecoration(
-              color: _timelineColors[event.type] ?? OrefPalette.teal,
-              shape: BoxShape.circle,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  event.title,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                Text(
-                  '${event.detail} · ${_formatAge(event.timestamp)}',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 class _InfoRow extends StatelessWidget {
