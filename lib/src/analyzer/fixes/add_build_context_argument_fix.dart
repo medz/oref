@@ -11,17 +11,31 @@ class AddBuildContextArgumentFix extends ResolvedCorrectionProducer {
   static const FixKind kind = FixKind(
     'oref.fix.add_build_context_argument',
     DartFixKindPriority.standard,
-    'Oref: add build context argument',
+    'Oref: add {0} argument to {1}',
+  );
+
+  static const FixKind multiKind = FixKind(
+    'oref.fix.add_build_context_argument.multi',
+    DartFixKindPriority.standard,
+    'Oref: add build context arguments',
   );
 
   AddBuildContextArgumentFix({required super.context});
+
+  List<String>? _arguments;
 
   @override
   CorrectionApplicability get applicability =>
       CorrectionApplicability.singleLocation;
 
   @override
+  List<String>? get fixArguments => _arguments;
+
+  @override
   FixKind get fixKind => kind;
+
+  @override
+  FixKind get multiFixKind => multiKind;
 
   @override
   Future<void> compute(ChangeBuilder builder) async {
@@ -49,6 +63,11 @@ class AddBuildContextArgumentFix extends ResolvedCorrectionProducer {
     if (contextName == null) {
       return;
     }
+
+    _arguments = [
+      formatLintArgument(contextName),
+      formatLintArgument(hook.name),
+    ];
 
     final contextArgument = hook.contextArgument;
     if (contextArgument == null) {

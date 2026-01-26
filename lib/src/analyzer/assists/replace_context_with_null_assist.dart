@@ -10,14 +10,19 @@ class ReplaceContextWithNullAssist extends ResolvedCorrectionProducer {
   static const AssistKind kind = AssistKind(
     'oref.assist.replace_context_with_null',
     30,
-    'Oref: replace context with null',
+    'Oref: replace {0} with `null` in {1}',
   );
 
   ReplaceContextWithNullAssist({required super.context});
 
+  List<String>? _arguments;
+
   @override
   CorrectionApplicability get applicability =>
       CorrectionApplicability.singleLocation;
+
+  @override
+  List<String>? get assistArguments => _arguments;
 
   @override
   AssistKind get assistKind => kind;
@@ -45,6 +50,12 @@ class ReplaceContextWithNullAssist extends ResolvedCorrectionProducer {
         !isBuildContextExpression(contextArgument)) {
       return;
     }
+
+    final contextName = contextArgument.toSource();
+    _arguments = [
+      formatLintArgument(contextName),
+      formatLintArgument(hook.name),
+    ];
 
     await builder.addDartFileEdit(file, (builder) {
       builder.addSimpleReplacement(range.node(contextArgument), 'null');

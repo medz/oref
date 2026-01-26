@@ -11,17 +11,31 @@ class ReplaceContextWithNullFix extends ResolvedCorrectionProducer {
   static const FixKind kind = FixKind(
     'oref.fix.replace_context_with_null',
     DartFixKindPriority.standard,
-    'Oref: replace context with null',
+    'Oref: replace {0} with `null` in {1}',
+  );
+
+  static const FixKind multiKind = FixKind(
+    'oref.fix.replace_context_with_null.multi',
+    DartFixKindPriority.standard,
+    'Oref: replace contexts with null',
   );
 
   ReplaceContextWithNullFix({required super.context});
+
+  List<String>? _arguments;
 
   @override
   CorrectionApplicability get applicability =>
       CorrectionApplicability.singleLocation;
 
   @override
+  List<String>? get fixArguments => _arguments;
+
+  @override
   FixKind get fixKind => kind;
+
+  @override
+  FixKind get multiFixKind => multiKind;
 
   @override
   Future<void> compute(ChangeBuilder builder) async {
@@ -41,6 +55,12 @@ class ReplaceContextWithNullFix extends ResolvedCorrectionProducer {
         !isBuildContextExpression(contextArgument)) {
       return;
     }
+
+    final contextName = contextArgument.toSource();
+    _arguments = [
+      formatLintArgument(contextName),
+      formatLintArgument(hook.name),
+    ];
 
     await builder.addDartFileEdit(file, (builder) {
       builder.addSimpleReplacement(range.node(contextArgument), 'null');

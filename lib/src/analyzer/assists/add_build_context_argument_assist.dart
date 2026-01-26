@@ -10,14 +10,19 @@ class AddBuildContextArgumentAssist extends ResolvedCorrectionProducer {
   static const AssistKind kind = AssistKind(
     'oref.assist.add_build_context_argument',
     30,
-    'Oref: add build context argument',
+    'Oref: add {0} argument to {1}',
   );
 
   AddBuildContextArgumentAssist({required super.context});
 
+  List<String>? _arguments;
+
   @override
   CorrectionApplicability get applicability =>
       CorrectionApplicability.singleLocation;
+
+  @override
+  List<String>? get assistArguments => _arguments;
 
   @override
   AssistKind get assistKind => kind;
@@ -48,6 +53,11 @@ class AddBuildContextArgumentAssist extends ResolvedCorrectionProducer {
     if (contextName == null) {
       return;
     }
+
+    _arguments = [
+      formatLintArgument(contextName),
+      formatLintArgument(hook.name),
+    ];
 
     final contextArgument = hook.contextArgument;
     if (contextArgument == null) {
