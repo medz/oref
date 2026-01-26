@@ -1,6 +1,7 @@
 part of 'utils.dart';
 
 final Map<String, String?> _packageNameCache = {};
+final RegExp _whitespaceRegExp = RegExp(r'\s');
 
 bool shouldSkipHookLint(RuleContext context) {
   return _isOrefPackage(context);
@@ -39,7 +40,7 @@ String? _readPackageName(String rootPath) {
         return trimmed
             .substring('name:'.length)
             .trim()
-            .split(RegExp(r'\s'))
+            .split(_whitespaceRegExp)
             .first;
       }
     }
