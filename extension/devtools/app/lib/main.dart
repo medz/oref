@@ -23,6 +23,7 @@ part 'widgets/ui_scope.dart';
 part 'nav_items.dart';
 part 'panel_info.dart';
 part 'sorting.dart';
+part 'filters.dart';
 part 'widgets/adaptive_wrap.dart';
 part 'widgets/action_buttons.dart';
 part 'widgets/action_pill.dart';
@@ -229,8 +230,6 @@ class _StatusStyle {
 
   final Color color;
 }
-
-const _signalFilters = ['All', 'Active', 'Dirty', 'Disposed'];
 
 const _statusStyles = {
   'Active': _StatusStyle(OrefPalette.lime),
