@@ -45,6 +45,7 @@ part 'widgets/signal_row.dart';
 part 'widgets/signal_detail.dart';
 part 'widgets/collections_header.dart';
 part 'widgets/collections_list.dart';
+part 'widgets/collections_header_row.dart';
 part 'widgets/panel_placeholder.dart';
 part 'widgets/panel_scroll_view.dart';
 part 'widgets/panel_state_cards.dart';
@@ -2194,81 +2195,6 @@ class _SettingsPanel extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-}
-
-class _CollectionsHeaderRow extends StatelessWidget {
-  const _CollectionsHeaderRow({
-    required this.sortKey,
-    required this.sortAscending,
-    required this.onSortName,
-    required this.onSortUpdated,
-  });
-
-  final _SortKey sortKey;
-  final bool sortAscending;
-  final VoidCallback onSortName;
-  final VoidCallback onSortUpdated;
-
-  @override
-  Widget build(BuildContext context) {
-    final labelStyle = Theme.of(context).textTheme.labelSmall;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: Theme.of(context).dividerColor.withValues(alpha: 0.4),
-          ),
-        ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 3,
-            child: _SortHeaderCell(
-              label: 'Collection',
-              isActive: sortKey == _SortKey.name,
-              ascending: sortAscending,
-              onTap: onSortName,
-              style: labelStyle,
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Align(
-              alignment: Alignment.center,
-              child: Text('Type', style: labelStyle),
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Align(
-              alignment: Alignment.center,
-              child: Text('Op', style: labelStyle),
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Align(
-              alignment: Alignment.center,
-              child: Text('Scope', style: labelStyle),
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: _SortHeaderCell(
-              label: 'Updated',
-              isActive: sortKey == _SortKey.updated,
-              ascending: sortAscending,
-              onTap: onSortUpdated,
-              style: labelStyle,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
