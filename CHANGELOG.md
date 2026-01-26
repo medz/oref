@@ -1,5 +1,7 @@
 ## Unreleased
 
+## 2.8.0
+
 ### Features
 
 - Adds an analyzer plugin with multiple lints enforcing hook composition, ordering, computed purity, lifecycle rules, and BuildContext usage, plus quick fixes and assists to help correct issues.

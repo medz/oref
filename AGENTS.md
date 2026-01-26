@@ -14,6 +14,20 @@
 - `flutter test` runs the full unit test suite in `test/`.
 - `cd example && flutter run` launches the sample app locally for interactive checks.
 
+## Release Process
+- Update versions in `pubspec.yaml`, `extension/devtools/app/pubspec.yaml`, `extension/devtools/config.yaml`, and any version references in `README.md`.
+- Move Unreleased notes into a new version section in `CHANGELOG.md`.
+- Rebuild DevTools extension (from `extension/devtools/app`):
+  - `flutter pub get`
+  - `dart run devtools_extensions validate --package=../../..`
+  - `dart run devtools_extensions build_and_copy --source=. --dest=../`
+- Run tests:
+  - `flutter test`
+  - `cd analysis_tests && dart test`
+- Commit and tag:
+  - `git commit -m "Release x.y.z"`
+  - `git tag vx.y.z`
+
 ## Coding Style & Naming Conventions
 - Use 2-space indentation; rely on `dart format` to enforce style.
 - File names are `snake_case.dart`; types are `UpperCamelCase`; methods and variables are `lowerCamelCase`.
