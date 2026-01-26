@@ -13,6 +13,7 @@ import '../shared/widgets/inline_empty_state.dart';
 import '../shared/widgets/page_header.dart';
 import '../shared/widgets/panel.dart';
 import '../shared/widgets/sort_header_cell.dart';
+import '../shared/widgets/table_header_row.dart';
 
 class CollectionsPage extends StatelessWidget {
   const CollectionsPage({super.key});
@@ -227,10 +228,11 @@ class _CollectionsList extends StatelessWidget {
           if (entries.isEmpty)
             const InlineEmptyState(
               message: 'No collection mutations match the current filters.',
+              padding: EdgeInsets.all(16),
             )
           else
             Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
                   for (var index = 0; index < entries.length; index++) ...[
@@ -263,7 +265,7 @@ class _CollectionsHeaderRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final labelStyle = Theme.of(context).textTheme.labelSmall;
 
-    return _TableHeaderRow(
+    return TableHeaderRow(
       child: Row(
         children: [
           Expanded(
@@ -309,27 +311,6 @@ class _CollectionsHeaderRow extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _TableHeaderRow extends StatelessWidget {
-  const _TableHeaderRow({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: Theme.of(context).dividerColor.withValues(alpha: 0.4),
-          ),
-        ),
-      ),
-      child: child,
     );
   }
 }

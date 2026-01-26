@@ -10,6 +10,7 @@ import '../shared/widgets/inline_empty_state.dart';
 import '../shared/widgets/metric_tile.dart';
 import '../shared/widgets/page_header.dart';
 import '../shared/widgets/panel.dart';
+import '../shared/widgets/table_header_row.dart';
 
 class PerformancePage extends StatelessWidget {
   const PerformancePage({super.key});
@@ -90,17 +91,74 @@ class _PerformanceList extends StatelessWidget {
               message: 'No performance samples yet.',
               padding: EdgeInsets.all(16),
             )
-          : Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  for (var index = 0; index < samples.length; index++) ...[
-                    _PerformanceRow(sample: samples[index]),
-                    if (index != samples.length - 1) const SizedBox(height: 12),
-                  ],
-                ],
-              ),
+          : Column(
+              children: [
+                const _PerformanceHeaderRow(),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      for (var index = 0; index < samples.length; index++) ...[
+                        _PerformanceRow(sample: samples[index]),
+                        if (index != samples.length - 1)
+                          const SizedBox(height: 12),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
             ),
+    );
+  }
+}
+
+class _PerformanceHeaderRow extends StatelessWidget {
+  const _PerformanceHeaderRow();
+
+  @override
+  Widget build(BuildContext context) {
+    final labelStyle = Theme.of(context).textTheme.labelSmall;
+
+    return TableHeaderRow(
+      child: Row(
+        children: [
+          Expanded(
+            flex: 2,
+            child: Align(
+              alignment: Alignment.center,
+              child: Text('Time/Age', style: labelStyle),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Align(
+              alignment: Alignment.center,
+              child: Text('Signal writes', style: labelStyle),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Align(
+              alignment: Alignment.center,
+              child: Text('Effect runs', style: labelStyle),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Align(
+              alignment: Alignment.center,
+              child: Text('Avg effect', style: labelStyle),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Align(
+              alignment: Alignment.center,
+              child: Text('Mutations', style: labelStyle),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
