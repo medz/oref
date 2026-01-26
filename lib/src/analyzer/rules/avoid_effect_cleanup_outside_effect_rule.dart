@@ -11,7 +11,7 @@ class AvoidEffectCleanupOutsideEffectRule extends AnalysisRule {
   static const LintCode code = LintCode(
     'avoid_effect_cleanup_outside_effect',
     '{0} must be called inside an effect callback.',
-    correctionMessage: 'Call {0} inside the callback passed to effect().',
+    correctionMessage: 'Call {0} only inside the callback passed to effect().',
     severity: DiagnosticSeverity.ERROR,
     uniqueName: 'oref.lint.avoid_effect_cleanup_outside_effect',
   );

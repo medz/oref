@@ -10,8 +10,8 @@ import '../utils/utils.dart';
 class AvoidCustomHooksOutsideBuildRule extends AnalysisRule {
   static const LintCode code = LintCode(
     'avoid_custom_hooks_outside_build',
-    '{0} must be called inside build scopes or other custom hooks.',
-    correctionMessage: 'Move {0} into a build scope or another custom hook.',
+    '{0} must be called inside a build scope or another hook.',
+    correctionMessage: 'Move {0} into a build scope or another hook.',
     severity: DiagnosticSeverity.ERROR,
     uniqueName: 'oref.lint.avoid_custom_hooks_outside_build',
   );
@@ -20,7 +20,7 @@ class AvoidCustomHooksOutsideBuildRule extends AnalysisRule {
     : super(
         name: 'avoid_custom_hooks_outside_build',
         description:
-            'Avoid calling custom hooks outside build scopes or other custom hooks.',
+            'Avoid calling custom hooks outside build scopes or other hooks.',
       );
 
   @override

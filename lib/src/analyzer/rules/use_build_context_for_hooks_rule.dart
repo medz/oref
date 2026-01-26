@@ -10,7 +10,7 @@ import '../utils/utils.dart';
 class UseBuildContextForHooksRule extends AnalysisRule {
   static const LintCode code = LintCode(
     'use_build_context_for_hooks',
-    '{0} inside build scopes must pass context.',
+    'In a build scope, {0} must receive BuildContext as the first argument.',
     correctionMessage: 'Pass the build context as the first argument to {0}.',
     severity: DiagnosticSeverity.ERROR,
     uniqueName: 'oref.lint.use_build_context_for_hooks',
@@ -20,7 +20,7 @@ class UseBuildContextForHooksRule extends AnalysisRule {
     : super(
         name: 'use_build_context_for_hooks',
         description:
-            'Require BuildContext when using Oref hooks in build scopes.',
+            'Require BuildContext when using optional Oref hooks in build scopes.',
       );
 
   @override
@@ -71,7 +71,7 @@ class _UseBuildContextForHooksVisitor extends SimpleAstVisitor<void> {
     }
 
     rule.reportAtNode(
-      contextArgument ?? node.methodName,
+      contextArgument ?? node.argumentList,
       arguments: [hook.name],
     );
   }

@@ -10,7 +10,7 @@ import '../utils/utils.dart';
 class AvoidDiscardedGlobalEffectRule extends AnalysisRule {
   static const LintCode code = LintCode(
     'avoid_discarded_global_effect',
-    '{0} created without storing the result can leak resources.',
+    'Discarding the result of {0} can leak resources.',
     correctionMessage: 'Store the result if you need to stop {0} later.',
     severity: DiagnosticSeverity.WARNING,
     uniqueName: 'oref.lint.avoid_discarded_global_effect',

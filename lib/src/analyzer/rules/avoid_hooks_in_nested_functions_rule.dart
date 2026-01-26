@@ -10,7 +10,7 @@ import '../utils/utils.dart';
 class AvoidHooksInNestedFunctionsRule extends AnalysisRule {
   static const LintCode code = LintCode(
     'avoid_hooks_in_nested_functions',
-    '{0} must not be called inside nested functions in build scopes.',
+    'Do not call {0} inside nested functions in a build scope.',
     correctionMessage: 'Move {0} to the top level of the build scope.',
     severity: DiagnosticSeverity.ERROR,
     uniqueName: 'oref.lint.avoid_hooks_in_nested_functions',

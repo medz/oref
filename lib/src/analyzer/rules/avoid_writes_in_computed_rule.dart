@@ -10,8 +10,8 @@ import '../utils/utils.dart';
 class AvoidWritesInComputedRule extends AnalysisRule {
   static const LintCode code = LintCode(
     'avoid_writes_in_computed',
-    'Writes inside computed getters can cause unexpected side effects (found {0}).',
-    correctionMessage: 'Prefer moving writes to an effect or event handler.',
+    'Writing to signals inside computed getters can cause side effects (found {0}).',
+    correctionMessage: 'Move the write to an effect or event handler instead.',
     severity: DiagnosticSeverity.WARNING,
     uniqueName: 'oref.lint.avoid_writes_in_computed',
   );

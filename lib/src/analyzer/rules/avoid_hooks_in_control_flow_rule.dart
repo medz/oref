@@ -10,7 +10,7 @@ import '../utils/utils.dart';
 class AvoidHooksInControlFlowRule extends AnalysisRule {
   static const LintCode code = LintCode(
     'avoid_hooks_in_control_flow',
-    '{0} must be called unconditionally at the top level of build scopes.',
+    'Call {0} unconditionally at the top level of a build scope.',
     correctionMessage: 'Move {0} out of the control flow.',
     severity: DiagnosticSeverity.ERROR,
     uniqueName: 'oref.lint.avoid_hooks_in_control_flow',

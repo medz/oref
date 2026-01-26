@@ -10,9 +10,9 @@ import '../utils/utils.dart';
 class AvoidHookContextOutsideBuildRule extends AnalysisRule {
   static const LintCode code = LintCode(
     'avoid_hook_context_outside_build',
-    '{0} relies on BuildContext and must be called inside build scopes.',
+    'Passing BuildContext to {0} is only allowed inside a build scope.',
     correctionMessage:
-        'Move {0} into a build scope, or pass null if it allows it.',
+        'Move {0} into a build scope, or pass null if supported.',
     severity: DiagnosticSeverity.ERROR,
     uniqueName: 'oref.lint.avoid_hook_context_outside_build',
   );
@@ -21,7 +21,7 @@ class AvoidHookContextOutsideBuildRule extends AnalysisRule {
     : super(
         name: 'avoid_hook_context_outside_build',
         description:
-            'Avoid using BuildContext with Oref hooks outside build scopes.',
+            'Avoid passing BuildContext to Oref hooks outside build scopes.',
       );
 
   @override
