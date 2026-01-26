@@ -80,10 +80,10 @@ HookCall? matchHookConstructor(InstanceCreationExpression node) {
     return null;
   }
 
-  final enclosing = element.enclosingElement;
-
+  final Element enclosing = element.enclosingElement;
   final library = enclosing.library;
-  if (!_isOrefLibrary(library.uri)) {
+
+  if (library == null || !_isOrefLibrary(library.uri)) {
     return null;
   }
 
