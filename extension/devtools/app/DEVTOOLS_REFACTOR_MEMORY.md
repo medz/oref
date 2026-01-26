@@ -15,9 +15,6 @@ Last updated: 2026-01-27 03:13:20 +0800
 
 > Each time you update Notes, remove older Notes. Keep Notes to only record the top ten log entries.
 
-- Prefer small, iterative refactors with validation per step.
-- Update this file after each meaningful refactor step.
-- Next progress report due in 30 min.
 - 2026-01-27 02:26:03 +0800: Added shared search hook and Live badge widget; updated signals/computed/collections search setup and replaced repeated Live pills across pages.
 - 2026-01-27 02:28:06 +0800: Moved search hook under shared/hooks to align with app architecture.
 - 2026-01-27 02:28:42 +0800 (Latest changes): Start time/Last updated reset to 2026-01-27 02:21:38 +0800; scan results flagged shared widget candidates `actions.dart` and `panel.dart`.
