@@ -348,15 +348,22 @@ Set<String> _externalCustomHookNamesForLibrary(LibraryElement library) {
 }
 
 String _librarySignature(LibraryElement library) {
+  final session = library.session;
   final buffer = StringBuffer();
   for (final fragment in library.fragments) {
     final path = fragment.source.fullName;
     buffer.write(path);
     buffer.write(':');
-    try {
-      buffer.write(File(path).statSync().modified.millisecondsSinceEpoch);
-    } on FileSystemException {
-      buffer.write('0');
+    final parsed = session.getParsedUnit(path);
+    if (parsed is ParsedUnitResult) {
+      // ParsedUnitResult.content reflects overlays, and file.modificationStamp
+      // is overlay-aware when the session uses OverlayResourceProvider.
+      buffer.write(parsed.file.modificationStamp);
+      buffer.write(':');
+      buffer.write(parsed.content.hashCode);
+    } else {
+      final file = session.resourceProvider.getFile(path);
+      buffer.write(file.modificationStamp);
     }
     buffer.write('|');
   }
@@ -378,24 +385,14 @@ Set<String> _computeCustomHookNamesForLibrary(LibraryElement library) {
     for (final name in candidateNames) name: _NameHookCandidate(name),
   };
 
+  final session = library.session;
   for (final fragment in library.fragments) {
     final path = fragment.source.fullName;
-    final file = File(path);
-    if (!file.existsSync()) {
+    final parsed = session.getParsedUnit(path);
+    if (parsed is! ParsedUnitResult) {
       continue;
     }
-    String content;
-    try {
-      content = file.readAsStringSync();
-    } on FileSystemException {
-      continue;
-    }
-
-    final unit = parseString(
-      content: content,
-      featureSet: library.featureSet,
-      path: path,
-    ).unit;
+    final unit = parsed.unit;
 
     for (final declaration in unit.declarations) {
       if (declaration is FunctionDeclaration) {

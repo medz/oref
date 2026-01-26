@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:analyzer/analysis_rule/rule_context.dart';
-import 'package:analyzer/dart/analysis/utilities.dart';
+import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/token.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
