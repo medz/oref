@@ -1,6 +1,7 @@
 import 'package:analysis_server_plugin/registry.dart';
 
 import 'disallow_context_outside_build_rule.dart';
+import 'discarded_global_effect_rule.dart';
 import 'effect_cleanup_requires_effect_rule.dart';
 import 'no_hooks_in_control_flow_rule.dart';
 import 'no_hooks_in_nested_functions_rule.dart';
@@ -16,4 +17,5 @@ void registerRules(PluginRegistry registry) {
   registry.registerWarningRule(NoWritesInComputedRule());
   registry.registerWarningRule(EffectCleanupRequiresEffectRule());
   registry.registerWarningRule(ScopeDisposeRequiresScopeRule());
+  registry.registerWarningRule(DiscardedGlobalEffectRule());
 }

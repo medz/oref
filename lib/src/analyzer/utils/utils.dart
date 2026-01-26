@@ -594,6 +594,14 @@ bool shouldSkipHookLint(RuleContext context) {
   return _isOrefPackage(context);
 }
 
+bool isInsideTopLevelFunction(AstNode node) {
+  final function = node.thisOrAncestorOfType<FunctionDeclaration>();
+  if (function == null) {
+    return false;
+  }
+  return function.parent is CompilationUnit;
+}
+
 bool _isOrefPackage(RuleContext context) {
   final package = context.package;
   if (package == null) {
