@@ -1,7 +1,7 @@
 # DevTools Refactor Memory
 
-Start time: 2026-01-27 01:33:01 +0800
-Last updated: 2026-01-27 02:09:14 +0800
+Start time: 2026-01-27 02:21:38 +0800
+Last updated: 2026-01-27 02:28:06 +0800
 
 **Must work continuously for at least six hours! No stopping is allowed! Continuous iteration and optimization!**
 
@@ -54,3 +54,5 @@ RAW:
 
 - Prefer small, iterative refactors with validation per step.
 - Update this file after each meaningful refactor step.
+- 2026-01-27 02:26:03 +0800: Added shared search hook and Live badge widget; updated signals/computed/collections search setup and replaced repeated Live pills across pages.
+- 2026-01-27 02:28:06 +0800: Moved search hook under shared/hooks to align with app architecture.

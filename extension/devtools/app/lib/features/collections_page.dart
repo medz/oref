@@ -5,10 +5,12 @@ import 'package:oref/oref.dart' as oref;
 import '../app/constants.dart';
 import '../app/palette.dart';
 import '../app/scopes.dart';
+import '../shared/hooks/search_query.dart';
 import '../shared/utils/helpers.dart';
 import '../shared/widgets/actions.dart';
 import '../shared/widgets/filter_chip.dart';
 import '../shared/widgets/glass.dart';
+import '../shared/widgets/live_badge.dart';
 import '../shared/widgets/panel.dart';
 import '../shared/widgets/sort_header_cell.dart';
 
@@ -135,13 +137,8 @@ class CollectionsState {
 }
 
 CollectionsState useCollectionsState(BuildContext context) {
-  final searchController = oref.useMemoized(
+  final searchState = useSearchQueryState(
     context,
-    () => TextEditingController(),
-  );
-  final searchQuery = oref.signal(
-    context,
-    '',
     debugLabel: 'collections.search',
   );
   final typeFilter = oref.signal(
@@ -164,21 +161,9 @@ CollectionsState useCollectionsState(BuildContext context) {
     false,
     debugLabel: 'collections.sortAscending',
   );
-  final searchListener = oref.useMemoized(context, () {
-    void listener() {
-      searchQuery.set(searchController.text);
-    }
-
-    searchController.addListener(listener);
-    return listener;
-  });
-  oref.onUnmounted(context, () {
-    searchController.removeListener(searchListener);
-    searchController.dispose();
-  });
   return CollectionsState(
-    searchController: searchController,
-    searchQuery: searchQuery,
+    searchController: searchState.controller,
+    searchQuery: searchState.query,
     typeFilter: typeFilter,
     opFilter: opFilter,
     sortKey: sortKey,
@@ -222,10 +207,7 @@ class _CollectionsHeader extends StatelessWidget {
           children: [
             Text('Collections', style: textTheme.headlineSmall),
             const SizedBox(width: 12),
-            const GlassPill(
-              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              child: Text('Live'),
-            ),
+            const LiveBadge(),
             const Spacer(),
             GlassPill(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),

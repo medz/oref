@@ -7,6 +7,7 @@ import '../shared/utils/helpers.dart';
 import '../shared/widgets/actions.dart';
 import '../shared/widgets/adaptive_wrap.dart';
 import '../shared/widgets/glass.dart';
+import '../shared/widgets/live_badge.dart';
 import '../shared/widgets/metric_tile.dart';
 import '../shared/widgets/panel.dart';
 
@@ -45,13 +46,7 @@ class BatchingPage extends StatelessWidget {
                       style: Theme.of(context).textTheme.headlineSmall,
                     ),
                     const SizedBox(width: 12),
-                    const GlassPill(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      child: Text('Live'),
-                    ),
+                    const LiveBadge(),
                     const Spacer(),
                     GlassPill(
                       padding: const EdgeInsets.symmetric(

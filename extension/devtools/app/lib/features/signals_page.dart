@@ -5,11 +5,13 @@ import 'package:oref/oref.dart' as oref;
 import '../app/constants.dart';
 import '../app/palette.dart';
 import '../app/scopes.dart';
+import '../shared/hooks/search_query.dart';
 import '../shared/utils/helpers.dart';
 import '../shared/widgets/actions.dart';
 import '../shared/widgets/filter_chip.dart';
 import '../shared/widgets/glass.dart';
 import '../shared/widgets/info_row.dart';
+import '../shared/widgets/live_badge.dart';
 import '../shared/widgets/panel.dart';
 import '../shared/widgets/sort_header_cell.dart';
 import '../shared/widgets/status_badge.dart';
@@ -157,11 +159,10 @@ class SignalsState {
 }
 
 SignalsState useSignalsState(BuildContext context) {
-  final searchController = oref.useMemoized(
+  final searchState = useSearchQueryState(
     context,
-    () => TextEditingController(),
+    debugLabel: 'signals.search',
   );
-  final searchQuery = oref.signal(context, '', debugLabel: 'signals.search');
   final statusFilter = oref.signal(
     context,
     'All',
@@ -182,21 +183,9 @@ SignalsState useSignalsState(BuildContext context) {
     false,
     debugLabel: 'signals.sortAscending',
   );
-  final searchListener = oref.useMemoized(context, () {
-    void listener() {
-      searchQuery.set(searchController.text);
-    }
-
-    searchController.addListener(listener);
-    return listener;
-  });
-  oref.onUnmounted(context, () {
-    searchController.removeListener(searchListener);
-    searchController.dispose();
-  });
   return SignalsState(
-    searchController: searchController,
-    searchQuery: searchQuery,
+    searchController: searchState.controller,
+    searchQuery: searchState.query,
     statusFilter: statusFilter,
     selectedId: selectedId,
     sortKey: sortKey,
@@ -232,10 +221,7 @@ class _SignalsHeader extends StatelessWidget {
           children: [
             Text('Signals', style: textTheme.headlineSmall),
             const SizedBox(width: 12),
-            const GlassPill(
-              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              child: Text('Live'),
-            ),
+            const LiveBadge(),
             const Spacer(),
             GlassPill(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),

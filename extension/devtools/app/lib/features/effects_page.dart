@@ -9,6 +9,7 @@ import '../shared/utils/helpers.dart';
 import '../shared/widgets/actions.dart';
 import '../shared/widgets/filter_chip.dart';
 import '../shared/widgets/glass.dart';
+import '../shared/widgets/live_badge.dart';
 import '../shared/widgets/panel.dart';
 
 class EffectsPage extends StatelessWidget {
@@ -126,10 +127,7 @@ class _EffectsHeader extends StatelessWidget {
           children: [
             Text('Effects', style: textTheme.headlineSmall),
             const SizedBox(width: 12),
-            const GlassPill(
-              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              child: Text('Live'),
-            ),
+            const LiveBadge(),
             const Spacer(),
             GlassPill(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
