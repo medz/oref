@@ -34,6 +34,7 @@ part 'widgets/chart_placeholder.dart';
 part 'widgets/mini_chart.dart';
 part 'widgets/sparkline.dart';
 part 'widgets/timeline_row.dart';
+part 'widgets/info_row.dart';
 part 'widgets/metric_tile.dart';
 part 'widgets/panel_placeholder.dart';
 part 'widgets/panel_scroll_view.dart';
@@ -3211,27 +3212,6 @@ class _PanelInfo {
   final String title;
   final String description;
   final List<String> bullets;
-}
-
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          SizedBox(width: 84, child: Text(label, style: textTheme.bodySmall)),
-          Expanded(child: Text(value, style: textTheme.bodyMedium)),
-        ],
-      ),
-    );
-  }
 }
 
 class _NavItemData {
