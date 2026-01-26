@@ -10,8 +10,8 @@ import '../utils/utils.dart';
 class NoHooksInControlFlowRule extends AnalysisRule {
   static const LintCode code = LintCode(
     'no_hooks_in_control_flow',
-    'Hooks must be called unconditionally at the top level of build scopes.',
-    correctionMessage: 'Move the hook out of the control flow.',
+    '{0} must be called unconditionally at the top level of build scopes.',
+    correctionMessage: 'Move {0} out of the control flow.',
     severity: DiagnosticSeverity.ERROR,
     uniqueName: 'LintCode.no_hooks_in_control_flow',
   );
@@ -54,13 +54,13 @@ class _NoHooksInControlFlowVisitor extends SimpleAstVisitor<void> {
     }
     final hook = matchHookInvocation(node);
     if (hook != null) {
-      _reportIfNeeded(node, node.methodName);
+      _reportIfNeeded(node, node.methodName, hook.name);
       return;
     }
     if (!customHooks.isCustomHookInvocation(node)) {
       return;
     }
-    _reportIfNeeded(node, node.methodName);
+    _reportIfNeeded(node, node.methodName, _hookName(node.methodName));
   }
 
   @override
@@ -71,7 +71,8 @@ class _NoHooksInControlFlowVisitor extends SimpleAstVisitor<void> {
     if (!customHooks.isCustomHookInvocationExpression(node)) {
       return;
     }
-    _reportIfNeeded(node, customHookInvocationNameNode(node));
+    final nameNode = customHookInvocationNameNode(node);
+    _reportIfNeeded(node, nameNode, _hookName(nameNode));
   }
 
   @override
@@ -83,10 +84,10 @@ class _NoHooksInControlFlowVisitor extends SimpleAstVisitor<void> {
     if (hook == null) {
       return;
     }
-    _reportIfNeeded(node, node.constructorName);
+    _reportIfNeeded(node, node.constructorName, hook.name);
   }
 
-  void _reportIfNeeded(AstNode node, AstNode target) {
+  void _reportIfNeeded(AstNode node, AstNode target, String hookName) {
     final scope = enclosingHookScope(node, customHooks: customHooks);
     if (scope == null) {
       return;
@@ -97,6 +98,19 @@ class _NoHooksInControlFlowVisitor extends SimpleAstVisitor<void> {
     if (!isInsideControlFlow(node, scope.node)) {
       return;
     }
-    rule.reportAtNode(target);
+    rule.reportAtNode(target, arguments: [hookName]);
+  }
+
+  String _hookName(AstNode node) {
+    if (node is SimpleIdentifier) {
+      return node.name;
+    }
+    if (node is PrefixedIdentifier) {
+      return node.identifier.name;
+    }
+    if (node is PropertyAccess) {
+      return node.propertyName.name;
+    }
+    return node.toSource();
   }
 }

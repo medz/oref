@@ -10,8 +10,8 @@ import '../utils/utils.dart';
 class EffectCleanupRequiresEffectRule extends AnalysisRule {
   static const LintCode code = LintCode(
     'effect_cleanup_requires_effect',
-    'Effect cleanup hooks must be called inside an effect callback.',
-    correctionMessage: 'Call this inside the callback passed to effect().',
+    '{0} must be called inside an effect callback.',
+    correctionMessage: 'Call {0} inside the callback passed to effect().',
     severity: DiagnosticSeverity.ERROR,
     uniqueName: 'LintCode.effect_cleanup_requires_effect',
   );
@@ -55,6 +55,6 @@ class _EffectCleanupRequiresEffectVisitor extends SimpleAstVisitor<void> {
     if (isInsideEffectCallback(node)) {
       return;
     }
-    rule.reportAtNode(node.methodName);
+    rule.reportAtNode(node.methodName, arguments: [node.methodName.name]);
   }
 }

@@ -10,8 +10,8 @@ import '../utils/utils.dart';
 class RequireContextInBuildRule extends AnalysisRule {
   static const LintCode code = LintCode(
     'require_context_in_build',
-    'Hook calls inside build scopes must pass context.',
-    correctionMessage: 'Pass the build context as the first argument.',
+    '{0} inside build scopes must pass context.',
+    correctionMessage: 'Pass the build context as the first argument to {0}.',
     severity: DiagnosticSeverity.ERROR,
     uniqueName: 'LintCode.require_context_in_build',
   );
@@ -70,6 +70,9 @@ class _RequireContextInBuildVisitor extends SimpleAstVisitor<void> {
       return;
     }
 
-    rule.reportAtNode(contextArgument ?? node.methodName);
+    rule.reportAtNode(
+      contextArgument ?? node.methodName,
+      arguments: [hook.name],
+    );
   }
 }

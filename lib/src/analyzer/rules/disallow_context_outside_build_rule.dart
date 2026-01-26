@@ -10,9 +10,9 @@ import '../utils/utils.dart';
 class DisallowContextOutsideBuildRule extends AnalysisRule {
   static const LintCode code = LintCode(
     'disallow_context_outside_build',
-    'Hooks that rely on BuildContext must be called inside build scopes.',
+    '{0} relies on BuildContext and must be called inside build scopes.',
     correctionMessage:
-        'Move the hook into a build scope, or pass null if the hook allows it.',
+        'Move {0} into a build scope, or pass null if it allows it.',
     severity: DiagnosticSeverity.ERROR,
     uniqueName: 'LintCode.disallow_context_outside_build',
   );
@@ -88,10 +88,10 @@ class _DisallowContextOutsideBuildVisitor extends SimpleAstVisitor<void> {
       if (!isBuildContextExpression(contextArgument)) {
         return;
       }
-      rule.reportAtNode(contextArgument);
+      rule.reportAtNode(contextArgument, arguments: [hook.name]);
       return;
     }
 
-    rule.reportAtNode(contextArgument ?? fallback);
+    rule.reportAtNode(contextArgument ?? fallback, arguments: [hook.name]);
   }
 }

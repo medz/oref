@@ -10,8 +10,8 @@ import '../utils/utils.dart';
 class DiscardedGlobalEffectRule extends AnalysisRule {
   static const LintCode code = LintCode(
     'discarded_global_effect',
-    'Global effects created without storing the disposer can leak resources.',
-    correctionMessage: 'Store the disposer if you need to stop it later.',
+    '{0} created without storing the result can leak resources.',
+    correctionMessage: 'Store the result if you need to stop {0} later.',
     severity: DiagnosticSeverity.WARNING,
     uniqueName: 'LintCode.discarded_global_effect',
   );
@@ -67,6 +67,6 @@ class _DiscardedGlobalEffectVisitor extends SimpleAstVisitor<void> {
       return;
     }
 
-    rule.reportAtNode(node.methodName);
+    rule.reportAtNode(node.methodName, arguments: [node.methodName.name]);
   }
 }

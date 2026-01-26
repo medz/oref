@@ -10,8 +10,8 @@ import '../utils/utils.dart';
 class ScopeDisposeRequiresScopeRule extends AnalysisRule {
   static const LintCode code = LintCode(
     'scope_dispose_requires_scope',
-    'Scope disposal hooks must be called inside an effect scope callback.',
-    correctionMessage: 'Call this inside the callback passed to effectScope().',
+    '{0} must be called inside an effect scope callback.',
+    correctionMessage: 'Call {0} inside the callback passed to effectScope().',
     severity: DiagnosticSeverity.ERROR,
     uniqueName: 'LintCode.scope_dispose_requires_scope',
   );
@@ -53,6 +53,6 @@ class _ScopeDisposeRequiresScopeVisitor extends SimpleAstVisitor<void> {
     if (isInsideEffectScopeCallback(node)) {
       return;
     }
-    rule.reportAtNode(node.methodName);
+    rule.reportAtNode(node.methodName, arguments: [node.methodName.name]);
   }
 }

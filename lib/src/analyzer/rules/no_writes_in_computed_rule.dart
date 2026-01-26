@@ -10,7 +10,7 @@ import '../utils/utils.dart';
 class NoWritesInComputedRule extends AnalysisRule {
   static const LintCode code = LintCode(
     'no_writes_in_computed',
-    'Computed getters must be pure and must not write to signals.',
+    'Computed getters must be pure and must not write to signals (found {0}).',
     correctionMessage: 'Move writes to an effect or event handler.',
     severity: DiagnosticSeverity.ERROR,
     uniqueName: 'LintCode.no_writes_in_computed',
@@ -57,6 +57,18 @@ class _NoWritesInComputedVisitor extends SimpleAstVisitor<void> {
     if (!isWritableSignalType(targetType)) {
       return;
     }
-    rule.reportAtNode(node.methodName);
+    rule.reportAtNode(node.methodName, arguments: [_writeTargetName(node)]);
+  }
+
+  String _writeTargetName(MethodInvocation node) {
+    final target = node.target;
+    if (target == null) {
+      return 'signal';
+    }
+    final name = target.toSource();
+    if (name.isEmpty) {
+      return 'signal';
+    }
+    return name;
   }
 }
