@@ -7,7 +7,7 @@ import 'rules/registry.dart';
 
 class AnalyzerPlugin extends Plugin {
   @override
-  String get name => 'Oref Analyzer Plugin';
+  String get name => 'oref';
 
   @override
   void register(PluginRegistry registry) {
