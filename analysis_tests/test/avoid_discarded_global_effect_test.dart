@@ -1,6 +1,6 @@
 import 'package:test_reflective_loader/test_reflective_loader.dart';
+import 'package:oref/src/analyzer/rules/avoid_discarded_global_effect_rule.dart';
 
-import '../../lib/src/analyzer/rules/avoid_discarded_global_effect_rule.dart';
 import 'support/oref_rule_harness.dart';
 
 void main() {

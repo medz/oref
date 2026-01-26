@@ -2,5 +2,4 @@ include: package:lints/recommended.yaml
 
 analyzer:
   errors:
-    avoid_relative_lib_imports: ignore
     non_constant_identifier_names: ignore
