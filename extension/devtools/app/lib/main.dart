@@ -22,6 +22,7 @@ part 'utils/helpers.dart';
 part 'widgets/ui_scope.dart';
 part 'nav_items.dart';
 part 'panel_info.dart';
+part 'sorting.dart';
 part 'widgets/adaptive_wrap.dart';
 part 'widgets/action_buttons.dart';
 part 'widgets/action_pill.dart';
@@ -222,8 +223,6 @@ const double _effectsTimelineLineLeft =
     _effectsTimelineHorizontalPadding +
     _effectsTimelineDotSize / 2 -
     _effectsTimelineLineWidth / 2;
-
-enum _SortKey { name, updated }
 
 class _StatusStyle {
   const _StatusStyle(this.color);
