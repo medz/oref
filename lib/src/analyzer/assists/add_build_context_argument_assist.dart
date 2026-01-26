@@ -10,7 +10,7 @@ class AddBuildContextArgumentAssist extends ResolvedCorrectionProducer {
   static const AssistKind kind = AssistKind(
     'oref.assist.add_build_context_argument',
     30,
-    'Add build context argument',
+    'Oref: add build context argument',
   );
 
   AddBuildContextArgumentAssist({required super.context});

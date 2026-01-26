@@ -11,7 +11,7 @@ class AddBuildContextArgumentFix extends ResolvedCorrectionProducer {
   static const FixKind kind = FixKind(
     'oref.fix.add_build_context_argument',
     DartFixKindPriority.standard,
-    'Add build context argument',
+    'Oref: add build context argument',
   );
 
   AddBuildContextArgumentFix({required super.context});

@@ -11,7 +11,7 @@ class ReplaceContextWithNullFix extends ResolvedCorrectionProducer {
   static const FixKind kind = FixKind(
     'oref.fix.replace_context_with_null',
     DartFixKindPriority.standard,
-    'Replace context with null',
+    'Oref: replace context with null',
   );
 
   ReplaceContextWithNullFix({required super.context});

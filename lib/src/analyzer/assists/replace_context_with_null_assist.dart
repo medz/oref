@@ -10,7 +10,7 @@ class ReplaceContextWithNullAssist extends ResolvedCorrectionProducer {
   static const AssistKind kind = AssistKind(
     'oref.assist.replace_context_with_null',
     30,
-    'Replace context with null',
+    'Oref: replace context with null',
   );
 
   ReplaceContextWithNullAssist({required super.context});
