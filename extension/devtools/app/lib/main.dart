@@ -29,6 +29,7 @@ part 'color_maps.dart';
 part 'effects_timeline_constants.dart';
 part 'palette.dart';
 part 'theme.dart';
+part 'devtools_scope.dart';
 part 'widgets/adaptive_wrap.dart';
 part 'widgets/action_buttons.dart';
 part 'widgets/action_pill.dart';
@@ -113,20 +114,5 @@ class OrefDevToolsApp extends StatelessWidget {
         },
       ),
     );
-  }
-}
-
-class OrefDevToolsScope extends InheritedNotifier<OrefDevToolsController> {
-  const OrefDevToolsScope({
-    super.key,
-    required OrefDevToolsController controller,
-    required super.child,
-  }) : super(notifier: controller);
-
-  static OrefDevToolsController of(BuildContext context) {
-    final scope = context
-        .dependOnInheritedWidgetOfExactType<OrefDevToolsScope>();
-    assert(scope != null, 'OrefDevToolsScope not found in widget tree.');
-    return scope!.notifier!;
   }
 }
