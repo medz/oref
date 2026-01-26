@@ -73,7 +73,7 @@ class _AvoidCustomHooksOutsideBuildVisitor extends SimpleAstVisitor<void> {
     if (enclosingHookScope(node, customHooks: customHooks) != null) {
       return;
     }
-    rule.reportAtNode(target, arguments: [hookName]);
+    rule.reportAtNode(target, arguments: [formatLintArgument(hookName)]);
   }
 
   String _hookName(AstNode node) {

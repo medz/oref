@@ -57,7 +57,10 @@ class _AvoidWritesInComputedVisitor extends SimpleAstVisitor<void> {
     if (!isWritableSignalType(targetType)) {
       return;
     }
-    rule.reportAtNode(node.methodName, arguments: [_writeTargetName(node)]);
+    rule.reportAtNode(
+      node.methodName,
+      arguments: [formatLintArgument(_writeTargetName(node))],
+    );
   }
 
   String _writeTargetName(MethodInvocation node) {

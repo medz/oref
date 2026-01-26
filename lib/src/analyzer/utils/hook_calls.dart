@@ -175,3 +175,10 @@ int? positionalArgumentIndex(Expression expression, ArgumentList argumentList) {
   }
   return null;
 }
+
+String formatLintArgument(String value) {
+  if (value.isEmpty || value.contains('`')) {
+    return value;
+  }
+  return '`$value`';
+}

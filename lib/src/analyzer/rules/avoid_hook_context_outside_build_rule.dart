@@ -88,10 +88,16 @@ class _AvoidHookContextOutsideBuildVisitor extends SimpleAstVisitor<void> {
       if (!isBuildContextExpression(contextArgument)) {
         return;
       }
-      rule.reportAtNode(contextArgument, arguments: [hook.name]);
+      rule.reportAtNode(
+        contextArgument,
+        arguments: [formatLintArgument(hook.name)],
+      );
       return;
     }
 
-    rule.reportAtNode(contextArgument ?? fallback, arguments: [hook.name]);
+    rule.reportAtNode(
+      contextArgument ?? fallback,
+      arguments: [formatLintArgument(hook.name)],
+    );
   }
 }

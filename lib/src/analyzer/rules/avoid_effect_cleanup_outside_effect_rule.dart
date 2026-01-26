@@ -55,6 +55,9 @@ class _AvoidEffectCleanupOutsideEffectVisitor extends SimpleAstVisitor<void> {
     if (isInsideEffectCallback(node)) {
       return;
     }
-    rule.reportAtNode(node.methodName, arguments: [node.methodName.name]);
+    rule.reportAtNode(
+      node.methodName,
+      arguments: [formatLintArgument(node.methodName.name)],
+    );
   }
 }

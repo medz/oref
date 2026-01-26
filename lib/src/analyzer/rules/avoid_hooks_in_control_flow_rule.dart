@@ -99,7 +99,10 @@ class _AvoidHooksInControlFlowVisitor extends SimpleAstVisitor<void> {
       return;
     }
     final scopeLabel = hookScopeLabel(scope, customHooks: customHooks);
-    rule.reportAtNode(target, arguments: [hookName, scopeLabel]);
+    rule.reportAtNode(
+      target,
+      arguments: [formatLintArgument(hookName), formatLintArgument(scopeLabel)],
+    );
   }
 
   String _hookName(AstNode node) {

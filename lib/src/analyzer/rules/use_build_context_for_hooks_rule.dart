@@ -74,7 +74,11 @@ class _UseBuildContextForHooksVisitor extends SimpleAstVisitor<void> {
     final scopeLabel = hookScopeLabel(scope, customHooks: customHooks);
     rule.reportAtNode(
       contextArgument ?? node.argumentList,
-      arguments: [hook.name, contextName, scopeLabel],
+      arguments: [
+        formatLintArgument(hook.name),
+        formatLintArgument(contextName),
+        formatLintArgument(scopeLabel),
+      ],
     );
   }
 }
