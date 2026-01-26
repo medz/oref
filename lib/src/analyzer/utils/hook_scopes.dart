@@ -146,6 +146,7 @@ bool isInsideControlFlow(AstNode node, AstNode stopAt) {
         current is ForElement ||
         current is WhileStatement ||
         current is DoStatement ||
+        current is TryStatement ||
         current is SwitchStatement ||
         current is SwitchExpression ||
         (current is BinaryExpression &&
