@@ -1,2 +1,0 @@
-# Exclude built devtools extension artifacts from Linguist language stats.
-extension/devtools/build/** linguist-generated=true
