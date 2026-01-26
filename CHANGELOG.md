@@ -2,12 +2,23 @@
 
 ### Features
 
-- add analyzer plugin lint rules, fixes, and assists for context usage, hook ordering, computed purity, and lifecycle helpers.
-- enforce custom hook composition rules so custom hooks only run in build scopes or other custom hooks.
+- Adds an analyzer plugin with multiple lints enforcing hook composition, ordering, computed purity, lifecycle rules, and BuildContext usage, plus quick fixes and assists to help correct issues.
 
 ### Bug Fixes
 
 - fix(async): ensure AsyncData re-fetches when dependencies change during a pending request.
+
+### Tests
+
+- Adds comprehensive unit tests and a reusable test harness covering the new analyzer rules.
+
+### Chores
+
+- Updates project configuration, dependencies, and CI to run the analyzer test suite.
+
+### Documentation
+
+- Updates CHANGELOG and README with analyzer/lints guidance.
 
 ## 2.7.0
 
@@ -18,7 +29,6 @@
 - Wire live signal/effect/collection data and sampling controls into the extension.
 - Add `onMounted` widget lifecycle hook to run once after the first frame.
 - Add `onUnmounted` widget lifecycle hook to run once when a widget unmounts.
-
 
 ## 2.6.1
 
@@ -381,6 +391,7 @@ Now, `signal`/`computed`/`effect`/`effectScope` make reactive primitives
 This is a complete rewrite of Oref with breaking changes to most APIs. The new version provides better performance, cleaner APIs, and improved developer experience.
 
 #### API Changes
+
 - **`useSignal` → `signal`**: Replace `useSignal(context, value)` with `signal(context, value)`
 - **`useComputed` → `computed`**: Replace `useComputed(context, computation)` with `computed(context, computation)`
 - **`useEffect` → `effect`**: Replace `useEffect(context, callback)` with `effect(context, callback)`
@@ -390,6 +401,7 @@ This is a complete rewrite of Oref with breaking changes to most APIs. The new v
 - **Reactive Access**: Direct signal calls now supported in widgets (e.g., `Text('${count()}')`), replacing the need for `SignalBuilder` in many cases
 
 #### Removed Features
+
 - Removed entire old signal system implementation (848 lines deleted)
 - Removed global async computed APIs (`createGlobalAsyncComputed`, `useAsyncComputed`)
 - Removed legacy primitive operators
@@ -398,6 +410,7 @@ This is a complete rewrite of Oref with breaking changes to most APIs. The new v
 ### ✨ NEW FEATURES
 
 #### Reactive Collections
+
 - **`ReactiveList<T>`**: Reactive wrapper for List operations with automatic dependency tracking
 - **`ReactiveMap<K, V>`**: Reactive wrapper for Map operations with automatic dependency tracking
 - **`ReactiveSet<T>`**: Reactive wrapper for Set operations with automatic dependency tracking
@@ -405,12 +418,14 @@ This is a complete rewrite of Oref with breaking changes to most APIs. The new v
 - **Global Collections**: Support for global reactive collections via default constructors
 
 #### Enhanced Widget Integration
+
 - **`SignalBuilder`**: New widget for explicit reactive UI updates
 - **`SignalBuildContext` Extension**: Adds `context.watch()` method for reactive value access
 - **Direct Signal Access**: Signals can now be called directly in widget build methods
 - **Improved Widget Effects**: Better automatic rebuild triggering when signal dependencies change
 
 #### New Utilities
+
 - **`GlobalSignals`**: Utility class for managing global signal instances
 - **`batch()` and `untrack()`**: Export utility functions from alien_signals for advanced use cases
 - **Enhanced Ref System**: Improved `Ref`, `StateRef`, and `WidgetRef` utilities moved to dedicated utils module
@@ -418,12 +433,14 @@ This is a complete rewrite of Oref with breaking changes to most APIs. The new v
 ### 🔧 IMPROVEMENTS
 
 #### Performance
+
 - Built on alien_signals v0.5.3 for optimal performance
 - Removed global mutable state in computed values
 - Improved memoization with better scope handling and lifecycle management
 - Simplified effect and scope management for reduced overhead
 
 #### Developer Experience
+
 - **Better Documentation**: Comprehensive inline documentation with examples for all APIs
 - **Cleaner API Surface**: More intuitive function names following React hooks conventions
 - **Simplified Widget Integration**: Signals can be used directly in widget build methods without complex setup
@@ -431,6 +448,7 @@ This is a complete rewrite of Oref with breaking changes to most APIs. The new v
 - **Organized Code Structure**: Reorganized exports and moved utilities to separate directories for better maintainability
 
 #### Architecture
+
 - **Complete Rewrite**: Built from ground up with lessons learned from v1.x
 - **Widget Effect System**: New widget effect pattern for consistent scope management
 - **Improved Memoization**: Better widget-scoped memoization with proper lifecycle management
@@ -440,6 +458,7 @@ This is a complete rewrite of Oref with breaking changes to most APIs. The new v
 ### 🔄 MIGRATION GUIDE
 
 #### Basic Signal Usage
+
 ```dart
 // v1.x
 final count = useSignal(context, 0);
@@ -449,6 +468,7 @@ final count = signal(context, 0);
 ```
 
 #### Computed Values
+
 ```dart
 // v1.x
 final doubled = useComputed(context, () => count.value * 2);
@@ -458,6 +478,7 @@ final doubled = computed(context, () => count() * 2);
 ```
 
 #### Effects
+
 ```dart
 // v1.x
 useEffect(context, () {
@@ -471,6 +492,7 @@ effect(context, () {
 ```
 
 #### Widget Reactivity
+
 ```dart
 // v1.x - Required SignalBuilder or manual tracking
 SignalBuilder(
@@ -490,6 +512,7 @@ SignalBUilder(
 ```
 
 #### Reactive Collections
+
 ```dart
 // v2.0 - New feature
 final items = ReactiveList<String>(['a', 'b', 'c']);
@@ -499,6 +522,7 @@ final itemsScoped = ReactiveList.scoped(context, ['a', 'b', 'c']);
 ### 🗂️ PACKAGE STRUCTURE
 
 The new version features a well-organized package structure:
+
 - **Core**: `signal`, `computed`, `effect`, `effectScope`, `useMemoized`, widget effects
 - **Reactive**: `Reactive` mixin, `ReactiveList`, `ReactiveMap`, `ReactiveSet`
 - **Utils**: `batch`, `untrack`, `GlobalSignals`, `Ref` utilities, `SignalBuildContext`
@@ -524,7 +548,7 @@ The new version features a well-organized package structure:
 
 ## v1.1.2
 
-- Not returning use* hooks as expected
+- Not returning use\* hooks as expected
 
 ## v1.1.1
 
@@ -541,6 +565,7 @@ The new version features a well-organized package structure:
 ## v1.0.0
 
 ### Added
+
 - Initial release of Oref - A reactive state management library for Flutter
 - Core reactive primitives:
   - `useSignal` - Create reactive signals with automatic dependency tracking
@@ -562,6 +587,7 @@ The new version features a well-organized package structure:
 - Performance optimizations with alien_signals backend
 
 ### Features
+
 - 🚀 High performance reactive system built on alien_signals
 - 🪄 Magic in widgets - add reactivity to any existing Widget seamlessly
 - 🔄 Automatic dependency tracking and updates
@@ -570,5 +596,6 @@ The new version features a well-organized package structure:
 - 📦 Lightweight with minimal overhead
 
 ### Dependencies
+
 - Flutter SDK ^3.8.1
 - alien_signals ^0.4.2
