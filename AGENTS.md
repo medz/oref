@@ -62,3 +62,4 @@
 - Feature-specific widgets live with their feature/pages; `widgets/` is only for shared widgets.
 - Refactor iteratively with validation per step.
 - Memory file: `extension/devtools/app/DEVTOOLS_REFACTOR_MEMORY.md`
+- **Must work continuously for at least six hours! No stopping is allowed! Continuous iteration and optimization!**
