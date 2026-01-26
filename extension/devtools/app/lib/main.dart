@@ -11,6 +11,13 @@ import 'package:oref/oref.dart' as oref;
 import 'oref_service.dart';
 
 part 'shell.dart';
+part 'hooks/use_collections_panel_state.dart';
+part 'hooks/use_computed_panel_state.dart';
+part 'hooks/use_effects_panel_state.dart';
+part 'hooks/use_settings_panel_state.dart';
+part 'hooks/use_signals_panel_state.dart';
+part 'hooks/use_timeline_panel_state.dart';
+part 'hooks/use_ui_state.dart';
 
 List<Sample> _samplesByKind(List<Sample> samples, String kind) {
   return samples.where((sample) => sample.kind == kind).toList();
@@ -58,27 +65,6 @@ class OrefDevToolsScope extends InheritedNotifier<OrefDevToolsController> {
     assert(scope != null, 'OrefDevToolsScope not found in widget tree.');
     return scope!.notifier!;
   }
-}
-
-class _UiState {
-  _UiState({required this.themeMode, required this.selectedNavLabel});
-
-  final oref.WritableSignal<ThemeMode> themeMode;
-  final oref.WritableSignal<String> selectedNavLabel;
-}
-
-_UiState _useUiState(BuildContext context) {
-  final themeMode = oref.signal(
-    context,
-    ThemeMode.system,
-    debugLabel: 'ui.themeMode',
-  );
-  final selectedNavLabel = oref.signal(
-    context,
-    _navItems.first.label,
-    debugLabel: 'ui.nav.selected',
-  );
-  return _UiState(themeMode: themeMode, selectedNavLabel: selectedNavLabel);
 }
 
 class _UiScope extends InheritedWidget {
@@ -647,112 +633,6 @@ class _SignalsPanel extends StatelessWidget {
   }
 }
 
-class _SignalsPanelStateData {
-  _SignalsPanelStateData({
-    required this.searchController,
-    required this.searchQuery,
-    required this.statusFilter,
-    required this.selectedId,
-    required this.sortKey,
-    required this.sortAscending,
-  });
-
-  final TextEditingController searchController;
-  final oref.WritableSignal<String> searchQuery;
-  final oref.WritableSignal<String> statusFilter;
-  final oref.WritableSignal<int?> selectedId;
-  final oref.WritableSignal<_SortKey> sortKey;
-  final oref.WritableSignal<bool> sortAscending;
-
-  void toggleSelection(int id) {
-    selectedId.set(selectedId() == id ? null : id);
-  }
-
-  void toggleSort(_SortKey key) {
-    if (sortKey() == key) {
-      sortAscending.set(!sortAscending());
-    } else {
-      sortKey.set(key);
-      sortAscending.set(key == _SortKey.name);
-    }
-  }
-
-  List<Sample> filter(List<Sample> entries) {
-    final query = searchQuery().trim().toLowerCase();
-    final currentStatus = statusFilter();
-    final currentSortKey = sortKey();
-    final ascending = sortAscending();
-    final filtered = entries.where((entry) {
-      final matchesQuery =
-          query.isEmpty || entry.label.toLowerCase().contains(query);
-      final status = entry.status ?? 'Active';
-      final matchesStatus = currentStatus == 'All' || status == currentStatus;
-      return matchesQuery && matchesStatus;
-    }).toList();
-    filtered.sort(
-      (a, b) => _compareSort(
-        currentSortKey,
-        ascending,
-        a.label,
-        b.label,
-        a.updatedAt,
-        b.updatedAt,
-        a.id,
-        b.id,
-      ),
-    );
-    return filtered;
-  }
-}
-
-_SignalsPanelStateData _useSignalsPanelState(BuildContext context) {
-  final searchController = oref.useMemoized(
-    context,
-    () => TextEditingController(),
-  );
-  final searchQuery = oref.signal(context, '', debugLabel: 'signals.search');
-  final statusFilter = oref.signal(
-    context,
-    'All',
-    debugLabel: 'signals.statusFilter',
-  );
-  final selectedId = oref.signal<int?>(
-    context,
-    null,
-    debugLabel: 'signals.selected',
-  );
-  final sortKey = oref.signal(
-    context,
-    _SortKey.updated,
-    debugLabel: 'signals.sortKey',
-  );
-  final sortAscending = oref.signal(
-    context,
-    false,
-    debugLabel: 'signals.sortAscending',
-  );
-  final searchListener = oref.useMemoized(context, () {
-    void listener() {
-      searchQuery.set(searchController.text);
-    }
-
-    searchController.addListener(listener);
-    return listener;
-  });
-  oref.onUnmounted(context, () {
-    searchController.removeListener(searchListener);
-    searchController.dispose();
-  });
-  return _SignalsPanelStateData(
-    searchController: searchController,
-    searchQuery: searchQuery,
-    statusFilter: statusFilter,
-    selectedId: selectedId,
-    sortKey: sortKey,
-    sortAscending: sortAscending,
-  );
-}
-
 class _ComputedPanel extends StatelessWidget {
   const _ComputedPanel();
 
@@ -835,112 +715,6 @@ class _ComputedPanel extends StatelessWidget {
       },
     );
   }
-}
-
-class _ComputedPanelStateData {
-  _ComputedPanelStateData({
-    required this.searchController,
-    required this.searchQuery,
-    required this.statusFilter,
-    required this.selectedId,
-    required this.sortKey,
-    required this.sortAscending,
-  });
-
-  final TextEditingController searchController;
-  final oref.WritableSignal<String> searchQuery;
-  final oref.WritableSignal<String> statusFilter;
-  final oref.WritableSignal<int?> selectedId;
-  final oref.WritableSignal<_SortKey> sortKey;
-  final oref.WritableSignal<bool> sortAscending;
-
-  void toggleSelection(int id) {
-    selectedId.set(selectedId() == id ? null : id);
-  }
-
-  void toggleSort(_SortKey key) {
-    if (sortKey() == key) {
-      sortAscending.set(!sortAscending());
-    } else {
-      sortKey.set(key);
-      sortAscending.set(key == _SortKey.name);
-    }
-  }
-
-  List<Sample> filter(List<Sample> entries) {
-    final query = searchQuery().trim().toLowerCase();
-    final currentStatus = statusFilter();
-    final currentSortKey = sortKey();
-    final ascending = sortAscending();
-    final filtered = entries.where((entry) {
-      final matchesQuery =
-          query.isEmpty || entry.label.toLowerCase().contains(query);
-      final status = entry.status ?? 'Active';
-      final matchesStatus = currentStatus == 'All' || status == currentStatus;
-      return matchesQuery && matchesStatus;
-    }).toList();
-    filtered.sort(
-      (a, b) => _compareSort(
-        currentSortKey,
-        ascending,
-        a.label,
-        b.label,
-        a.updatedAt,
-        b.updatedAt,
-        a.id,
-        b.id,
-      ),
-    );
-    return filtered;
-  }
-}
-
-_ComputedPanelStateData _useComputedPanelState(BuildContext context) {
-  final searchController = oref.useMemoized(
-    context,
-    () => TextEditingController(),
-  );
-  final searchQuery = oref.signal(context, '', debugLabel: 'computed.search');
-  final statusFilter = oref.signal(
-    context,
-    'All',
-    debugLabel: 'computed.statusFilter',
-  );
-  final selectedId = oref.signal<int?>(
-    context,
-    null,
-    debugLabel: 'computed.selected',
-  );
-  final sortKey = oref.signal(
-    context,
-    _SortKey.updated,
-    debugLabel: 'computed.sortKey',
-  );
-  final sortAscending = oref.signal(
-    context,
-    false,
-    debugLabel: 'computed.sortAscending',
-  );
-  final searchListener = oref.useMemoized(context, () {
-    void listener() {
-      searchQuery.set(searchController.text);
-    }
-
-    searchController.addListener(listener);
-    return listener;
-  });
-  oref.onUnmounted(context, () {
-    searchController.removeListener(searchListener);
-    searchController.dispose();
-  });
-  return _ComputedPanelStateData(
-    searchController: searchController,
-    searchQuery: searchQuery,
-    statusFilter: statusFilter,
-    selectedId: selectedId,
-    sortKey: sortKey,
-    sortAscending: sortAscending,
-  );
 }
 
 class _ComputedHeader extends StatelessWidget {
@@ -1461,114 +1235,6 @@ class _CollectionsPanel extends StatelessWidget {
   }
 }
 
-class _CollectionsPanelStateData {
-  _CollectionsPanelStateData({
-    required this.searchController,
-    required this.searchQuery,
-    required this.typeFilter,
-    required this.opFilter,
-    required this.sortKey,
-    required this.sortAscending,
-  });
-
-  final TextEditingController searchController;
-  final oref.WritableSignal<String> searchQuery;
-  final oref.WritableSignal<String> typeFilter;
-  final oref.WritableSignal<String> opFilter;
-  final oref.WritableSignal<_SortKey> sortKey;
-  final oref.WritableSignal<bool> sortAscending;
-
-  void toggleSort(_SortKey key) {
-    if (sortKey() == key) {
-      sortAscending.set(!sortAscending());
-    } else {
-      sortKey.set(key);
-      sortAscending.set(key == _SortKey.name);
-    }
-  }
-
-  List<Sample> filter(List<Sample> entries) {
-    final query = searchQuery().trim().toLowerCase();
-    final typeValue = typeFilter();
-    final opValue = opFilter();
-    final currentSortKey = sortKey();
-    final ascending = sortAscending();
-    final filtered = entries.where((entry) {
-      final matchesQuery =
-          query.isEmpty || entry.label.toLowerCase().contains(query);
-      final matchesType = typeValue == 'All' || entry.type == typeValue;
-      final operation = entry.operation ?? 'Idle';
-      final matchesOp = opValue == 'All' || operation == opValue;
-      return matchesQuery && matchesType && matchesOp;
-    }).toList();
-    filtered.sort(
-      (a, b) => _compareSort(
-        currentSortKey,
-        ascending,
-        a.label,
-        b.label,
-        a.updatedAt,
-        b.updatedAt,
-        a.id,
-        b.id,
-      ),
-    );
-    return filtered;
-  }
-}
-
-_CollectionsPanelStateData _useCollectionsPanelState(BuildContext context) {
-  final searchController = oref.useMemoized(
-    context,
-    () => TextEditingController(),
-  );
-  final searchQuery = oref.signal(
-    context,
-    '',
-    debugLabel: 'collections.search',
-  );
-  final typeFilter = oref.signal(
-    context,
-    'All',
-    debugLabel: 'collections.typeFilter',
-  );
-  final opFilter = oref.signal(
-    context,
-    'All',
-    debugLabel: 'collections.opFilter',
-  );
-  final sortKey = oref.signal(
-    context,
-    _SortKey.updated,
-    debugLabel: 'collections.sortKey',
-  );
-  final sortAscending = oref.signal(
-    context,
-    false,
-    debugLabel: 'collections.sortAscending',
-  );
-  final searchListener = oref.useMemoized(context, () {
-    void listener() {
-      searchQuery.set(searchController.text);
-    }
-
-    searchController.addListener(listener);
-    return listener;
-  });
-  oref.onUnmounted(context, () {
-    searchController.removeListener(searchListener);
-    searchController.dispose();
-  });
-  return _CollectionsPanelStateData(
-    searchController: searchController,
-    searchQuery: searchQuery,
-    typeFilter: typeFilter,
-    opFilter: opFilter,
-    sortKey: sortKey,
-    sortAscending: sortAscending,
-  );
-}
-
 class _BatchingPanel extends StatelessWidget {
   const _BatchingPanel();
 
@@ -1984,33 +1650,6 @@ class _TimelinePanel extends StatelessWidget {
       },
     );
   }
-}
-
-class _TimelinePanelStateData {
-  _TimelinePanelStateData({
-    required this.typeFilter,
-    required this.severityFilter,
-  });
-
-  final oref.WritableSignal<String> typeFilter;
-  final oref.WritableSignal<String> severityFilter;
-}
-
-_TimelinePanelStateData _useTimelinePanelState(BuildContext context) {
-  final typeFilter = oref.signal(
-    context,
-    'All',
-    debugLabel: 'timeline.typeFilter',
-  );
-  final severityFilter = oref.signal(
-    context,
-    'All',
-    debugLabel: 'timeline.severityFilter',
-  );
-  return _TimelinePanelStateData(
-    typeFilter: typeFilter,
-    severityFilter: severityFilter,
-  );
 }
 
 class _TimelineList extends StatelessWidget {
@@ -2531,23 +2170,6 @@ class _SettingsPanel extends StatelessWidget {
   }
 }
 
-class _SettingsPanelStateData {
-  _SettingsPanelStateData({required this.isEditing, required this.draft});
-
-  final oref.WritableSignal<bool> isEditing;
-  final oref.WritableSignal<DevToolsSettings> draft;
-}
-
-_SettingsPanelStateData _useSettingsPanelState(BuildContext context) {
-  final isEditing = oref.signal(context, false, debugLabel: 'settings.editing');
-  final draft = oref.signal(
-    context,
-    const DevToolsSettings(),
-    debugLabel: 'settings.draft',
-  );
-  return _SettingsPanelStateData(isEditing: isEditing, draft: draft);
-}
-
 class _CollectionsHeader extends StatelessWidget {
   const _CollectionsHeader({
     required this.controller,
@@ -2918,30 +2540,6 @@ class _DiffToken extends StatelessWidget {
       child: Text('$prefix ${delta.label}'),
     );
   }
-}
-
-class _EffectsPanelStateData {
-  _EffectsPanelStateData({required this.typeFilter, required this.scopeFilter});
-
-  final oref.WritableSignal<String> typeFilter;
-  final oref.WritableSignal<String> scopeFilter;
-}
-
-_EffectsPanelStateData _useEffectsPanelState(BuildContext context) {
-  final typeFilter = oref.signal(
-    context,
-    'All',
-    debugLabel: 'effects.typeFilter',
-  );
-  final scopeFilter = oref.signal(
-    context,
-    'All',
-    debugLabel: 'effects.scopeFilter',
-  );
-  return _EffectsPanelStateData(
-    typeFilter: typeFilter,
-    scopeFilter: scopeFilter,
-  );
 }
 
 class _EffectsHeader extends StatelessWidget {
