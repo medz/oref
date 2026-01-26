@@ -9,7 +9,7 @@ import '../utils/utils.dart';
 
 class ReplaceContextWithNullFix extends ResolvedCorrectionProducer {
   static const FixKind kind = FixKind(
-    'oref.fix.replaceContextWithNull',
+    'oref.fix.replace_context_with_null',
     DartFixKindPriority.standard,
     'Replace context with null',
   );

@@ -8,7 +8,7 @@ import '../utils/utils.dart';
 
 class ReplaceContextWithNullAssist extends ResolvedCorrectionProducer {
   static const AssistKind kind = AssistKind(
-    'oref.assist.replaceContextWithNull',
+    'oref.assist.replace_context_with_null',
     30,
     'Replace context with null',
   );

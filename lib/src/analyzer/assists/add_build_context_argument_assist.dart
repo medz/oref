@@ -8,7 +8,7 @@ import '../utils/utils.dart';
 
 class AddBuildContextArgumentAssist extends ResolvedCorrectionProducer {
   static const AssistKind kind = AssistKind(
-    'oref.assist.addBuildContextArgument',
+    'oref.assist.add_build_context_argument',
     30,
     'Add build context argument',
   );

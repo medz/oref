@@ -9,7 +9,7 @@ import '../utils/utils.dart';
 
 class AddBuildContextArgumentFix extends ResolvedCorrectionProducer {
   static const FixKind kind = FixKind(
-    'oref.fix.addBuildContextArgument',
+    'oref.fix.add_build_context_argument',
     DartFixKindPriority.standard,
     'Add build context argument',
   );
