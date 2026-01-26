@@ -27,6 +27,7 @@ part 'widgets/glass_card.dart';
 part 'widgets/glass_input.dart';
 part 'widgets/glass_pill.dart';
 part 'widgets/insight_card.dart';
+part 'widgets/insight_row.dart';
 part 'widgets/metric_tile.dart';
 part 'widgets/panel_placeholder.dart';
 part 'widgets/panel_scroll_view.dart';
@@ -3204,40 +3205,6 @@ class _PanelInfo {
   final String title;
   final String description;
   final List<String> bullets;
-}
-
-class _InsightRow extends StatelessWidget {
-  const _InsightRow(this.label, this.value);
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: DefaultTextStyle.merge(
-        style: textTheme.bodySmall,
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                value,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.right,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 class _HealthCard extends StatelessWidget {
