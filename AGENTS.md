@@ -54,3 +54,11 @@
 - PRs should describe what changed and why, link relevant issues, and note testing performed.
 - Update `CHANGELOG.md` for user-facing changes or API behavior updates.
 - Include screenshots or GIFs when modifying the `example/` UI.
+
+## DevTools Refactor Task (2026-01-27)
+
+- Refactor the DevTools app into a standard Flutter app structure.
+- Eliminate all `part` usage; use explicit imports instead.
+- Feature-specific widgets live with their feature/pages; `widgets/` is only for shared widgets.
+- Refactor iteratively with validation per step.
+- Memory file: `extension/devtools/app/DEVTOOLS_REFACTOR_MEMORY.md`
