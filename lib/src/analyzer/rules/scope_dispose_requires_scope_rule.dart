@@ -13,7 +13,7 @@ class ScopeDisposeRequiresScopeRule extends AnalysisRule {
     '{0} must be called inside an effect scope callback.',
     correctionMessage: 'Call {0} inside the callback passed to effectScope().',
     severity: DiagnosticSeverity.ERROR,
-    uniqueName: 'LintCode.scope_dispose_requires_scope',
+    uniqueName: 'oref.lint.scope_dispose_requires_scope',
   );
 
   ScopeDisposeRequiresScopeRule()

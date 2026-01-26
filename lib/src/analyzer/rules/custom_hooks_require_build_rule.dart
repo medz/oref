@@ -13,7 +13,7 @@ class CustomHooksRequireBuildRule extends AnalysisRule {
     '{0} must be called inside build scopes or other custom hooks.',
     correctionMessage: 'Move {0} into a build scope or another custom hook.',
     severity: DiagnosticSeverity.ERROR,
-    uniqueName: 'LintCode.custom_hooks_require_build',
+    uniqueName: 'oref.lint.custom_hooks_require_build',
   );
 
   CustomHooksRequireBuildRule()

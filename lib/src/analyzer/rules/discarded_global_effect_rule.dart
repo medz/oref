@@ -13,7 +13,7 @@ class DiscardedGlobalEffectRule extends AnalysisRule {
     '{0} created without storing the result can leak resources.',
     correctionMessage: 'Store the result if you need to stop {0} later.',
     severity: DiagnosticSeverity.WARNING,
-    uniqueName: 'LintCode.discarded_global_effect',
+    uniqueName: 'oref.lint.discarded_global_effect',
   );
 
   DiscardedGlobalEffectRule()

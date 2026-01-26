@@ -13,7 +13,7 @@ class NoWritesInComputedRule extends AnalysisRule {
     'Computed getters must be pure and must not write to signals (found {0}).',
     correctionMessage: 'Move writes to an effect or event handler.',
     severity: DiagnosticSeverity.ERROR,
-    uniqueName: 'LintCode.no_writes_in_computed',
+    uniqueName: 'oref.lint.no_writes_in_computed',
   );
 
   NoWritesInComputedRule()

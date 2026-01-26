@@ -13,7 +13,7 @@ class EffectCleanupRequiresEffectRule extends AnalysisRule {
     '{0} must be called inside an effect callback.',
     correctionMessage: 'Call {0} inside the callback passed to effect().',
     severity: DiagnosticSeverity.ERROR,
-    uniqueName: 'LintCode.effect_cleanup_requires_effect',
+    uniqueName: 'oref.lint.effect_cleanup_requires_effect',
   );
 
   EffectCleanupRequiresEffectRule()

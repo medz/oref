@@ -13,7 +13,7 @@ class RequireContextInBuildRule extends AnalysisRule {
     '{0} inside build scopes must pass context.',
     correctionMessage: 'Pass the build context as the first argument to {0}.',
     severity: DiagnosticSeverity.ERROR,
-    uniqueName: 'LintCode.require_context_in_build',
+    uniqueName: 'oref.lint.require_context_in_build',
   );
 
   RequireContextInBuildRule()

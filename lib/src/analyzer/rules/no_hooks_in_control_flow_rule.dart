@@ -13,7 +13,7 @@ class NoHooksInControlFlowRule extends AnalysisRule {
     '{0} must be called unconditionally at the top level of build scopes.',
     correctionMessage: 'Move {0} out of the control flow.',
     severity: DiagnosticSeverity.ERROR,
-    uniqueName: 'LintCode.no_hooks_in_control_flow',
+    uniqueName: 'oref.lint.no_hooks_in_control_flow',
   );
 
   NoHooksInControlFlowRule()

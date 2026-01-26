@@ -13,7 +13,7 @@ class NoHooksInNestedFunctionsRule extends AnalysisRule {
     '{0} must not be called inside nested functions in build scopes.',
     correctionMessage: 'Move {0} to the top level of the build scope.',
     severity: DiagnosticSeverity.ERROR,
-    uniqueName: 'LintCode.no_hooks_in_nested_functions',
+    uniqueName: 'oref.lint.no_hooks_in_nested_functions',
   );
 
   NoHooksInNestedFunctionsRule()

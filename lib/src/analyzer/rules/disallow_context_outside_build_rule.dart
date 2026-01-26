@@ -14,7 +14,7 @@ class DisallowContextOutsideBuildRule extends AnalysisRule {
     correctionMessage:
         'Move {0} into a build scope, or pass null if it allows it.',
     severity: DiagnosticSeverity.ERROR,
-    uniqueName: 'LintCode.disallow_context_outside_build',
+    uniqueName: 'oref.lint.disallow_context_outside_build',
   );
 
   DisallowContextOutsideBuildRule()
