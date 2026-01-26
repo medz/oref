@@ -23,7 +23,20 @@ class OrefDevToolsApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final uiState = oref.useMemoized(context, () => _UiState(context));
+    final themeMode = oref.signal(
+      context,
+      ThemeMode.system,
+      debugLabel: 'ui.themeMode',
+    );
+    final selectedNavLabel = oref.signal(
+      context,
+      _navItems.first.label,
+      debugLabel: 'ui.nav.selected',
+    );
+    final uiState = _UiState(
+      themeMode: themeMode,
+      selectedNavLabel: selectedNavLabel,
+    );
     return _UiScope(
       state: uiState,
       child: oref.SignalBuilder(
@@ -59,17 +72,7 @@ class OrefDevToolsScope extends InheritedNotifier<OrefDevToolsController> {
 }
 
 class _UiState {
-  _UiState(BuildContext context)
-    : themeMode = oref.signal(
-        context,
-        ThemeMode.system,
-        debugLabel: 'ui.themeMode',
-      ),
-      selectedNavLabel = oref.signal(
-        context,
-        _navItems.first.label,
-        debugLabel: 'ui.nav.selected',
-      );
+  _UiState({required this.themeMode, required this.selectedNavLabel});
 
   final oref.WritableSignal<ThemeMode> themeMode;
   final oref.WritableSignal<String> selectedNavLabel;
@@ -186,11 +189,11 @@ class _DevToolsShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = oref.useMemoized(context, () {
-      final controller = OrefDevToolsController();
-      oref.onUnmounted(context, controller.dispose);
-      return controller;
-    });
+    final controller = oref.useMemoized(
+      context,
+      () => OrefDevToolsController(),
+    );
+    oref.onUnmounted(context, controller.dispose);
     final uiState = _UiScope.of(context);
 
     return oref.SignalBuilder(
@@ -1098,9 +1101,50 @@ class _SignalsPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final state = oref.useMemoized(
+    final searchController = oref.useMemoized(
       context,
-      () => _SignalsPanelStateData(context),
+      () => TextEditingController(),
+    );
+    final searchQuery = oref.signal(context, '', debugLabel: 'signals.search');
+    final statusFilter = oref.signal(
+      context,
+      'All',
+      debugLabel: 'signals.statusFilter',
+    );
+    final selectedId = oref.signal<int?>(
+      context,
+      null,
+      debugLabel: 'signals.selected',
+    );
+    final sortKey = oref.signal(
+      context,
+      _SortKey.updated,
+      debugLabel: 'signals.sortKey',
+    );
+    final sortAscending = oref.signal(
+      context,
+      false,
+      debugLabel: 'signals.sortAscending',
+    );
+    final searchListener = oref.useMemoized(context, () {
+      void listener() {
+        searchQuery.set(searchController.text);
+      }
+
+      searchController.addListener(listener);
+      return listener;
+    });
+    oref.onUnmounted(context, () {
+      searchController.removeListener(searchListener);
+      searchController.dispose();
+    });
+    final state = _SignalsPanelStateData(
+      searchController: searchController,
+      searchQuery: searchQuery,
+      statusFilter: statusFilter,
+      selectedId: selectedId,
+      sortKey: sortKey,
+      sortAscending: sortAscending,
     );
 
     return oref.SignalBuilder(
@@ -1181,34 +1225,14 @@ class _SignalsPanel extends StatelessWidget {
 }
 
 class _SignalsPanelStateData {
-  _SignalsPanelStateData(BuildContext context)
-    : searchController = TextEditingController(),
-      searchQuery = oref.signal(context, '', debugLabel: 'signals.search'),
-      statusFilter = oref.signal(
-        context,
-        'All',
-        debugLabel: 'signals.statusFilter',
-      ),
-      selectedId = oref.signal<int?>(
-        context,
-        null,
-        debugLabel: 'signals.selected',
-      ),
-      sortKey = oref.signal(
-        context,
-        _SortKey.updated,
-        debugLabel: 'signals.sortKey',
-      ),
-      sortAscending = oref.signal(
-        context,
-        false,
-        debugLabel: 'signals.sortAscending',
-      ) {
-    searchController.addListener(() {
-      searchQuery.set(searchController.text);
-    });
-    oref.onUnmounted(context, searchController.dispose);
-  }
+  _SignalsPanelStateData({
+    required this.searchController,
+    required this.searchQuery,
+    required this.statusFilter,
+    required this.selectedId,
+    required this.sortKey,
+    required this.sortAscending,
+  });
 
   final TextEditingController searchController;
   final oref.WritableSignal<String> searchQuery;
@@ -1263,9 +1287,50 @@ class _ComputedPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final state = oref.useMemoized(
+    final searchController = oref.useMemoized(
       context,
-      () => _ComputedPanelStateData(context),
+      () => TextEditingController(),
+    );
+    final searchQuery = oref.signal(context, '', debugLabel: 'computed.search');
+    final statusFilter = oref.signal(
+      context,
+      'All',
+      debugLabel: 'computed.statusFilter',
+    );
+    final selectedId = oref.signal<int?>(
+      context,
+      null,
+      debugLabel: 'computed.selected',
+    );
+    final sortKey = oref.signal(
+      context,
+      _SortKey.updated,
+      debugLabel: 'computed.sortKey',
+    );
+    final sortAscending = oref.signal(
+      context,
+      false,
+      debugLabel: 'computed.sortAscending',
+    );
+    final searchListener = oref.useMemoized(context, () {
+      void listener() {
+        searchQuery.set(searchController.text);
+      }
+
+      searchController.addListener(listener);
+      return listener;
+    });
+    oref.onUnmounted(context, () {
+      searchController.removeListener(searchListener);
+      searchController.dispose();
+    });
+    final state = _ComputedPanelStateData(
+      searchController: searchController,
+      searchQuery: searchQuery,
+      statusFilter: statusFilter,
+      selectedId: selectedId,
+      sortKey: sortKey,
+      sortAscending: sortAscending,
     );
 
     return oref.SignalBuilder(
@@ -1346,34 +1411,14 @@ class _ComputedPanel extends StatelessWidget {
 }
 
 class _ComputedPanelStateData {
-  _ComputedPanelStateData(BuildContext context)
-    : searchController = TextEditingController(),
-      searchQuery = oref.signal(context, '', debugLabel: 'computed.search'),
-      statusFilter = oref.signal(
-        context,
-        'All',
-        debugLabel: 'computed.statusFilter',
-      ),
-      selectedId = oref.signal<int?>(
-        context,
-        null,
-        debugLabel: 'computed.selected',
-      ),
-      sortKey = oref.signal(
-        context,
-        _SortKey.updated,
-        debugLabel: 'computed.sortKey',
-      ),
-      sortAscending = oref.signal(
-        context,
-        false,
-        debugLabel: 'computed.sortAscending',
-      ) {
-    searchController.addListener(() {
-      searchQuery.set(searchController.text);
-    });
-    oref.onUnmounted(context, searchController.dispose);
-  }
+  _ComputedPanelStateData({
+    required this.searchController,
+    required this.searchQuery,
+    required this.statusFilter,
+    required this.selectedId,
+    required this.sortKey,
+    required this.sortAscending,
+  });
 
   final TextEditingController searchController;
   final oref.WritableSignal<String> searchQuery;
@@ -1820,9 +1865,19 @@ class _EffectsPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final state = oref.useMemoized(
+    final typeFilter = oref.signal(
       context,
-      () => _EffectsPanelStateData(context),
+      'All',
+      debugLabel: 'effects.typeFilter',
+    );
+    final scopeFilter = oref.signal(
+      context,
+      'All',
+      debugLabel: 'effects.scopeFilter',
+    );
+    final state = _EffectsPanelStateData(
+      typeFilter: typeFilter,
+      scopeFilter: scopeFilter,
     );
 
     return oref.SignalBuilder(
@@ -1883,9 +1938,54 @@ class _CollectionsPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final state = oref.useMemoized(
+    final searchController = oref.useMemoized(
       context,
-      () => _CollectionsPanelStateData(context),
+      () => TextEditingController(),
+    );
+    final searchQuery = oref.signal(
+      context,
+      '',
+      debugLabel: 'collections.search',
+    );
+    final typeFilter = oref.signal(
+      context,
+      'All',
+      debugLabel: 'collections.typeFilter',
+    );
+    final opFilter = oref.signal(
+      context,
+      'All',
+      debugLabel: 'collections.opFilter',
+    );
+    final sortKey = oref.signal(
+      context,
+      _SortKey.updated,
+      debugLabel: 'collections.sortKey',
+    );
+    final sortAscending = oref.signal(
+      context,
+      false,
+      debugLabel: 'collections.sortAscending',
+    );
+    final searchListener = oref.useMemoized(context, () {
+      void listener() {
+        searchQuery.set(searchController.text);
+      }
+
+      searchController.addListener(listener);
+      return listener;
+    });
+    oref.onUnmounted(context, () {
+      searchController.removeListener(searchListener);
+      searchController.dispose();
+    });
+    final state = _CollectionsPanelStateData(
+      searchController: searchController,
+      searchQuery: searchQuery,
+      typeFilter: typeFilter,
+      opFilter: opFilter,
+      sortKey: sortKey,
+      sortAscending: sortAscending,
     );
 
     return oref.SignalBuilder(
@@ -1948,34 +2048,14 @@ class _CollectionsPanel extends StatelessWidget {
 }
 
 class _CollectionsPanelStateData {
-  _CollectionsPanelStateData(BuildContext context)
-    : searchController = TextEditingController(),
-      searchQuery = oref.signal(context, '', debugLabel: 'collections.search'),
-      typeFilter = oref.signal(
-        context,
-        'All',
-        debugLabel: 'collections.typeFilter',
-      ),
-      opFilter = oref.signal(
-        context,
-        'All',
-        debugLabel: 'collections.opFilter',
-      ),
-      sortKey = oref.signal(
-        context,
-        _SortKey.updated,
-        debugLabel: 'collections.sortKey',
-      ),
-      sortAscending = oref.signal(
-        context,
-        false,
-        debugLabel: 'collections.sortAscending',
-      ) {
-    searchController.addListener(() {
-      searchQuery.set(searchController.text);
-    });
-    oref.onUnmounted(context, searchController.dispose);
-  }
+  _CollectionsPanelStateData({
+    required this.searchController,
+    required this.searchQuery,
+    required this.typeFilter,
+    required this.opFilter,
+    required this.sortKey,
+    required this.sortAscending,
+  });
 
   final TextEditingController searchController;
   final oref.WritableSignal<String> searchQuery;
@@ -2328,9 +2408,19 @@ class _TimelinePanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final state = oref.useMemoized(
+    final typeFilter = oref.signal(
       context,
-      () => _TimelinePanelStateData(context),
+      'All',
+      debugLabel: 'timeline.typeFilter',
+    );
+    final severityFilter = oref.signal(
+      context,
+      'All',
+      debugLabel: 'timeline.severityFilter',
+    );
+    final state = _TimelinePanelStateData(
+      typeFilter: typeFilter,
+      severityFilter: severityFilter,
     );
 
     return oref.SignalBuilder(
@@ -2444,17 +2534,10 @@ class _TimelinePanel extends StatelessWidget {
 }
 
 class _TimelinePanelStateData {
-  _TimelinePanelStateData(BuildContext context)
-    : typeFilter = oref.signal(
-        context,
-        'All',
-        debugLabel: 'timeline.typeFilter',
-      ),
-      severityFilter = oref.signal(
-        context,
-        'All',
-        debugLabel: 'timeline.severityFilter',
-      );
+  _TimelinePanelStateData({
+    required this.typeFilter,
+    required this.severityFilter,
+  });
 
   final oref.WritableSignal<String> typeFilter;
   final oref.WritableSignal<String> severityFilter;
@@ -2721,10 +2804,17 @@ class _SettingsPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final state = oref.useMemoized(
+    final isEditing = oref.signal(
       context,
-      () => _SettingsPanelStateData(context),
+      false,
+      debugLabel: 'settings.editing',
     );
+    final draft = oref.signal(
+      context,
+      const DevToolsSettings(),
+      debugLabel: 'settings.draft',
+    );
+    final state = _SettingsPanelStateData(isEditing: isEditing, draft: draft);
 
     return oref.SignalBuilder(
       builder: (context) {
@@ -2982,13 +3072,7 @@ class _SettingsPanel extends StatelessWidget {
 }
 
 class _SettingsPanelStateData {
-  _SettingsPanelStateData(BuildContext context)
-    : isEditing = oref.signal(context, false, debugLabel: 'settings.editing'),
-      draft = oref.signal(
-        context,
-        const DevToolsSettings(),
-        debugLabel: 'settings.draft',
-      );
+  _SettingsPanelStateData({required this.isEditing, required this.draft});
 
   final oref.WritableSignal<bool> isEditing;
   final oref.WritableSignal<DevToolsSettings> draft;
@@ -3367,17 +3451,7 @@ class _DiffToken extends StatelessWidget {
 }
 
 class _EffectsPanelStateData {
-  _EffectsPanelStateData(BuildContext context)
-    : typeFilter = oref.signal(
-        context,
-        'All',
-        debugLabel: 'effects.typeFilter',
-      ),
-      scopeFilter = oref.signal(
-        context,
-        'All',
-        debugLabel: 'effects.scopeFilter',
-      );
+  _EffectsPanelStateData({required this.typeFilter, required this.scopeFilter});
 
   final oref.WritableSignal<String> typeFilter;
   final oref.WritableSignal<String> scopeFilter;
