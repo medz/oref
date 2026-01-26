@@ -234,7 +234,7 @@ class _CollectionsList extends StatelessWidget {
                 children: [
                   for (var index = 0; index < entries.length; index++) ...[
                     _CollectionRow(entry: entries[index], isCompact: isCompact),
-                    if (index != entries.length - 1) const SizedBox(height: 10),
+                    if (index != entries.length - 1) const SizedBox(height: 12),
                   ],
                 ],
               ),

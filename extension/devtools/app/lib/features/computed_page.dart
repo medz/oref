@@ -260,7 +260,7 @@ class _ComputedList extends StatelessWidget {
                       isCompact: isCompact,
                       onTap: () => onSelect(entries[index]),
                     ),
-                    if (index != entries.length - 1) const SizedBox(height: 8),
+                    if (index != entries.length - 1) const SizedBox(height: 12),
                   ],
                 ],
               ),
