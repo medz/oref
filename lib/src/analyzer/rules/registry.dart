@@ -1,23 +1,23 @@
 import 'package:analysis_server_plugin/registry.dart';
 
-import 'custom_hooks_require_build_rule.dart';
-import 'disallow_context_outside_build_rule.dart';
-import 'discarded_global_effect_rule.dart';
-import 'effect_cleanup_requires_effect_rule.dart';
-import 'no_hooks_in_control_flow_rule.dart';
-import 'no_hooks_in_nested_functions_rule.dart';
-import 'no_writes_in_computed_rule.dart';
-import 'require_context_in_build_rule.dart';
-import 'scope_dispose_requires_scope_rule.dart';
+import 'avoid_custom_hooks_outside_build_rule.dart';
+import 'avoid_discarded_global_effect_rule.dart';
+import 'avoid_effect_cleanup_outside_effect_rule.dart';
+import 'avoid_hook_context_outside_build_rule.dart';
+import 'avoid_hooks_in_control_flow_rule.dart';
+import 'avoid_hooks_in_nested_functions_rule.dart';
+import 'avoid_scope_dispose_outside_scope_rule.dart';
+import 'avoid_writes_in_computed_rule.dart';
+import 'use_build_context_for_hooks_rule.dart';
 
 void registerRules(PluginRegistry registry) {
-  registry.registerWarningRule(RequireContextInBuildRule());
-  registry.registerWarningRule(DisallowContextOutsideBuildRule());
-  registry.registerWarningRule(CustomHooksRequireBuildRule());
-  registry.registerWarningRule(NoHooksInControlFlowRule());
-  registry.registerWarningRule(NoHooksInNestedFunctionsRule());
-  registry.registerWarningRule(NoWritesInComputedRule());
-  registry.registerWarningRule(EffectCleanupRequiresEffectRule());
-  registry.registerWarningRule(ScopeDisposeRequiresScopeRule());
-  registry.registerWarningRule(DiscardedGlobalEffectRule());
+  registry.registerWarningRule(UseBuildContextForHooksRule());
+  registry.registerWarningRule(AvoidHookContextOutsideBuildRule());
+  registry.registerWarningRule(AvoidCustomHooksOutsideBuildRule());
+  registry.registerWarningRule(AvoidHooksInControlFlowRule());
+  registry.registerWarningRule(AvoidHooksInNestedFunctionsRule());
+  registry.registerWarningRule(AvoidWritesInComputedRule());
+  registry.registerWarningRule(AvoidEffectCleanupOutsideEffectRule());
+  registry.registerWarningRule(AvoidScopeDisposeOutsideScopeRule());
+  registry.registerWarningRule(AvoidDiscardedGlobalEffectRule());
 }

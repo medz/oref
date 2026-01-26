@@ -7,20 +7,20 @@ import 'package:analyzer/error/error.dart';
 
 import '../utils/utils.dart';
 
-class EffectCleanupRequiresEffectRule extends AnalysisRule {
+class AvoidEffectCleanupOutsideEffectRule extends AnalysisRule {
   static const LintCode code = LintCode(
-    'effect_cleanup_requires_effect',
+    'avoid_effect_cleanup_outside_effect',
     '{0} must be called inside an effect callback.',
     correctionMessage: 'Call {0} inside the callback passed to effect().',
     severity: DiagnosticSeverity.ERROR,
-    uniqueName: 'oref.lint.effect_cleanup_requires_effect',
+    uniqueName: 'oref.lint.avoid_effect_cleanup_outside_effect',
   );
 
-  EffectCleanupRequiresEffectRule()
+  AvoidEffectCleanupOutsideEffectRule()
     : super(
-        name: 'effect_cleanup_requires_effect',
+        name: 'avoid_effect_cleanup_outside_effect',
         description:
-            'Require onEffectCleanup/onEffectDispose to be inside effect().',
+            'Avoid calling onEffectCleanup/onEffectDispose outside effect().',
       );
 
   @override
@@ -32,16 +32,16 @@ class EffectCleanupRequiresEffectRule extends AnalysisRule {
     RuleContext context,
   ) {
     final skip = shouldSkipHookLint(context);
-    var visitor = _EffectCleanupRequiresEffectVisitor(this, skip);
+    var visitor = _AvoidEffectCleanupOutsideEffectVisitor(this, skip);
     registry.addMethodInvocation(this, visitor);
   }
 }
 
-class _EffectCleanupRequiresEffectVisitor extends SimpleAstVisitor<void> {
+class _AvoidEffectCleanupOutsideEffectVisitor extends SimpleAstVisitor<void> {
   final AnalysisRule rule;
   final bool skip;
 
-  _EffectCleanupRequiresEffectVisitor(this.rule, this.skip);
+  _AvoidEffectCleanupOutsideEffectVisitor(this.rule, this.skip);
 
   @override
   void visitMethodInvocation(MethodInvocation node) {

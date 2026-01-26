@@ -7,19 +7,19 @@ import 'package:analyzer/error/error.dart';
 
 import '../utils/utils.dart';
 
-class NoWritesInComputedRule extends AnalysisRule {
+class AvoidWritesInComputedRule extends AnalysisRule {
   static const LintCode code = LintCode(
-    'no_writes_in_computed',
-    'Computed getters must be pure and must not write to signals (found {0}).',
-    correctionMessage: 'Move writes to an effect or event handler.',
+    'avoid_writes_in_computed',
+    'Writes inside computed getters can cause unexpected side effects (found {0}).',
+    correctionMessage: 'Prefer moving writes to an effect or event handler.',
     severity: DiagnosticSeverity.WARNING,
-    uniqueName: 'oref.lint.no_writes_in_computed',
+    uniqueName: 'oref.lint.avoid_writes_in_computed',
   );
 
-  NoWritesInComputedRule()
+  AvoidWritesInComputedRule()
     : super(
-        name: 'no_writes_in_computed',
-        description: 'Disallow writes to signals inside computed getters.',
+        name: 'avoid_writes_in_computed',
+        description: 'Avoid writes to signals inside computed getters.',
       );
 
   @override
@@ -31,16 +31,16 @@ class NoWritesInComputedRule extends AnalysisRule {
     RuleContext context,
   ) {
     final skip = shouldSkipHookLint(context);
-    var visitor = _NoWritesInComputedVisitor(this, skip);
+    var visitor = _AvoidWritesInComputedVisitor(this, skip);
     registry.addMethodInvocation(this, visitor);
   }
 }
 
-class _NoWritesInComputedVisitor extends SimpleAstVisitor<void> {
+class _AvoidWritesInComputedVisitor extends SimpleAstVisitor<void> {
   final AnalysisRule rule;
   final bool skip;
 
-  _NoWritesInComputedVisitor(this.rule, this.skip);
+  _AvoidWritesInComputedVisitor(this.rule, this.skip);
 
   @override
   void visitMethodInvocation(MethodInvocation node) {

@@ -7,18 +7,18 @@ import 'package:analyzer/error/error.dart';
 
 import '../utils/utils.dart';
 
-class RequireContextInBuildRule extends AnalysisRule {
+class UseBuildContextForHooksRule extends AnalysisRule {
   static const LintCode code = LintCode(
-    'require_context_in_build',
+    'use_build_context_for_hooks',
     '{0} inside build scopes must pass context.',
     correctionMessage: 'Pass the build context as the first argument to {0}.',
     severity: DiagnosticSeverity.ERROR,
-    uniqueName: 'oref.lint.require_context_in_build',
+    uniqueName: 'oref.lint.use_build_context_for_hooks',
   );
 
-  RequireContextInBuildRule()
+  UseBuildContextForHooksRule()
     : super(
-        name: 'require_context_in_build',
+        name: 'use_build_context_for_hooks',
         description:
             'Require BuildContext when using Oref hooks in build scopes.',
       );
@@ -33,17 +33,17 @@ class RequireContextInBuildRule extends AnalysisRule {
   ) {
     final skip = shouldSkipHookLint(context);
     final customHooks = buildCustomHookRegistry(context);
-    var visitor = _RequireContextInBuildVisitor(this, skip, customHooks);
+    var visitor = _UseBuildContextForHooksVisitor(this, skip, customHooks);
     registry.addMethodInvocation(this, visitor);
   }
 }
 
-class _RequireContextInBuildVisitor extends SimpleAstVisitor<void> {
+class _UseBuildContextForHooksVisitor extends SimpleAstVisitor<void> {
   final AnalysisRule rule;
   final bool skip;
   final CustomHookRegistry customHooks;
 
-  _RequireContextInBuildVisitor(this.rule, this.skip, this.customHooks);
+  _UseBuildContextForHooksVisitor(this.rule, this.skip, this.customHooks);
 
   @override
   void visitMethodInvocation(MethodInvocation node) {

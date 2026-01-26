@@ -7,20 +7,20 @@ import 'package:analyzer/error/error.dart';
 
 import '../utils/utils.dart';
 
-class NoHooksInNestedFunctionsRule extends AnalysisRule {
+class AvoidCustomHooksOutsideBuildRule extends AnalysisRule {
   static const LintCode code = LintCode(
-    'no_hooks_in_nested_functions',
-    '{0} must not be called inside nested functions in build scopes.',
-    correctionMessage: 'Move {0} to the top level of the build scope.',
+    'avoid_custom_hooks_outside_build',
+    '{0} must be called inside build scopes or other custom hooks.',
+    correctionMessage: 'Move {0} into a build scope or another custom hook.',
     severity: DiagnosticSeverity.ERROR,
-    uniqueName: 'oref.lint.no_hooks_in_nested_functions',
+    uniqueName: 'oref.lint.avoid_custom_hooks_outside_build',
   );
 
-  NoHooksInNestedFunctionsRule()
+  AvoidCustomHooksOutsideBuildRule()
     : super(
-        name: 'no_hooks_in_nested_functions',
+        name: 'avoid_custom_hooks_outside_build',
         description:
-            'Disallow calling Oref hooks inside nested functions in build scopes.',
+            'Avoid calling custom hooks outside build scopes or other custom hooks.',
       );
 
   @override
@@ -33,34 +33,28 @@ class NoHooksInNestedFunctionsRule extends AnalysisRule {
   ) {
     final skip = shouldSkipHookLint(context);
     final customHooks = buildCustomHookRegistry(context);
-    var visitor = _NoHooksInNestedFunctionsVisitor(this, skip, customHooks);
+    var visitor = _AvoidCustomHooksOutsideBuildVisitor(this, skip, customHooks);
     registry.addMethodInvocation(this, visitor);
     registry.addFunctionExpressionInvocation(this, visitor);
-    registry.addInstanceCreationExpression(this, visitor);
   }
 }
 
-class _NoHooksInNestedFunctionsVisitor extends SimpleAstVisitor<void> {
+class _AvoidCustomHooksOutsideBuildVisitor extends SimpleAstVisitor<void> {
   final AnalysisRule rule;
   final bool skip;
   final CustomHookRegistry customHooks;
 
-  _NoHooksInNestedFunctionsVisitor(this.rule, this.skip, this.customHooks);
+  _AvoidCustomHooksOutsideBuildVisitor(this.rule, this.skip, this.customHooks);
 
   @override
   void visitMethodInvocation(MethodInvocation node) {
     if (skip) {
       return;
     }
-    final hook = matchHookInvocation(node);
-    if (hook != null) {
-      _reportIfNeeded(node, node.methodName, hook.name);
-      return;
-    }
     if (!customHooks.isCustomHookInvocation(node)) {
       return;
     }
-    _reportIfNeeded(node, node.methodName, _hookName(node.methodName));
+    _reportIfOutsideScope(node, node.methodName, _hookName(node.methodName));
   }
 
   @override
@@ -72,27 +66,11 @@ class _NoHooksInNestedFunctionsVisitor extends SimpleAstVisitor<void> {
       return;
     }
     final nameNode = customHookInvocationNameNode(node);
-    _reportIfNeeded(node, nameNode, _hookName(nameNode));
+    _reportIfOutsideScope(node, nameNode, _hookName(nameNode));
   }
 
-  @override
-  void visitInstanceCreationExpression(InstanceCreationExpression node) {
-    if (skip) {
-      return;
-    }
-    final hook = matchHookConstructor(node);
-    if (hook == null) {
-      return;
-    }
-    _reportIfNeeded(node, node.constructorName, hook.name);
-  }
-
-  void _reportIfNeeded(AstNode node, AstNode target, String hookName) {
-    final scope = enclosingHookScope(node, customHooks: customHooks);
-    if (scope == null) {
-      return;
-    }
-    if (!isInsideNestedFunction(node, scope.node)) {
+  void _reportIfOutsideScope(AstNode node, AstNode target, String hookName) {
+    if (enclosingHookScope(node, customHooks: customHooks) != null) {
       return;
     }
     rule.reportAtNode(target, arguments: [hookName]);

@@ -7,18 +7,18 @@ import 'package:analyzer/error/error.dart';
 
 import '../utils/utils.dart';
 
-class DiscardedGlobalEffectRule extends AnalysisRule {
+class AvoidDiscardedGlobalEffectRule extends AnalysisRule {
   static const LintCode code = LintCode(
-    'discarded_global_effect',
+    'avoid_discarded_global_effect',
     '{0} created without storing the result can leak resources.',
     correctionMessage: 'Store the result if you need to stop {0} later.',
     severity: DiagnosticSeverity.WARNING,
-    uniqueName: 'oref.lint.discarded_global_effect',
+    uniqueName: 'oref.lint.avoid_discarded_global_effect',
   );
 
-  DiscardedGlobalEffectRule()
+  AvoidDiscardedGlobalEffectRule()
     : super(
-        name: 'discarded_global_effect',
+        name: 'avoid_discarded_global_effect',
         description:
             'Warn when global effects/scopes are created and immediately discarded.',
       );
@@ -32,16 +32,16 @@ class DiscardedGlobalEffectRule extends AnalysisRule {
     RuleContext context,
   ) {
     final skip = shouldSkipHookLint(context);
-    var visitor = _DiscardedGlobalEffectVisitor(this, skip);
+    var visitor = _AvoidDiscardedGlobalEffectVisitor(this, skip);
     registry.addMethodInvocation(this, visitor);
   }
 }
 
-class _DiscardedGlobalEffectVisitor extends SimpleAstVisitor<void> {
+class _AvoidDiscardedGlobalEffectVisitor extends SimpleAstVisitor<void> {
   final AnalysisRule rule;
   final bool skip;
 
-  _DiscardedGlobalEffectVisitor(this.rule, this.skip);
+  _AvoidDiscardedGlobalEffectVisitor(this.rule, this.skip);
 
   @override
   void visitMethodInvocation(MethodInvocation node) {

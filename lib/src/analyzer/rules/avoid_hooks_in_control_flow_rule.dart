@@ -7,20 +7,20 @@ import 'package:analyzer/error/error.dart';
 
 import '../utils/utils.dart';
 
-class CustomHooksRequireBuildRule extends AnalysisRule {
+class AvoidHooksInControlFlowRule extends AnalysisRule {
   static const LintCode code = LintCode(
-    'custom_hooks_require_build',
-    '{0} must be called inside build scopes or other custom hooks.',
-    correctionMessage: 'Move {0} into a build scope or another custom hook.',
+    'avoid_hooks_in_control_flow',
+    '{0} must be called unconditionally at the top level of build scopes.',
+    correctionMessage: 'Move {0} out of the control flow.',
     severity: DiagnosticSeverity.ERROR,
-    uniqueName: 'oref.lint.custom_hooks_require_build',
+    uniqueName: 'oref.lint.avoid_hooks_in_control_flow',
   );
 
-  CustomHooksRequireBuildRule()
+  AvoidHooksInControlFlowRule()
     : super(
-        name: 'custom_hooks_require_build',
+        name: 'avoid_hooks_in_control_flow',
         description:
-            'Require custom hooks to be called inside build scopes or other custom hooks.',
+            'Avoid calling Oref hooks inside control flow in build scopes.',
       );
 
   @override
@@ -33,28 +33,34 @@ class CustomHooksRequireBuildRule extends AnalysisRule {
   ) {
     final skip = shouldSkipHookLint(context);
     final customHooks = buildCustomHookRegistry(context);
-    var visitor = _CustomHooksRequireBuildVisitor(this, skip, customHooks);
+    var visitor = _AvoidHooksInControlFlowVisitor(this, skip, customHooks);
     registry.addMethodInvocation(this, visitor);
     registry.addFunctionExpressionInvocation(this, visitor);
+    registry.addInstanceCreationExpression(this, visitor);
   }
 }
 
-class _CustomHooksRequireBuildVisitor extends SimpleAstVisitor<void> {
+class _AvoidHooksInControlFlowVisitor extends SimpleAstVisitor<void> {
   final AnalysisRule rule;
   final bool skip;
   final CustomHookRegistry customHooks;
 
-  _CustomHooksRequireBuildVisitor(this.rule, this.skip, this.customHooks);
+  _AvoidHooksInControlFlowVisitor(this.rule, this.skip, this.customHooks);
 
   @override
   void visitMethodInvocation(MethodInvocation node) {
     if (skip) {
       return;
     }
+    final hook = matchHookInvocation(node);
+    if (hook != null) {
+      _reportIfNeeded(node, node.methodName, hook.name);
+      return;
+    }
     if (!customHooks.isCustomHookInvocation(node)) {
       return;
     }
-    _reportIfOutsideScope(node, node.methodName, _hookName(node.methodName));
+    _reportIfNeeded(node, node.methodName, _hookName(node.methodName));
   }
 
   @override
@@ -66,11 +72,30 @@ class _CustomHooksRequireBuildVisitor extends SimpleAstVisitor<void> {
       return;
     }
     final nameNode = customHookInvocationNameNode(node);
-    _reportIfOutsideScope(node, nameNode, _hookName(nameNode));
+    _reportIfNeeded(node, nameNode, _hookName(nameNode));
   }
 
-  void _reportIfOutsideScope(AstNode node, AstNode target, String hookName) {
-    if (enclosingHookScope(node, customHooks: customHooks) != null) {
+  @override
+  void visitInstanceCreationExpression(InstanceCreationExpression node) {
+    if (skip) {
+      return;
+    }
+    final hook = matchHookConstructor(node);
+    if (hook == null) {
+      return;
+    }
+    _reportIfNeeded(node, node.constructorName, hook.name);
+  }
+
+  void _reportIfNeeded(AstNode node, AstNode target, String hookName) {
+    final scope = enclosingHookScope(node, customHooks: customHooks);
+    if (scope == null) {
+      return;
+    }
+    if (isInsideNestedFunction(node, scope.node)) {
+      return;
+    }
+    if (!isInsideControlFlow(node, scope.node)) {
       return;
     }
     rule.reportAtNode(target, arguments: [hookName]);

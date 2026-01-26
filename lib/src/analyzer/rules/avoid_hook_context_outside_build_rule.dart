@@ -7,21 +7,21 @@ import 'package:analyzer/error/error.dart';
 
 import '../utils/utils.dart';
 
-class DisallowContextOutsideBuildRule extends AnalysisRule {
+class AvoidHookContextOutsideBuildRule extends AnalysisRule {
   static const LintCode code = LintCode(
-    'disallow_context_outside_build',
+    'avoid_hook_context_outside_build',
     '{0} relies on BuildContext and must be called inside build scopes.',
     correctionMessage:
         'Move {0} into a build scope, or pass null if it allows it.',
     severity: DiagnosticSeverity.ERROR,
-    uniqueName: 'oref.lint.disallow_context_outside_build',
+    uniqueName: 'oref.lint.avoid_hook_context_outside_build',
   );
 
-  DisallowContextOutsideBuildRule()
+  AvoidHookContextOutsideBuildRule()
     : super(
-        name: 'disallow_context_outside_build',
+        name: 'avoid_hook_context_outside_build',
         description:
-            'Require Oref hooks that use BuildContext to run inside build scopes.',
+            'Avoid using BuildContext with Oref hooks outside build scopes.',
       );
 
   @override
@@ -34,18 +34,18 @@ class DisallowContextOutsideBuildRule extends AnalysisRule {
   ) {
     final skip = shouldSkipHookLint(context);
     final customHooks = buildCustomHookRegistry(context);
-    var visitor = _DisallowContextOutsideBuildVisitor(this, skip, customHooks);
+    var visitor = _AvoidHookContextOutsideBuildVisitor(this, skip, customHooks);
     registry.addMethodInvocation(this, visitor);
     registry.addInstanceCreationExpression(this, visitor);
   }
 }
 
-class _DisallowContextOutsideBuildVisitor extends SimpleAstVisitor<void> {
+class _AvoidHookContextOutsideBuildVisitor extends SimpleAstVisitor<void> {
   final AnalysisRule rule;
   final bool skip;
   final CustomHookRegistry customHooks;
 
-  _DisallowContextOutsideBuildVisitor(this.rule, this.skip, this.customHooks);
+  _AvoidHookContextOutsideBuildVisitor(this.rule, this.skip, this.customHooks);
 
   @override
   void visitMethodInvocation(MethodInvocation node) {

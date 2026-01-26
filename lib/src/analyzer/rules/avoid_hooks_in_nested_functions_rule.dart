@@ -7,20 +7,20 @@ import 'package:analyzer/error/error.dart';
 
 import '../utils/utils.dart';
 
-class NoHooksInControlFlowRule extends AnalysisRule {
+class AvoidHooksInNestedFunctionsRule extends AnalysisRule {
   static const LintCode code = LintCode(
-    'no_hooks_in_control_flow',
-    '{0} must be called unconditionally at the top level of build scopes.',
-    correctionMessage: 'Move {0} out of the control flow.',
+    'avoid_hooks_in_nested_functions',
+    '{0} must not be called inside nested functions in build scopes.',
+    correctionMessage: 'Move {0} to the top level of the build scope.',
     severity: DiagnosticSeverity.ERROR,
-    uniqueName: 'oref.lint.no_hooks_in_control_flow',
+    uniqueName: 'oref.lint.avoid_hooks_in_nested_functions',
   );
 
-  NoHooksInControlFlowRule()
+  AvoidHooksInNestedFunctionsRule()
     : super(
-        name: 'no_hooks_in_control_flow',
+        name: 'avoid_hooks_in_nested_functions',
         description:
-            'Disallow calling Oref hooks inside control flow in build scopes.',
+            'Avoid calling Oref hooks inside nested functions in build scopes.',
       );
 
   @override
@@ -33,19 +33,19 @@ class NoHooksInControlFlowRule extends AnalysisRule {
   ) {
     final skip = shouldSkipHookLint(context);
     final customHooks = buildCustomHookRegistry(context);
-    var visitor = _NoHooksInControlFlowVisitor(this, skip, customHooks);
+    var visitor = _AvoidHooksInNestedFunctionsVisitor(this, skip, customHooks);
     registry.addMethodInvocation(this, visitor);
     registry.addFunctionExpressionInvocation(this, visitor);
     registry.addInstanceCreationExpression(this, visitor);
   }
 }
 
-class _NoHooksInControlFlowVisitor extends SimpleAstVisitor<void> {
+class _AvoidHooksInNestedFunctionsVisitor extends SimpleAstVisitor<void> {
   final AnalysisRule rule;
   final bool skip;
   final CustomHookRegistry customHooks;
 
-  _NoHooksInControlFlowVisitor(this.rule, this.skip, this.customHooks);
+  _AvoidHooksInNestedFunctionsVisitor(this.rule, this.skip, this.customHooks);
 
   @override
   void visitMethodInvocation(MethodInvocation node) {
@@ -92,10 +92,7 @@ class _NoHooksInControlFlowVisitor extends SimpleAstVisitor<void> {
     if (scope == null) {
       return;
     }
-    if (isInsideNestedFunction(node, scope.node)) {
-      return;
-    }
-    if (!isInsideControlFlow(node, scope.node)) {
+    if (!isInsideNestedFunction(node, scope.node)) {
       return;
     }
     rule.reportAtNode(target, arguments: [hookName]);
