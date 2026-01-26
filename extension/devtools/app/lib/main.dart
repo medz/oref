@@ -30,6 +30,7 @@ part 'widgets/insight_card.dart';
 part 'widgets/insight_row.dart';
 part 'widgets/health_card.dart';
 part 'widgets/health_bar.dart';
+part 'widgets/chart_placeholder.dart';
 part 'widgets/metric_tile.dart';
 part 'widgets/panel_placeholder.dart';
 part 'widgets/panel_scroll_view.dart';
@@ -3207,43 +3208,6 @@ class _PanelInfo {
   final String title;
   final String description;
   final List<String> bullets;
-}
-
-class _ChartPlaceholder extends StatelessWidget {
-  const _ChartPlaceholder({required this.icon, required this.caption});
-
-  final IconData icon;
-  final String caption;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 180,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
-        gradient: const LinearGradient(
-          colors: [Color(0x3322E3C4), Color(0x226C5CFF)],
-        ),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
-        ),
-      ),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Icon(icon, size: 48),
-          Positioned(
-            bottom: 12,
-            right: 12,
-            child: _GlassPill(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              child: Text(caption),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 class _MiniChart extends StatelessWidget {
