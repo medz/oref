@@ -10,9 +10,8 @@ import '../utils/utils.dart';
 class CustomHooksRequireBuildRule extends AnalysisRule {
   static const LintCode code = LintCode(
     'custom_hooks_require_build',
-    'Custom hooks must be called inside build scopes or other custom hooks.',
-    correctionMessage:
-        'Move the custom hook call into a build scope or another custom hook.',
+    '{0} must be called inside build scopes or other custom hooks.',
+    correctionMessage: 'Move {0} into a build scope or another custom hook.',
     severity: DiagnosticSeverity.ERROR,
     uniqueName: 'LintCode.custom_hooks_require_build',
   );
@@ -55,7 +54,7 @@ class _CustomHooksRequireBuildVisitor extends SimpleAstVisitor<void> {
     if (!customHooks.isCustomHookInvocation(node)) {
       return;
     }
-    _reportIfOutsideScope(node, node.methodName);
+    _reportIfOutsideScope(node, node.methodName, _hookName(node.methodName));
   }
 
   @override
@@ -66,13 +65,27 @@ class _CustomHooksRequireBuildVisitor extends SimpleAstVisitor<void> {
     if (!customHooks.isCustomHookInvocationExpression(node)) {
       return;
     }
-    _reportIfOutsideScope(node, customHookInvocationNameNode(node));
+    final nameNode = customHookInvocationNameNode(node);
+    _reportIfOutsideScope(node, nameNode, _hookName(nameNode));
   }
 
-  void _reportIfOutsideScope(AstNode node, AstNode target) {
+  void _reportIfOutsideScope(AstNode node, AstNode target, String hookName) {
     if (enclosingHookScope(node, customHooks: customHooks) != null) {
       return;
     }
-    rule.reportAtNode(target);
+    rule.reportAtNode(target, arguments: [hookName]);
+  }
+
+  String _hookName(AstNode node) {
+    if (node is SimpleIdentifier) {
+      return node.name;
+    }
+    if (node is PrefixedIdentifier) {
+      return node.identifier.name;
+    }
+    if (node is PropertyAccess) {
+      return node.propertyName.name;
+    }
+    return node.toSource();
   }
 }
