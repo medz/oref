@@ -50,6 +50,7 @@ part 'widgets/collection_row.dart';
 part 'widgets/effects_header.dart';
 part 'widgets/effects_timeline.dart';
 part 'widgets/effect_row.dart';
+part 'widgets/effects_panel.dart';
 part 'widgets/computed_header.dart';
 part 'widgets/computed_list.dart';
 part 'widgets/computed_table_header.dart';
@@ -217,66 +218,6 @@ class OrefPalette {
   static const Color pink = Color(0xFFFF71C6);
   static const Color deepBlue = Color(0xFF0C141C);
   static const Color lightBlue = Color(0xFFE7F3FF);
-}
-
-class _EffectsPanel extends StatelessWidget {
-  const _EffectsPanel();
-
-  @override
-  Widget build(BuildContext context) {
-    final state = _useEffectsPanelState(context);
-
-    return oref.SignalBuilder(
-      builder: (context) {
-        final controller = OrefDevToolsScope.of(context);
-        final entries = _samplesByKind(
-          controller.snapshot?.samples ?? const <Sample>[],
-          'effect',
-        );
-        final typeFilters = _buildFilterOptions(
-          entries.map((entry) => entry.type),
-        );
-        final scopeFilters = _buildFilterOptions(
-          entries.map((entry) => entry.scope),
-        );
-        final filtered = entries.where((entry) {
-          final matchesType =
-              state.typeFilter() == 'All' || entry.type == state.typeFilter();
-          final matchesScope =
-              state.scopeFilter() == 'All' ||
-              entry.scope == state.scopeFilter();
-          return matchesType && matchesScope;
-        }).toList();
-
-        return _ConnectionGuard(
-          child: _PanelScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _EffectsHeader(
-                  typeFilter: state.typeFilter(),
-                  scopeFilter: state.scopeFilter(),
-                  typeFilters: typeFilters,
-                  scopeFilters: scopeFilters,
-                  onTypeChange: (value) => state.typeFilter.set(value),
-                  onScopeChange: (value) => state.scopeFilter.set(value),
-                  totalCount: entries.length,
-                  filteredCount: filtered.length,
-                  onExport: () => _exportData(
-                    context,
-                    'effects',
-                    filtered.map((entry) => entry.toJson()).toList(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                _EffectsTimeline(entries: filtered),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
 }
 
 class _CollectionsPanel extends StatelessWidget {
