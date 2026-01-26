@@ -5,6 +5,7 @@ import 'package:oref/oref.dart' as oref;
 import '../app/scopes.dart';
 import '../shared/widgets/actions.dart';
 import '../shared/widgets/glass.dart';
+import '../shared/widgets/page_header.dart';
 import '../shared/widgets/panel.dart';
 
 class SettingsPage extends StatelessWidget {
@@ -32,24 +33,15 @@ class SettingsPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Text(
-                      'Settings',
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
-                    const Spacer(),
-                    ActionPill(
-                      label: 'Refresh',
-                      icon: Icons.refresh_rounded,
-                      onTap: controller.refresh,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Tune how diagnostics are collected.',
-                  style: Theme.of(context).textTheme.bodyMedium,
+                PageHeader(
+                  title: 'Settings',
+                  description: 'Tune how diagnostics are collected.',
+                  totalCount: 0,
+                  filteredCount: 0,
+                  countText: controller.connected ? 'Connected' : 'Offline',
+                  showLiveBadge: false,
+                  exportLabel: 'Refresh',
+                  onExport: controller.refresh,
                 ),
                 const SizedBox(height: 16),
                 GlassCard(

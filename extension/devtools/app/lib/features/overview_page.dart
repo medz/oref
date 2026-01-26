@@ -11,6 +11,7 @@ import '../shared/widgets/adaptive_wrap.dart';
 import '../shared/widgets/glass.dart';
 import '../shared/widgets/info_row.dart';
 import '../shared/widgets/metric_tile.dart';
+import '../shared/widgets/page_header.dart';
 import '../shared/widgets/panel.dart';
 
 class OverviewPage extends StatelessWidget {
@@ -121,13 +122,21 @@ class OverviewPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Overview', style: textTheme.headlineSmall),
-          const SizedBox(height: 12),
-          Text(
-            'Signal diagnostics, activity, and collection health in one place.',
-            style: textTheme.bodyLarge,
+          PageHeader(
+            title: 'Overview',
+            description:
+                'Signal diagnostics, activity, and collection health in one place.',
+            totalCount: samples.length,
+            filteredCount: samples.length,
+            countText: '${samples.length} samples',
+            showLiveBadge: false,
+            onExport: () => exportData(
+              context,
+              'overview',
+              snapshot?.toJson() ?? const <String, Object?>{},
+            ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
           AdaptiveWrap(
             children: [
               MetricTile(
