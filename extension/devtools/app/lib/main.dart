@@ -52,6 +52,7 @@ part 'widgets/effects_timeline.dart';
 part 'widgets/effect_row.dart';
 part 'widgets/computed_header.dart';
 part 'widgets/computed_list.dart';
+part 'widgets/computed_table_header.dart';
 part 'widgets/panel_placeholder.dart';
 part 'widgets/panel_scroll_view.dart';
 part 'widgets/panel_state_cards.dart';
@@ -748,81 +749,6 @@ class _ComputedPanel extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-}
-
-class _ComputedTableHeader extends StatelessWidget {
-  const _ComputedTableHeader({
-    required this.sortKey,
-    required this.sortAscending,
-    required this.onSortName,
-    required this.onSortUpdated,
-  });
-
-  final _SortKey sortKey;
-  final bool sortAscending;
-  final VoidCallback onSortName;
-  final VoidCallback onSortUpdated;
-
-  @override
-  Widget build(BuildContext context) {
-    final labelStyle = Theme.of(context).textTheme.labelSmall;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: Theme.of(context).dividerColor.withValues(alpha: 0.4),
-          ),
-        ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 3,
-            child: _SortHeaderCell(
-              label: 'Name',
-              isActive: sortKey == _SortKey.name,
-              ascending: sortAscending,
-              onTap: onSortName,
-              style: labelStyle,
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Align(
-              alignment: Alignment.center,
-              child: Text('Value', style: labelStyle),
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Align(
-              alignment: Alignment.center,
-              child: Text('Status', style: labelStyle),
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Align(
-              alignment: Alignment.center,
-              child: Text('Runs', style: labelStyle),
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: _SortHeaderCell(
-              label: 'Updated',
-              isActive: sortKey == _SortKey.updated,
-              ascending: sortAscending,
-              onTap: onSortUpdated,
-              style: labelStyle,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
