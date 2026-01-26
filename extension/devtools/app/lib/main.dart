@@ -36,6 +36,7 @@ part 'widgets/sparkline.dart';
 part 'widgets/timeline_row.dart';
 part 'widgets/info_row.dart';
 part 'widgets/hot_badge.dart';
+part 'widgets/diff_token.dart';
 part 'widgets/metric_tile.dart';
 part 'widgets/panel_placeholder.dart';
 part 'widgets/panel_scroll_view.dart';
@@ -2536,28 +2537,6 @@ class _CollectionRow extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _DiffToken extends StatelessWidget {
-  const _DiffToken({required this.delta});
-
-  final CollectionDelta delta;
-
-  @override
-  Widget build(BuildContext context) {
-    final style = _deltaStyles[delta.kind] ?? OrefPalette.indigo;
-    final prefix = switch (delta.kind) {
-      'add' => '+',
-      'remove' => '-',
-      _ => '±',
-    };
-
-    return _GlassPill(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      color: style.withValues(alpha: 0.18),
-      child: Text('$prefix ${delta.label}'),
     );
   }
 }
