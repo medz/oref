@@ -37,8 +37,6 @@ class HookCall {
   final String name;
   final Expression? contextArgument;
   final bool isOptionalContext;
-
-  bool get isRequiredContext => !isOptionalContext;
 }
 
 HookCall? matchHookInvocation(MethodInvocation node) {
