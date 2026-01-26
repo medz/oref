@@ -20,10 +20,8 @@ HookScope? enclosingHookScope(AstNode node, {CustomHookRegistry? customHooks}) {
     }
     if (current is FunctionDeclaration) {
       final function = current.functionExpression;
-      if (isHookBuilderFunction(function)) {
-        return HookScope.builder(function);
-      }
-      if (isCustomHookFunctionDeclaration(current, customHooks: customHooks)) {
+      if (isHookBuilderFunction(function) ||
+          isCustomHookFunctionDeclaration(current, customHooks: customHooks)) {
         return HookScope.builder(function);
       }
     }
@@ -130,16 +128,12 @@ bool isTopLevelVariableFunction(FunctionExpression node) {
 
 AstNode customHookInvocationNameNode(FunctionExpressionInvocation node) {
   final target = node.function;
-  if (target is SimpleIdentifier) {
-    return target;
-  }
-  if (target is PrefixedIdentifier) {
-    return target.identifier;
-  }
-  if (target is PropertyAccess) {
-    return target.propertyName;
-  }
-  return target;
+  return switch (target) {
+    SimpleIdentifier target => target,
+    PrefixedIdentifier(:final identifier) => identifier,
+    PropertyAccess(:final propertyName) => propertyName,
+    _ => target,
+  };
 }
 
 bool isInsideControlFlow(AstNode node, AstNode stopAt) {
@@ -219,12 +213,10 @@ String? buildContextParameterNameFromParameters(
 
   final element = unwrapped.declaredFragment?.element;
   final name = unwrapped.name?.lexeme;
-  if (name == null) {
+  if (name == null || element == null || !isBuildContextType(element.type)) {
     return null;
   }
-  if (element == null || !isBuildContextType(element.type)) {
-    return null;
-  }
+
   return name;
 }
 

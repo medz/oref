@@ -44,6 +44,7 @@ HookCall? matchHookInvocation(MethodInvocation node) {
   if (element is! ExecutableElement) {
     return null;
   }
+
   final library = element.library;
   if (!_isOrefLibrary(library.uri)) {
     return null;
@@ -53,6 +54,7 @@ HookCall? matchHookInvocation(MethodInvocation node) {
   if (name == null) {
     return null;
   }
+
   final firstArgument = firstPositionalArgument(node.argumentList);
   if (_optionalContextHookNames.contains(name)) {
     return HookCall(
@@ -62,6 +64,7 @@ HookCall? matchHookInvocation(MethodInvocation node) {
       isOptionalContext: true,
     );
   }
+
   if (_requiredContextHookNames.contains(name)) {
     return HookCall(
       node: node,
@@ -88,19 +91,13 @@ HookCall? matchHookConstructor(InstanceCreationExpression node) {
   }
 
   final enclosingName = enclosing.name;
-  if (enclosingName == null) {
-    return null;
-  }
-
-  if (!_scopedCollectionTypes.contains(enclosingName)) {
+  if (enclosingName == null ||
+      !_scopedCollectionTypes.contains(enclosingName)) {
     return null;
   }
 
   final constructorName = element.name;
-  if (constructorName == null) {
-    return null;
-  }
-  if (constructorName != 'scoped') {
+  if (constructorName == null || constructorName != 'scoped') {
     return null;
   }
 
@@ -151,12 +148,10 @@ FormalParameterElement? _firstPositionalParameter(
 
 bool isOrefFunctionInvocation(MethodInvocation node, String name) {
   final element = node.methodName.element;
-  if (element is! ExecutableElement) {
+  if (element is! ExecutableElement || element.name != name) {
     return false;
   }
-  if (element.name != name) {
-    return false;
-  }
+
   return _isOrefLibrary(element.library.uri);
 }
 

@@ -325,10 +325,7 @@ Element? _invocationTargetElement(Expression expression) {
 }
 
 Set<String> _externalCustomHookNamesForLibrary(LibraryElement library) {
-  if (library.isInSdk) {
-    return const {};
-  }
-  if (_isOrefLibrary(library.firstFragment.source.uri)) {
+  if (library.isInSdk || _isOrefLibrary(library.firstFragment.source.uri)) {
     return const {};
   }
 

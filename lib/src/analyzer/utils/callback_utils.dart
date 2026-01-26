@@ -2,11 +2,7 @@ part of 'utils.dart';
 
 bool isComputedGetterFunction(FunctionExpression node) {
   final argumentContainer = _argumentContainer(node);
-  if (argumentContainer == null) {
-    return false;
-  }
-
-  if (argumentContainer is NamedExpression) {
+  if (argumentContainer == null || argumentContainer is NamedExpression) {
     return false;
   }
 
@@ -16,10 +12,8 @@ bool isComputedGetterFunction(FunctionExpression node) {
   }
 
   final invocation = argumentList.parent;
-  if (invocation is! MethodInvocation) {
-    return false;
-  }
-  if (!isOrefFunctionInvocation(invocation, 'computed')) {
+  if (invocation is! MethodInvocation ||
+      !isOrefFunctionInvocation(invocation, 'computed')) {
     return false;
   }
 
@@ -29,10 +23,8 @@ bool isComputedGetterFunction(FunctionExpression node) {
 
 bool isWritableComputedGetterFunction(FunctionExpression node) {
   final argumentContainer = _argumentContainer(node);
-  if (argumentContainer is! NamedExpression) {
-    return false;
-  }
-  if (argumentContainer.name.label.name != 'get') {
+  if (argumentContainer is! NamedExpression ||
+      argumentContainer.name.label.name != 'get') {
     return false;
   }
 
@@ -45,6 +37,7 @@ bool isWritableComputedGetterFunction(FunctionExpression node) {
   if (invocation is! MethodInvocation) {
     return false;
   }
+
   return isOrefFunctionInvocation(invocation, 'writableComputed');
 }
 
@@ -65,6 +58,7 @@ bool isInsideComputedGetter(AstNode node) {
         return true;
       }
     }
+
     if (current is FunctionDeclaration) {
       final function = current.functionExpression;
       if (isComputedGetterFunction(function) ||
@@ -72,6 +66,7 @@ bool isInsideComputedGetter(AstNode node) {
         return true;
       }
     }
+
     current = current.parent;
   }
   return false;
@@ -122,10 +117,8 @@ bool _isCallbackArgument(
   }
 
   final invocation = argumentList.parent;
-  if (invocation is! MethodInvocation) {
-    return false;
-  }
-  if (!isOrefFunctionInvocation(invocation, methodName)) {
+  if (invocation is! MethodInvocation ||
+      !isOrefFunctionInvocation(invocation, methodName)) {
     return false;
   }
 
