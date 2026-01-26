@@ -19,6 +19,7 @@ part 'hooks/use_signals_panel_state.dart';
 part 'hooks/use_timeline_panel_state.dart';
 part 'hooks/use_ui_state.dart';
 part 'utils/helpers.dart';
+part 'widgets/adaptive_wrap.dart';
 part 'widgets/action_buttons.dart';
 part 'widgets/action_pill.dart';
 part 'widgets/filter_chip.dart';
@@ -3202,37 +3203,6 @@ class _PanelInfo {
   final String title;
   final String description;
   final List<String> bullets;
-}
-
-class _AdaptiveWrap extends StatelessWidget {
-  const _AdaptiveWrap({required this.children});
-
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        const minItemWidth = 220.0;
-        const maxColumns = 4;
-        const spacing = 16.0;
-        const runSpacing = 16.0;
-        final available = constraints.maxWidth;
-        final rawColumns = (available / (minItemWidth + spacing)).floor();
-        final columns = rawColumns.clamp(1, maxColumns);
-        final width =
-            (available - (columns - 1) * spacing) / columns.toDouble();
-
-        return Wrap(
-          spacing: spacing,
-          runSpacing: runSpacing,
-          children: [
-            for (final child in children) SizedBox(width: width, child: child),
-          ],
-        );
-      },
-    );
-  }
 }
 
 class _InsightCard extends StatelessWidget {
