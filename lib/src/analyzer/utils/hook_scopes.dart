@@ -180,7 +180,9 @@ bool isBuildContextExpression(Expression? expression) {
   if (staticType != null && isBuildContextType(staticType)) {
     return true;
   }
-  // Fallback for unresolved types: keep a lightweight name heuristic.
+  // Fallback for unresolved types: accept identifiers named `context`.
+  // This can be a false-positive if a non-BuildContext variable is named
+  // `context`, but avoids dropping hints when types aren't resolved.
   if (expression is SimpleIdentifier) {
     return expression.name == 'context';
   }
