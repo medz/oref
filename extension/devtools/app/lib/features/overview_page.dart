@@ -9,6 +9,7 @@ import '../shared/utils/helpers.dart';
 import '../shared/widgets/actions.dart';
 import '../shared/widgets/adaptive_wrap.dart';
 import '../shared/widgets/glass.dart';
+import '../shared/widgets/inline_empty_state.dart';
 import '../shared/widgets/info_row.dart';
 import '../shared/widgets/metric_tile.dart';
 import '../shared/widgets/page_header.dart';
@@ -362,11 +363,11 @@ class OverviewPage extends StatelessWidget {
                     Text('Recent Activity', style: textTheme.titleMedium),
                     const SizedBox(height: 12),
                     if (timelineEvents.isEmpty)
-                      Text(
-                        controller.isUnavailable
+                      InlineEmptyState(
+                        message: controller.isUnavailable
                             ? 'Enable Oref DevTools to capture activity.'
                             : 'No recent activity yet.',
-                        style: textTheme.bodyMedium,
+                        padding: EdgeInsets.zero,
                       )
                     else
                       for (final event in timelineEvents.take(6))
