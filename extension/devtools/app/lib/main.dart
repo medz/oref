@@ -19,6 +19,7 @@ part 'hooks/use_signals_panel_state.dart';
 part 'hooks/use_timeline_panel_state.dart';
 part 'hooks/use_ui_state.dart';
 part 'utils/helpers.dart';
+part 'widgets/ui_scope.dart';
 part 'widgets/adaptive_wrap.dart';
 part 'widgets/action_buttons.dart';
 part 'widgets/action_pill.dart';
@@ -119,21 +120,6 @@ class OrefDevToolsScope extends InheritedNotifier<OrefDevToolsController> {
     assert(scope != null, 'OrefDevToolsScope not found in widget tree.');
     return scope!.notifier!;
   }
-}
-
-class _UiScope extends InheritedWidget {
-  const _UiScope({required this.state, required super.child});
-
-  final _UiState state;
-
-  static _UiState of(BuildContext context) {
-    final scope = context.dependOnInheritedWidgetOfExactType<_UiScope>();
-    assert(scope != null, '_UiScope not found in widget tree.');
-    return scope!.state;
-  }
-
-  @override
-  bool updateShouldNotify(_UiScope oldWidget) => state != oldWidget.state;
 }
 
 class OrefTheme {
