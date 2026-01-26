@@ -7,12 +7,12 @@ import '../app/palette.dart';
 import '../app/scopes.dart';
 import '../shared/hooks/search_query.dart';
 import '../shared/utils/helpers.dart';
-import '../shared/widgets/actions.dart';
 import '../shared/widgets/filter_chip.dart';
 import '../shared/widgets/glass.dart';
-import '../shared/widgets/live_badge.dart';
+import '../shared/widgets/page_header.dart';
 import '../shared/widgets/panel.dart';
 import '../shared/widgets/sort_header_cell.dart';
+import '../shared/widgets/table_header_row.dart';
 
 class CollectionsPage extends StatelessWidget {
   const CollectionsPage({super.key});
@@ -44,14 +44,10 @@ class CollectionsPage extends StatelessWidget {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _CollectionsHeader(
-                      controller: state.searchController,
-                      typeFilter: state.typeFilter(),
-                      opFilter: state.opFilter(),
-                      typeFilters: typeFilters,
-                      opFilters: opFilters,
-                      onTypeChange: (value) => state.typeFilter.set(value),
-                      onOpChange: (value) => state.opFilter.set(value),
+                    PageHeader(
+                      title: 'Collections',
+                      description:
+                          'Inspect reactive list, map, and set mutations.',
                       totalCount: entries.length,
                       filteredCount: filtered.length,
                       onExport: () => exportData(
@@ -59,6 +55,48 @@ class CollectionsPage extends StatelessWidget {
                         'collections',
                         filtered.map((entry) => entry.toJson()).toList(),
                       ),
+                      children: [
+                        GlassInput(
+                          controller: state.searchController,
+                          hintText: 'Search collections...',
+                        ),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            Text(
+                              'Type',
+                              style: Theme.of(context).textTheme.labelMedium,
+                            ),
+                            for (final filter in typeFilters)
+                              FilterChipButton(
+                                label: filter,
+                                isSelected: filter == state.typeFilter(),
+                                onTap: () => state.typeFilter.set(filter),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            Text(
+                              'Op',
+                              style: Theme.of(context).textTheme.labelMedium,
+                            ),
+                            for (final filter in opFilters)
+                              FilterChipButton(
+                                label: filter,
+                                isSelected: filter == state.opFilter(),
+                                onTap: () => state.opFilter.set(filter),
+                              ),
+                          ],
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 16),
                     _CollectionsList(
@@ -171,98 +209,6 @@ CollectionsState useCollectionsState(BuildContext context) {
   );
 }
 
-class _CollectionsHeader extends StatelessWidget {
-  const _CollectionsHeader({
-    required this.controller,
-    required this.typeFilter,
-    required this.opFilter,
-    required this.typeFilters,
-    required this.opFilters,
-    required this.onTypeChange,
-    required this.onOpChange,
-    required this.totalCount,
-    required this.filteredCount,
-    required this.onExport,
-  });
-
-  final TextEditingController controller;
-  final String typeFilter;
-  final String opFilter;
-  final List<String> typeFilters;
-  final List<String> opFilters;
-  final ValueChanged<String> onTypeChange;
-  final ValueChanged<String> onOpChange;
-  final int totalCount;
-  final int filteredCount;
-  final VoidCallback onExport;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Text('Collections', style: textTheme.headlineSmall),
-            const SizedBox(width: 12),
-            const LiveBadge(),
-            const Spacer(),
-            GlassPill(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              child: Text('$filteredCount / $totalCount'),
-            ),
-            const SizedBox(width: 12),
-            ActionPill(
-              label: 'Export',
-              icon: Icons.download_rounded,
-              onTap: onExport,
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Inspect reactive list, map, and set mutations.',
-          style: textTheme.bodyMedium,
-        ),
-        const SizedBox(height: 12),
-        GlassInput(controller: controller, hintText: 'Search collections...'),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            Text('Type', style: textTheme.labelMedium),
-            for (final filter in typeFilters)
-              FilterChipButton(
-                label: filter,
-                isSelected: filter == typeFilter,
-                onTap: () => onTypeChange(filter),
-              ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            Text('Op', style: textTheme.labelMedium),
-            for (final filter in opFilters)
-              FilterChipButton(
-                label: filter,
-                isSelected: filter == opFilter,
-                onTap: () => onOpChange(filter),
-              ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
 class _CollectionsList extends StatelessWidget {
   const _CollectionsList({
     required this.entries,
@@ -336,15 +282,7 @@ class _CollectionsHeaderRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final labelStyle = Theme.of(context).textTheme.labelSmall;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: Theme.of(context).dividerColor.withValues(alpha: 0.4),
-          ),
-        ),
-      ),
+    return TableHeaderRow(
       child: Row(
         children: [
           Expanded(

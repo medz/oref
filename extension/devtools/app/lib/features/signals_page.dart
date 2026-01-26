@@ -7,11 +7,11 @@ import '../app/palette.dart';
 import '../app/scopes.dart';
 import '../shared/hooks/search_query.dart';
 import '../shared/utils/helpers.dart';
-import '../shared/widgets/actions.dart';
-import '../shared/widgets/filter_chip.dart';
+import '../shared/widgets/filter_group.dart';
 import '../shared/widgets/glass.dart';
 import '../shared/widgets/info_row.dart';
-import '../shared/widgets/live_badge.dart';
+import '../shared/widgets/inline_empty_state.dart';
+import '../shared/widgets/page_header.dart';
 import '../shared/widgets/panel.dart';
 import '../shared/widgets/sort_header_cell.dart';
 import '../shared/widgets/status_badge.dart';
@@ -54,17 +54,34 @@ class SignalsPage extends StatelessWidget {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _SignalsHeader(
-                      controller: state.searchController,
-                      selectedFilter: state.statusFilter(),
-                      onFilterChange: (value) => state.statusFilter.set(value),
-                      totalCount: entries.length,
+                    PageHeader(
+                      title: 'Signals',
+                      description:
+                          'Inspect live signal values, owners, and update cadence.',
                       filteredCount: filtered.length,
+                      totalCount: entries.length,
                       onExport: () => exportData(
                         context,
                         'signals',
                         filtered.map((entry) => entry.toJson()).toList(),
                       ),
+                      children: [
+                        const SizedBox(height: 4),
+                        GlassInput(
+                          controller: state.searchController,
+                          hintText: 'Search signals...',
+                        ),
+                        const SizedBox(height: 12),
+                        FilterGroup(
+                          label: 'Status',
+                          filters: signalFilters,
+                          selectedFilter: state.statusFilter(),
+                          onFilterChange: state.statusFilter.set,
+                          spacing: 8,
+                          runSpacing: 8,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 16),
                     if (isSplit)
@@ -193,73 +210,6 @@ SignalsState useSignalsState(BuildContext context) {
   );
 }
 
-class _SignalsHeader extends StatelessWidget {
-  const _SignalsHeader({
-    required this.controller,
-    required this.selectedFilter,
-    required this.onFilterChange,
-    required this.totalCount,
-    required this.filteredCount,
-    required this.onExport,
-  });
-
-  final TextEditingController controller;
-  final String selectedFilter;
-  final ValueChanged<String> onFilterChange;
-  final int totalCount;
-  final int filteredCount;
-  final VoidCallback onExport;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Text('Signals', style: textTheme.headlineSmall),
-            const SizedBox(width: 12),
-            const LiveBadge(),
-            const Spacer(),
-            GlassPill(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              child: Text('$filteredCount / $totalCount'),
-            ),
-            const SizedBox(width: 12),
-            ActionPill(
-              label: 'Export',
-              icon: Icons.download_rounded,
-              onTap: onExport,
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Inspect live signal values, owners, and update cadence.',
-          style: textTheme.bodyMedium,
-        ),
-        const SizedBox(height: 16),
-        GlassInput(controller: controller, hintText: 'Search signals...'),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final filter in signalFilters)
-              FilterChipButton(
-                label: filter,
-                isSelected: filter == selectedFilter,
-                onTap: () => onFilterChange(filter),
-              ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
 class _SignalList extends StatelessWidget {
   const _SignalList({
     required this.entries,
@@ -295,12 +245,8 @@ class _SignalList extends StatelessWidget {
               onSortUpdated: onSortUpdated,
             ),
           if (entries.isEmpty)
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                'No signals match the current filter.',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
+            const InlineEmptyState(
+              message: 'No signals match the current filter.',
             )
           else
             Padding(

@@ -7,11 +7,10 @@ import '../app/palette.dart';
 import '../app/scopes.dart';
 import '../shared/hooks/search_query.dart';
 import '../shared/utils/helpers.dart';
-import '../shared/widgets/actions.dart';
 import '../shared/widgets/filter_chip.dart';
 import '../shared/widgets/glass.dart';
 import '../shared/widgets/info_row.dart';
-import '../shared/widgets/live_badge.dart';
+import '../shared/widgets/page_header.dart';
 import '../shared/widgets/panel.dart';
 import '../shared/widgets/sort_header_cell.dart';
 import '../shared/widgets/status_badge.dart';
@@ -54,17 +53,37 @@ class ComputedPage extends StatelessWidget {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _ComputedHeader(
-                      controller: state.searchController,
-                      selectedFilter: state.statusFilter(),
-                      onFilterChange: (value) => state.statusFilter.set(value),
-                      totalCount: entries.length,
+                    PageHeader(
+                      title: 'Computed',
+                      description:
+                          'Inspect derived state, cache hits, and dependency churn.',
                       filteredCount: filtered.length,
+                      totalCount: entries.length,
                       onExport: () => exportData(
                         context,
                         'computed',
                         filtered.map((entry) => entry.toJson()).toList(),
                       ),
+                      children: [
+                        const SizedBox(height: 4),
+                        GlassInput(
+                          controller: state.searchController,
+                          hintText: 'Search computed values...',
+                        ),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            for (final filter in signalFilters)
+                              FilterChipButton(
+                                label: filter,
+                                isSelected: filter == state.statusFilter(),
+                                onTap: () => state.statusFilter.set(filter),
+                              ),
+                          ],
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 16),
                     if (isSplit)
@@ -191,76 +210,6 @@ ComputedState useComputedState(BuildContext context) {
     sortKey: sortKey,
     sortAscending: sortAscending,
   );
-}
-
-class _ComputedHeader extends StatelessWidget {
-  const _ComputedHeader({
-    required this.controller,
-    required this.selectedFilter,
-    required this.onFilterChange,
-    required this.totalCount,
-    required this.filteredCount,
-    required this.onExport,
-  });
-
-  final TextEditingController controller;
-  final String selectedFilter;
-  final ValueChanged<String> onFilterChange;
-  final int totalCount;
-  final int filteredCount;
-  final VoidCallback onExport;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Text('Computed', style: textTheme.headlineSmall),
-            const SizedBox(width: 12),
-            const LiveBadge(),
-            const Spacer(),
-            GlassPill(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              child: Text('$filteredCount / $totalCount'),
-            ),
-            const SizedBox(width: 12),
-            ActionPill(
-              label: 'Export',
-              icon: Icons.download_rounded,
-              onTap: onExport,
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Inspect derived state, cache hits, and dependency churn.',
-          style: textTheme.bodyMedium,
-        ),
-        const SizedBox(height: 16),
-        GlassInput(
-          controller: controller,
-          hintText: 'Search computed values...',
-        ),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final filter in signalFilters)
-              FilterChipButton(
-                label: filter,
-                isSelected: filter == selectedFilter,
-                onTap: () => onFilterChange(filter),
-              ),
-          ],
-        ),
-      ],
-    );
-  }
 }
 
 class _ComputedList extends StatelessWidget {

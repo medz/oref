@@ -1,7 +1,7 @@
 # DevTools Refactor Memory
 
 Start time: 2026-01-27 02:21:38 +0800
-Last updated: 2026-01-27 02:28:06 +0800
+Last updated: 2026-01-27 02:53:16 +0800
 
 **Must work continuously for at least six hours! No stopping is allowed! Continuous iteration and optimization!**
 
@@ -54,5 +54,13 @@ RAW:
 
 - Prefer small, iterative refactors with validation per step.
 - Update this file after each meaningful refactor step.
+- Next progress report due in 30 min.
 - 2026-01-27 02:26:03 +0800: Added shared search hook and Live badge widget; updated signals/computed/collections search setup and replaced repeated Live pills across pages.
 - 2026-01-27 02:28:06 +0800: Moved search hook under shared/hooks to align with app architecture.
+- 2026-01-27 02:28:42 +0800 (Latest changes): Start time/Last updated reset to 2026-01-27 02:21:38 +0800; scan results flagged shared widget candidates `actions.dart` and `panel.dart`.
+- 2026-01-27 02:34:01 +0800 (Latest changes): Noted PageHeader pattern duplication, FilterGroup duplication without a shared widget, and EmptyState/list chrome inconsistencies.
+- 2026-01-27 02:37:42 +0800 (Latest changes): Added shared PageHeader; refactored effects_page to use it. Added FilterGroup and updated timeline_page. Added InlineEmptyState and updated signals_page.
+- 2026-01-27 02:39:21 +0800 (Latest changes): Ran formatting on new PageHeader/InlineEmptyState and the effects/signals pages after the refactor.
+- 2026-01-27 02:48:05 +0800 (Iteration start): Tasks assigned: PageHeader rollout, FilterGroup rollout, EmptyState rollout, list chrome consistency.
+- 2026-01-27 02:52:07 +0800 (Latest changes): Rolled out PageHeader to signals/computed, applied FilterGroup on effects, added InlineEmptyState on timeline/performance, and introduced TableHeaderRow plus collections header updates.
+- 2026-01-27 02:53:16 +0800 (Latest changes): Rolled PageHeader into collections/batching/performance and added countText support.

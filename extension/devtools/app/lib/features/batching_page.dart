@@ -4,11 +4,10 @@ import 'package:oref/devtools.dart' as devtools;
 import '../app/palette.dart';
 import '../app/scopes.dart';
 import '../shared/utils/helpers.dart';
-import '../shared/widgets/actions.dart';
 import '../shared/widgets/adaptive_wrap.dart';
 import '../shared/widgets/glass.dart';
-import '../shared/widgets/live_badge.dart';
 import '../shared/widgets/metric_tile.dart';
+import '../shared/widgets/page_header.dart';
 import '../shared/widgets/panel.dart';
 
 class BatchingPage extends StatelessWidget {
@@ -39,38 +38,17 @@ class BatchingPage extends StatelessWidget {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Text(
-                      'Batching',
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
-                    const SizedBox(width: 12),
-                    const LiveBadge(),
-                    const Spacer(),
-                    GlassPill(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      child: Text('${batches.length} batches'),
-                    ),
-                    const SizedBox(width: 12),
-                    ActionPill(
-                      label: 'Export',
-                      icon: Icons.download_rounded,
-                      onTap: () => exportData(
-                        context,
-                        'batches',
-                        batches.map((batch) => batch.toJson()).toList(),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Inspect batched writes and flush timing.',
-                  style: Theme.of(context).textTheme.bodyMedium,
+                PageHeader(
+                  title: 'Batching',
+                  description: 'Inspect batched writes and flush timing.',
+                  totalCount: batches.length,
+                  filteredCount: batches.length,
+                  countText: '${batches.length} batches',
+                  onExport: () => exportData(
+                    context,
+                    'batches',
+                    batches.map((batch) => batch.toJson()).toList(),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 AdaptiveWrap(

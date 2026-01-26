@@ -4,11 +4,11 @@ import '../app/palette.dart';
 import '../app/scopes.dart';
 import '../services/oref_service.dart';
 import '../shared/utils/helpers.dart';
-import '../shared/widgets/actions.dart';
 import '../shared/widgets/adaptive_wrap.dart';
 import '../shared/widgets/glass.dart';
-import '../shared/widgets/live_badge.dart';
+import '../shared/widgets/inline_empty_state.dart';
 import '../shared/widgets/metric_tile.dart';
+import '../shared/widgets/page_header.dart';
 import '../shared/widgets/panel.dart';
 
 class PerformancePage extends StatelessWidget {
@@ -25,38 +25,17 @@ class PerformancePage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Text(
-                  'Performance',
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-                const SizedBox(width: 12),
-                const LiveBadge(),
-                const Spacer(),
-                GlassPill(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  child: Text('${samples.length} samples'),
-                ),
-                const SizedBox(width: 12),
-                ActionPill(
-                  label: 'Export',
-                  icon: Icons.download_rounded,
-                  onTap: () => exportData(
-                    context,
-                    'performance',
-                    samples.map((sample) => sample.toJson()).toList(),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Sampled signal throughput and effect costs.',
-              style: Theme.of(context).textTheme.bodyMedium,
+            PageHeader(
+              title: 'Performance',
+              description: 'Sampled signal throughput and effect costs.',
+              totalCount: samples.length,
+              filteredCount: samples.length,
+              countText: '${samples.length} samples',
+              onExport: () => exportData(
+                context,
+                'performance',
+                samples.map((sample) => sample.toJson()).toList(),
+              ),
             ),
             const SizedBox(height: 16),
             AdaptiveWrap(
@@ -107,12 +86,9 @@ class _PerformanceList extends StatelessWidget {
     return GlassCard(
       padding: const EdgeInsets.all(0),
       child: samples.isEmpty
-          ? Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                'No performance samples yet.',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
+          ? const InlineEmptyState(
+              message: 'No performance samples yet.',
+              padding: EdgeInsets.all(16),
             )
           : Padding(
               padding: const EdgeInsets.all(16),
