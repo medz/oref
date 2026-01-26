@@ -134,6 +134,10 @@ class _EffectsTimeline extends StatelessWidget {
           if (entries.isEmpty)
             const InlineEmptyState(
               message: 'No effects match the current filters.',
+              padding: EdgeInsets.symmetric(
+                horizontal: effectsTimelineHorizontalPadding,
+                vertical: 16,
+              ),
             )
           else
             Padding(

@@ -248,10 +248,11 @@ class _SignalList extends StatelessWidget {
           if (entries.isEmpty)
             const InlineEmptyState(
               message: 'No signals match the current filter.',
+              padding: EdgeInsets.all(16),
             )
           else
             Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
                   for (var index = 0; index < entries.length; index++) ...[
@@ -480,10 +481,10 @@ class _SignalDetail extends StatelessWidget {
     if (entry == null) {
       return GlassCard(
         padding: const EdgeInsets.all(20),
-        child: Center(
-          child: Text(
-            'Select a signal to view details.',
-            style: Theme.of(context).textTheme.bodyMedium,
+        child: const Center(
+          child: InlineEmptyState(
+            message: 'Select a signal to view details.',
+            padding: EdgeInsets.zero,
           ),
         ),
       );
