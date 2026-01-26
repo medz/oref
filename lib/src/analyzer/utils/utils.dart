@@ -172,7 +172,13 @@ HookScope? enclosingHookScope(AstNode node) {
         isWidgetBuildMethod(current)) {
       return HookScope.build(current);
     }
-    if (current is FunctionExpression && isHookBuilderFunction(current)) {
+    if (current is FunctionDeclaration &&
+        isCustomHookFunctionDeclaration(current)) {
+      return HookScope.builder(current.functionExpression);
+    }
+    if (current is FunctionExpression &&
+        (isHookBuilderFunction(current) ||
+            isCustomHookFunctionExpression(current))) {
       return HookScope.builder(current);
     }
     if (current is FunctionDeclaration) {
@@ -228,6 +234,37 @@ bool isHookBuilderFunction(FunctionExpression node) {
   }
 
   return isWidgetType(type.returnType);
+}
+
+bool isCustomHookFunctionDeclaration(FunctionDeclaration node) {
+  if (node.parent is! CompilationUnit) {
+    return false;
+  }
+  return buildContextParameterNameFromParameters(
+        node.functionExpression.parameters,
+      ) !=
+      null;
+}
+
+bool isCustomHookFunctionExpression(FunctionExpression node) {
+  if (!isTopLevelVariableFunction(node)) {
+    return false;
+  }
+  return buildContextParameterNameFromParameters(node.parameters) != null;
+}
+
+bool isTopLevelVariableFunction(FunctionExpression node) {
+  final parent = node.parent;
+  if (parent is! VariableDeclaration) {
+    return false;
+  }
+  final list = parent.parent;
+  if (list is! VariableDeclarationList) {
+    return false;
+  }
+  final declaration = list.parent;
+  return declaration is TopLevelVariableDeclaration &&
+      declaration.parent is CompilationUnit;
 }
 
 bool isInsideControlFlow(AstNode node, AstNode stopAt) {
