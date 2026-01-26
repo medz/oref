@@ -9,6 +9,7 @@ class ActionPill extends StatelessWidget {
     required this.icon,
     this.iconOnly = false,
     this.onTap,
+    this.padding,
     super.key,
   });
 
@@ -16,12 +17,14 @@ class ActionPill extends StatelessWidget {
   final IconData icon;
   final bool iconOnly;
   final VoidCallback? onTap;
+  final EdgeInsets? padding;
 
   @override
   Widget build(BuildContext context) {
     final isEnabled = onTap != null;
+    final resolvedPadding = iconOnly ? const EdgeInsets.all(10) : padding;
     final content = GlassPill(
-      padding: iconOnly ? const EdgeInsets.all(10) : null,
+      padding: resolvedPadding,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

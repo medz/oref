@@ -36,6 +36,7 @@ class PageHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    const headerPillPadding = EdgeInsets.symmetric(horizontal: 12, vertical: 6);
     final showCountPill =
         countText != null || (filteredCount != null && totalCount != null);
     final showExport = onExport != null;
@@ -53,10 +54,7 @@ class PageHeader extends StatelessWidget {
             const Spacer(),
             if (showCountPill)
               GlassPill(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
+                padding: headerPillPadding,
                 child: Text(countText ?? '$filteredCount / $totalCount'),
               ),
             if (showCountPill && showExport) const SizedBox(width: 12),
@@ -65,6 +63,7 @@ class PageHeader extends StatelessWidget {
                 label: exportLabel,
                 icon: Icons.download_rounded,
                 onTap: onExport,
+                padding: headerPillPadding,
               ),
           ],
         ),
