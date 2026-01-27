@@ -469,39 +469,56 @@ class _MainPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Widget page;
     switch (selectedItem.label) {
       case 'Overview':
-        return const OverviewPage();
+        page = const OverviewPage();
+        break;
       case 'Signals':
-        return const SignalsPage();
+        page = const SignalsPage();
+        break;
       case 'Computed':
-        return const ComputedPage();
+        page = const ComputedPage();
+        break;
       case 'Effects':
-        return const EffectsPage();
+        page = const EffectsPage();
+        break;
       case 'Collections':
-        return const CollectionsPage();
+        page = const CollectionsPage();
+        break;
       case 'Batching':
-        return const BatchingPage();
+        page = const BatchingPage();
+        break;
       case 'Timeline':
-        return const TimelinePage();
+        page = const TimelinePage();
+        break;
       case 'Performance':
-        return const PerformancePage();
+        page = const PerformancePage();
+        break;
       case 'Settings':
-        return const SettingsPage();
+        page = const SettingsPage();
+        break;
+      default:
+        final info =
+            panelInfo[selectedItem.label] ??
+            PanelInfo(
+              title: selectedItem.label,
+              description: 'This panel will be wired to live Oref diagnostics.',
+              bullets: const [
+                'Live data stream',
+                'Filters + search',
+                'Batch insights',
+              ],
+            );
+
+        page = PanelPlaceholder(info: info, icon: selectedItem.icon);
+        break;
     }
-
-    final info =
-        panelInfo[selectedItem.label] ??
-        PanelInfo(
-          title: selectedItem.label,
-          description: 'This panel will be wired to live Oref diagnostics.',
-          bullets: const [
-            'Live data stream',
-            'Filters + search',
-            'Batch insights',
-          ],
-        );
-
-    return PanelPlaceholder(info: info, icon: selectedItem.icon);
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 240),
+      switchInCurve: Curves.easeOutCubic,
+      switchOutCurve: Curves.easeInCubic,
+      child: KeyedSubtree(key: ValueKey(selectedItem.label), child: page),
+    );
   }
 }

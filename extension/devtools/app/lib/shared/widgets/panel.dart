@@ -4,19 +4,37 @@ import '../../app/palette.dart';
 import '../../app/scopes.dart';
 import 'glass.dart';
 
-class PanelScrollView extends StatelessWidget {
+class PanelScrollView extends StatefulWidget {
   const PanelScrollView({required this.child, super.key});
 
   final Widget child;
 
   @override
+  State<PanelScrollView> createState() => _PanelScrollViewState();
+}
+
+class _PanelScrollViewState extends State<PanelScrollView> {
+  late final ScrollController _controller = ScrollController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        return SingleChildScrollView(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: constraints.maxHeight),
-            child: child,
+        return Scrollbar(
+          controller: _controller,
+          interactive: true,
+          child: SingleChildScrollView(
+            controller: _controller,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: widget.child,
+            ),
           ),
         );
       },

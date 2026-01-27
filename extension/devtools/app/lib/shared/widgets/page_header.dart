@@ -41,36 +41,79 @@ class PageHeader extends StatelessWidget {
         countText != null || (filteredCount != null && totalCount != null);
     final showExport = onExport != null;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isCompact = constraints.maxWidth < 720;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: textTheme.headlineSmall),
-            if (showLiveBadge) ...[
-              const SizedBox(width: 12),
-              const LiveBadge(),
+            if (isCompact) ...[
+              Row(
+                children: [
+                  Text(title, style: textTheme.headlineSmall),
+                  if (showLiveBadge) ...[
+                    const SizedBox(width: 12),
+                    const LiveBadge(),
+                  ],
+                ],
+              ),
+              if (showCountPill || showExport) ...[
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 8,
+                  children: [
+                    if (showCountPill)
+                      GlassPill(
+                        padding: headerPillPadding,
+                        child: Text(
+                          countText ?? '$filteredCount / $totalCount',
+                        ),
+                      ),
+                    if (showExport)
+                      ActionPill(
+                        label: exportLabel,
+                        icon: Icons.download_rounded,
+                        onTap: onExport,
+                        padding: headerPillPadding,
+                      ),
+                  ],
+                ),
+              ],
+            ] else ...[
+              Row(
+                children: [
+                  Text(title, style: textTheme.headlineSmall),
+                  if (showLiveBadge) ...[
+                    const SizedBox(width: 12),
+                    const LiveBadge(),
+                  ],
+                  const Spacer(),
+                  if (showCountPill)
+                    GlassPill(
+                      padding: headerPillPadding,
+                      child: Text(countText ?? '$filteredCount / $totalCount'),
+                    ),
+                  if (showCountPill && showExport) const SizedBox(width: 12),
+                  if (showExport)
+                    ActionPill(
+                      label: exportLabel,
+                      icon: Icons.download_rounded,
+                      onTap: onExport,
+                      padding: headerPillPadding,
+                    ),
+                ],
+              ),
             ],
-            const Spacer(),
-            if (showCountPill)
-              GlassPill(
-                padding: headerPillPadding,
-                child: Text(countText ?? '$filteredCount / $totalCount'),
-              ),
-            if (showCountPill && showExport) const SizedBox(width: 12),
-            if (showExport)
-              ActionPill(
-                label: exportLabel,
-                icon: Icons.download_rounded,
-                onTap: onExport,
-                padding: headerPillPadding,
-              ),
+            const SizedBox(height: 8),
+            Text(description, style: textTheme.bodyMedium),
+            if (children.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              ...children,
+            ],
           ],
-        ),
-        const SizedBox(height: 8),
-        Text(description, style: textTheme.bodyMedium),
-        if (children.isNotEmpty) ...[const SizedBox(height: 12), ...children],
-      ],
+        );
+      },
     );
   }
 }

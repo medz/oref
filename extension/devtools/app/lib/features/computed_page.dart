@@ -5,7 +5,7 @@ import 'package:oref/oref.dart' as oref;
 import '../app/constants.dart';
 import '../app/palette.dart';
 import '../app/scopes.dart';
-import '../shared/hooks/search_query.dart';
+import '../shared/hooks/sample_list_state.dart';
 import '../shared/utils/helpers.dart';
 import '../shared/widgets/filter_group.dart';
 import '../shared/widgets/glass.dart';
@@ -22,7 +22,7 @@ class ComputedPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final state = useComputedState(context);
+    final state = useSampleListState(context, debugLabelPrefix: 'computed');
 
     return oref.SignalBuilder(
       builder: (context) {
@@ -116,100 +116,6 @@ class ComputedPage extends StatelessWidget {
       },
     );
   }
-}
-
-class ComputedState {
-  ComputedState({
-    required this.searchController,
-    required this.searchQuery,
-    required this.statusFilter,
-    required this.selectedId,
-    required this.sortKey,
-    required this.sortAscending,
-  });
-
-  final TextEditingController searchController;
-  final oref.WritableSignal<String> searchQuery;
-  final oref.WritableSignal<String> statusFilter;
-  final oref.WritableSignal<int?> selectedId;
-  final oref.WritableSignal<SortKey> sortKey;
-  final oref.WritableSignal<bool> sortAscending;
-
-  void toggleSelection(int id) {
-    selectedId.set(selectedId() == id ? null : id);
-  }
-
-  void toggleSort(SortKey key) {
-    if (sortKey() == key) {
-      sortAscending.set(!sortAscending());
-    } else {
-      sortKey.set(key);
-      sortAscending.set(key == SortKey.name);
-    }
-  }
-
-  List<Sample> filter(List<Sample> entries) {
-    final query = searchQuery().trim().toLowerCase();
-    final currentStatus = statusFilter();
-    final currentSortKey = sortKey();
-    final ascending = sortAscending();
-    final filtered = entries.where((entry) {
-      final matchesQuery =
-          query.isEmpty || entry.label.toLowerCase().contains(query);
-      final status = entry.status ?? 'Active';
-      final matchesStatus = currentStatus == 'All' || status == currentStatus;
-      return matchesQuery && matchesStatus;
-    }).toList();
-    filtered.sort(
-      (a, b) => compareSort(
-        currentSortKey,
-        ascending,
-        a.label,
-        b.label,
-        a.updatedAt,
-        b.updatedAt,
-        a.id,
-        b.id,
-      ),
-    );
-    return filtered;
-  }
-}
-
-ComputedState useComputedState(BuildContext context) {
-  final searchState = useSearchQueryState(
-    context,
-    debugLabel: 'computed.search',
-    debounce: const Duration(milliseconds: 200),
-  );
-  final statusFilter = oref.signal(
-    context,
-    'All',
-    debugLabel: 'computed.statusFilter',
-  );
-  final selectedId = oref.signal<int?>(
-    context,
-    null,
-    debugLabel: 'computed.selected',
-  );
-  final sortKey = oref.signal(
-    context,
-    SortKey.updated,
-    debugLabel: 'computed.sortKey',
-  );
-  final sortAscending = oref.signal(
-    context,
-    false,
-    debugLabel: 'computed.sortAscending',
-  );
-  return ComputedState(
-    searchController: searchState.controller,
-    searchQuery: searchState.query,
-    statusFilter: statusFilter,
-    selectedId: selectedId,
-    sortKey: sortKey,
-    sortAscending: sortAscending,
-  );
 }
 
 class _ComputedList extends StatelessWidget {

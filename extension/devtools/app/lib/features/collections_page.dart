@@ -5,7 +5,7 @@ import 'package:oref/oref.dart' as oref;
 import '../app/constants.dart';
 import '../app/palette.dart';
 import '../app/scopes.dart';
-import '../shared/hooks/search_query.dart';
+import '../shared/hooks/sample_list_state.dart';
 import '../shared/utils/helpers.dart';
 import '../shared/widgets/filter_group.dart';
 import '../shared/widgets/glass.dart';
@@ -105,65 +105,40 @@ class CollectionsPage extends StatelessWidget {
 
 class CollectionsState {
   CollectionsState({
-    required this.searchController,
-    required this.searchQuery,
+    required this.listState,
     required this.typeFilter,
     required this.opFilter,
-    required this.sortKey,
-    required this.sortAscending,
   });
 
-  final TextEditingController searchController;
-  final oref.WritableSignal<String> searchQuery;
+  final SampleListState listState;
   final oref.WritableSignal<String> typeFilter;
   final oref.WritableSignal<String> opFilter;
-  final oref.WritableSignal<SortKey> sortKey;
-  final oref.WritableSignal<bool> sortAscending;
+
+  TextEditingController get searchController => listState.searchController;
+  oref.WritableSignal<SortKey> get sortKey => listState.sortKey;
+  oref.WritableSignal<bool> get sortAscending => listState.sortAscending;
 
   void toggleSort(SortKey key) {
-    if (sortKey() == key) {
-      sortAscending.set(!sortAscending());
-    } else {
-      sortKey.set(key);
-      sortAscending.set(key == SortKey.name);
-    }
+    listState.toggleSort(key);
   }
 
   List<Sample> filter(List<Sample> entries) {
-    final query = searchQuery().trim().toLowerCase();
     final currentType = typeFilter();
     final currentOp = opFilter();
-    final currentSortKey = sortKey();
-    final ascending = sortAscending();
     final filtered = entries.where((entry) {
-      final matchesQuery =
-          query.isEmpty || entry.label.toLowerCase().contains(query);
       final matchesType = currentType == 'All' || entry.type == currentType;
       final matchesOp =
           currentOp == 'All' || (entry.operation ?? 'Idle') == currentOp;
-      return matchesQuery && matchesType && matchesOp;
+      return matchesType && matchesOp;
     }).toList();
-    filtered.sort(
-      (a, b) => compareSort(
-        currentSortKey,
-        ascending,
-        a.label,
-        b.label,
-        a.updatedAt,
-        b.updatedAt,
-        a.id,
-        b.id,
-      ),
-    );
-    return filtered;
+    return listState.filter(filtered);
   }
 }
 
 CollectionsState useCollectionsState(BuildContext context) {
-  final searchState = useSearchQueryState(
+  final listState = useSampleListState(
     context,
-    debugLabel: 'collections.search',
-    debounce: const Duration(milliseconds: 200),
+    debugLabelPrefix: 'collections',
   );
   final typeFilter = oref.signal(
     context,
@@ -175,23 +150,10 @@ CollectionsState useCollectionsState(BuildContext context) {
     'All',
     debugLabel: 'collections.opFilter',
   );
-  final sortKey = oref.signal(
-    context,
-    SortKey.updated,
-    debugLabel: 'collections.sortKey',
-  );
-  final sortAscending = oref.signal(
-    context,
-    false,
-    debugLabel: 'collections.sortAscending',
-  );
   return CollectionsState(
-    searchController: searchState.controller,
-    searchQuery: searchState.query,
+    listState: listState,
     typeFilter: typeFilter,
     opFilter: opFilter,
-    sortKey: sortKey,
-    sortAscending: sortAscending,
   );
 }
 
