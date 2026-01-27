@@ -93,10 +93,10 @@ class SettingsPage extends StatelessWidget {
                       const SizedBox(height: 12),
                       SwitchListTile.adaptive(
                         value: draft.enabled,
-                        onChanged: (value) {
+                        onChanged: (value) async {
                           state.isEditing.set(true);
                           state.draft.set(draft.copyWith(enabled: value));
-                          controller.updateSettings(state.draft());
+                          await controller.updateSettings(state.draft());
                           state.isEditing.set(false);
                         },
                         title: const Text('Enable sampling'),
