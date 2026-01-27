@@ -5,10 +5,13 @@
 ### Features
 
 - Adds an analyzer plugin with multiple lints enforcing hook composition, ordering, computed purity, lifecycle rules, and BuildContext usage, plus quick fixes and assists to help correct issues.
+- Refresh the Oref DevTools extension UI with updated layouts, pages, and shared widgets.
 
 ### Bug Fixes
 
 - fix(async): ensure AsyncData re-fetches when dependencies change during a pending request.
+- fix(devtools): await settings updates before clearing edit state and stabilize search debounce cleanup.
+- fix(devtools): prevent duplicate "All" filter options and handle unbounded wrap widths safely.
 
 ### Tests
 
