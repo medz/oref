@@ -34,6 +34,7 @@
   - `dart pub publish --dry-run`
   - `dart pub publish --force`
 - Create GitHub release:
+  - `git push origin vx.y.z`
   - `gh release create vx.y.z --title "vX.Y.Z" --notes-file RELEASE_NOTES.md`
 
 ## Coding Style & Naming Conventions
