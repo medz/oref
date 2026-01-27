@@ -14,10 +14,14 @@ class AdaptiveWrap extends StatelessWidget {
         const spacing = 16.0;
         const runSpacing = 16.0;
         final available = constraints.maxWidth;
-        final rawColumns = (available / (minItemWidth + spacing)).floor();
+        final hasBoundedWidth = constraints.hasBoundedWidth;
+        final safeAvailable = hasBoundedWidth ? available : minItemWidth;
+        final rawColumns = hasBoundedWidth
+            ? (safeAvailable / (minItemWidth + spacing)).floor()
+            : 1;
         final columns = rawColumns.clamp(1, maxColumns);
         final width =
-            (available - (columns - 1) * spacing) / columns.toDouble();
+            (safeAvailable - (columns - 1) * spacing) / columns.toDouble();
 
         return Wrap(
           spacing: spacing,
