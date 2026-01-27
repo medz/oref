@@ -4,6 +4,7 @@ import 'package:oref/oref.dart' as oref;
 import '../app/constants.dart';
 import '../app/palette.dart';
 import '../app/scopes.dart';
+import '../app/widgets/panel_placeholder.dart';
 import '../features/batching_page.dart';
 import '../features/collections_page.dart';
 import '../features/computed_page.dart';
@@ -16,7 +17,6 @@ import '../features/timeline_page.dart';
 import '../services/oref_service.dart';
 import '../shared/widgets/actions.dart';
 import '../shared/widgets/glass.dart';
-import '../shared/widgets/panel.dart';
 
 class DevToolsShell extends StatelessWidget {
   const DevToolsShell({super.key});

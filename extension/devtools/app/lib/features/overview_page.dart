@@ -6,7 +6,6 @@ import '../app/palette.dart';
 import '../app/scopes.dart';
 import '../services/oref_service.dart';
 import '../shared/utils/helpers.dart';
-import '../shared/widgets/actions.dart';
 import '../shared/widgets/adaptive_wrap.dart';
 import '../shared/widgets/glass.dart';
 import '../shared/widgets/inline_empty_state.dart';
@@ -14,6 +13,7 @@ import '../shared/widgets/info_row.dart';
 import '../shared/widgets/metric_tile.dart';
 import '../shared/widgets/page_header.dart';
 import '../shared/widgets/panel.dart';
+import 'overview/widgets/overview_actions.dart';
 
 class OverviewPage extends StatelessWidget {
   const OverviewPage({super.key});
