@@ -1,7 +1,7 @@
 # DevTools Refactor Memory
 
 Start time: 2026-01-27 02:21:38 +0800
-Last updated: 2026-01-27 04:00:56 +0800
+Last updated: 2026-01-27 04:26:41 +0800
 
 **Must work continuously for at least six hours! No stopping is allowed! Continuous iteration and optimization!**
 
@@ -54,13 +54,15 @@ RAW:
 
 - Prefer small, iterative refactors with validation per step.
 - Update this file after each meaningful refactor step.
-- 2026-01-27 02:39:21 +0800 (Latest changes): Ran formatting on new PageHeader/InlineEmptyState and the effects/signals pages after the refactor.
-- 2026-01-27 02:48:05 +0800 (Iteration start): Tasks assigned: PageHeader rollout, FilterGroup rollout, EmptyState rollout, list chrome consistency.
-- 2026-01-27 02:52:07 +0800 (Latest changes): Rolled out PageHeader to signals/computed, applied FilterGroup on effects, added InlineEmptyState on timeline/performance, and introduced TableHeaderRow plus collections header updates.
-- 2026-01-27 03:28:38 +0800 (Iteration start): Tasks assigned: PageHeader rollout for collections+timeline, FilterGroup rollout for signals+computed, EmptyState rollout for effects, TableHeaderRow for batching.
-- 2026-01-27 03:37:06 +0800 (Latest changes): Effects empty state now uses InlineEmptyState; PageHeader/FilterGroup rollouts for collections/timeline and signals/computed were already complete (no changes).
-- 2026-01-27 03:42:04 +0800 (Latest changes): Reinserted Start/Last updated lines and refreshed progress report due time after correcting memory log.
 - 2026-01-27 03:48:12 +0800 (Latest changes): Confirmed signals/computed already use TableHeaderRow (no changes).
 - 2026-01-27 03:48:38 +0800 (Latest changes): Batching page already uses InlineEmptyState (no changes).
 - 2026-01-27 03:49:16 +0800 (Latest changes): collections_page already uses InlineEmptyState (no changes).
 - 2026-01-27 04:00:56 +0800 (Latest changes): Applied TableHeaderRow to batching header; confirmed no remaining list empty states or filter groups need refactors; cleaned memory log formatting.
+- 2026-01-27 04:05:05 +0800 (Latest changes): Extracted PanelPlaceholder into app/widgets and updated shell import; shared panel helpers unchanged.
+- 2026-01-27 04:07:46 +0800 (Latest changes): Moved overview GradientButton/OutlineButton into feature-local widgets and trimmed shared actions widget.
+- 2026-01-27 04:10:30 +0800 (Latest changes): Scanned shared/widgets usage; no remaining single-feature widgets to relocate.
+- 2026-01-27 04:12:16 +0800 (Latest changes): Ran `dart format` on overview actions, panel placeholder, shell, and batching files (no changes).
+- 2026-01-27 04:12:50 +0800 (Latest changes): Ran `flutter test` (all tests passed; dependency updates available).
+- 2026-01-27 04:22:17 +0800 (Latest changes): Performance header now always renders (even when empty); ran `dart format` on performance_page; tests not run.
+- 2026-01-27 04:24:31 +0800 (Latest changes): Ran `dart analyze` (no issues found).
+- 2026-01-27 04:26:41 +0800 (Latest changes): Ran `flutter test` for the performance header/value placeholder updates (all tests passed).

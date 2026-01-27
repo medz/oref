@@ -105,10 +105,7 @@ class _BatchList extends StatelessWidget {
         children: [
           if (!isCompact) const _BatchHeaderRow(),
           if (batches.isEmpty)
-            const InlineEmptyState(
-              message: 'No batches recorded yet.',
-              padding: EdgeInsets.all(16),
-            )
+            const InlineEmptyState(message: 'No batches recorded yet.')
           else
             Padding(
               padding: const EdgeInsets.all(16),

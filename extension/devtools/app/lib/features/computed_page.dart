@@ -249,7 +249,6 @@ class _ComputedList extends StatelessWidget {
           if (entries.isEmpty)
             const InlineEmptyState(
               message: 'No computed values match the current filter.',
-              padding: EdgeInsets.all(16),
             )
           else
             Padding(
@@ -360,6 +359,7 @@ class _ComputedRow extends StatelessWidget {
     final highlight = isSelected
         ? OrefPalette.indigo.withValues(alpha: 0.2)
         : Colors.transparent;
+    final valueText = (entry.value?.isNotEmpty ?? false) ? entry.value! : '—';
 
     return Material(
       color: Colors.transparent,
@@ -407,7 +407,7 @@ class _ComputedRow extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      entry.value ?? '',
+                      valueText,
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
@@ -432,7 +432,7 @@ class _ComputedRow extends StatelessWidget {
                     Expanded(
                       flex: 2,
                       child: Text(
-                        entry.value ?? '',
+                        valueText,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.center,
@@ -488,6 +488,7 @@ class _ComputedDetail extends StatelessWidget {
     }
 
     final textTheme = Theme.of(context).textTheme;
+    final valueText = (entry!.value?.isNotEmpty ?? false) ? entry!.value! : '—';
 
     return GlassCard(
       padding: const EdgeInsets.all(20),
@@ -501,7 +502,7 @@ class _ComputedDetail extends StatelessWidget {
           InfoRow(label: 'Owner', value: entry!.owner),
           InfoRow(label: 'Scope', value: entry!.scope),
           InfoRow(label: 'Type', value: entry!.type),
-          InfoRow(label: 'Value', value: entry!.value ?? ''),
+          InfoRow(label: 'Value', value: valueText),
           InfoRow(label: 'Updated', value: formatAge(entry!.updatedAt)),
           InfoRow(label: 'Runs', value: '${entry!.runs ?? 0}'),
           InfoRow(

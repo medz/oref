@@ -228,7 +228,6 @@ class _CollectionsList extends StatelessWidget {
           if (entries.isEmpty)
             const InlineEmptyState(
               message: 'No collection mutations match the current filters.',
-              padding: EdgeInsets.all(16),
             )
           else
             Padding(

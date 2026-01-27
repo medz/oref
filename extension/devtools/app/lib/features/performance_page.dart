@@ -86,28 +86,25 @@ class _PerformanceList extends StatelessWidget {
   Widget build(BuildContext context) {
     return GlassCard(
       padding: const EdgeInsets.all(0),
-      child: samples.isEmpty
-          ? const InlineEmptyState(
-              message: 'No performance samples yet.',
-              padding: EdgeInsets.all(16),
-            )
-          : Column(
-              children: [
-                const _PerformanceHeaderRow(),
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      for (var index = 0; index < samples.length; index++) ...[
-                        _PerformanceRow(sample: samples[index]),
-                        if (index != samples.length - 1)
-                          const SizedBox(height: 12),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
+      child: Column(
+        children: [
+          const _PerformanceHeaderRow(),
+          if (samples.isEmpty)
+            const InlineEmptyState(message: 'No performance samples yet.')
+          else
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  for (var index = 0; index < samples.length; index++) ...[
+                    _PerformanceRow(sample: samples[index]),
+                    if (index != samples.length - 1) const SizedBox(height: 12),
+                  ],
+                ],
+              ),
             ),
+        ],
+      ),
     );
   }
 }

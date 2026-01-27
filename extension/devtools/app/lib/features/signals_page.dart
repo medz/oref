@@ -249,7 +249,6 @@ class _SignalList extends StatelessWidget {
           if (entries.isEmpty)
             const InlineEmptyState(
               message: 'No signals match the current filter.',
-              padding: EdgeInsets.all(16),
             )
           else
             Padding(
@@ -360,6 +359,7 @@ class _SignalRow extends StatelessWidget {
     final highlight = isSelected
         ? OrefPalette.teal.withValues(alpha: 0.2)
         : Colors.transparent;
+    final valueText = (entry.value?.isNotEmpty ?? false) ? entry.value! : '—';
 
     return Material(
       color: Colors.transparent,
@@ -407,7 +407,7 @@ class _SignalRow extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      entry.value ?? '',
+                      valueText,
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
@@ -432,7 +432,7 @@ class _SignalRow extends StatelessWidget {
                     Expanded(
                       flex: 2,
                       child: Text(
-                        entry.value ?? '',
+                        valueText,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.center,
@@ -484,6 +484,7 @@ class _SignalDetail extends StatelessWidget {
     }
 
     final textTheme = Theme.of(context).textTheme;
+    final valueText = (entry!.value?.isNotEmpty ?? false) ? entry!.value! : '—';
 
     return GlassCard(
       padding: const EdgeInsets.all(20),
@@ -497,7 +498,7 @@ class _SignalDetail extends StatelessWidget {
           InfoRow(label: 'Owner', value: entry!.owner),
           InfoRow(label: 'Scope', value: entry!.scope),
           InfoRow(label: 'Type', value: entry!.type),
-          InfoRow(label: 'Value', value: entry!.value ?? ''),
+          InfoRow(label: 'Value', value: valueText),
           InfoRow(label: 'Updated', value: formatAge(entry!.updatedAt)),
           InfoRow(label: 'Listeners', value: '${entry!.listeners ?? 0}'),
           InfoRow(label: 'Deps', value: '${entry!.dependencies ?? 0}'),
