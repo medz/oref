@@ -135,6 +135,7 @@ List<String> buildFilterOptions(Iterable<String> values) {
     final trimmed = value.trim();
     if (trimmed.isNotEmpty) unique.add(trimmed);
   }
+  unique.remove('All');
   final sorted = unique.toList()..sort();
   return ['All', ...sorted];
 }
