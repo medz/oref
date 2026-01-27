@@ -7,7 +7,7 @@
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:devtools_extension/main.dart';
+import 'package:devtools_extension/app/devtools_app.dart';
 
 void main() {
   testWidgets('Shows Oref DevTools landing', (WidgetTester tester) async {
