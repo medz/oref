@@ -7,7 +7,7 @@ class _ElementDisposer {
   final VoidCallback dispose;
 }
 
-final Set<_ElementDisposer> _trackedDisposers = <_ElementDisposer>{};
+final _trackedDisposers = <_ElementDisposer>{};
 bool _frameCallbackInstalled = false;
 
 void registerElementDisposer(BuildContext context, VoidCallback dispose) {

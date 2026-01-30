@@ -16,7 +16,7 @@ class PanelPlaceholder extends StatelessWidget {
 
     return SingleChildScrollView(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: .start,
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,

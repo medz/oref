@@ -12,7 +12,7 @@ class ReactiveList<T> extends ListBase<T>
     with Reactive<ReactiveList<T>>
     implements List<T> {
   /// Create a new [ReactiveList] instance.
-  ReactiveList(Iterable<T> elements) : _source = List.from(elements) {
+  ReactiveList(Iterable<T> elements) : _source = .from(elements) {
     _devtools = devtools.bindCollection(this, type: 'List');
   }
 
