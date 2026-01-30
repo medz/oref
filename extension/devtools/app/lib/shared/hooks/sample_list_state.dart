@@ -32,7 +32,7 @@ class SampleListState {
       sortAscending.set(!sortAscending());
     } else {
       sortKey.set(key);
-      sortAscending.set(key == SortKey.name);
+      sortAscending.set(key == .name);
     }
   }
 
@@ -69,7 +69,7 @@ SampleListState useSampleListState(
   required String debugLabelPrefix,
   Duration debounce = const Duration(milliseconds: 200),
   String initialStatus = 'All',
-  SortKey initialSortKey = SortKey.updated,
+  SortKey initialSortKey = .updated,
   bool initialSortAscending = false,
 }) {
   final searchState = useSearchQueryState(

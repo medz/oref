@@ -46,8 +46,8 @@ class SignalsPage extends StatelessWidget {
                   isCompact: !isSplit,
                   sortKey: state.sortKey(),
                   sortAscending: state.sortAscending(),
-                  onSortName: () => state.toggleSort(SortKey.name),
-                  onSortUpdated: () => state.toggleSort(SortKey.updated),
+                  onSortName: () => state.toggleSort(.name),
+                  onSortUpdated: () => state.toggleSort(.updated),
                   onSelect: (entry) => state.toggleSelection(entry.id),
                 );
                 final detail = _SignalDetail(entry: selected);
@@ -203,7 +203,7 @@ class _SignalTableHeader extends StatelessWidget {
             flex: 3,
             child: SortHeaderCell(
               label: 'Name',
-              isActive: sortKey == SortKey.name,
+              isActive: sortKey == .name,
               ascending: sortAscending,
               onTap: onSortName,
               style: labelStyle,
@@ -234,7 +234,7 @@ class _SignalTableHeader extends StatelessWidget {
             flex: 2,
             child: SortHeaderCell(
               label: 'Updated',
-              isActive: sortKey == SortKey.updated,
+              isActive: sortKey == .updated,
               ascending: sortAscending,
               onTap: onSortUpdated,
               style: labelStyle,

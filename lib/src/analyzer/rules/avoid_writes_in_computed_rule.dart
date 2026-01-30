@@ -12,7 +12,7 @@ class AvoidWritesInComputedRule extends AnalysisRule {
     'avoid_writes_in_computed',
     'Writing to signals inside computed getters can cause side effects (found {0}).',
     correctionMessage: 'Move the write to an effect or event handler instead.',
-    severity: DiagnosticSeverity.WARNING,
+    severity: .WARNING,
     uniqueName: 'oref.lint.avoid_writes_in_computed',
   );
 

@@ -89,8 +89,8 @@ class CollectionsPage extends StatelessWidget {
                       isCompact: isCompact,
                       sortKey: state.sortKey(),
                       sortAscending: state.sortAscending(),
-                      onSortName: () => state.toggleSort(SortKey.name),
-                      onSortUpdated: () => state.toggleSort(SortKey.updated),
+                      onSortName: () => state.toggleSort(.name),
+                      onSortUpdated: () => state.toggleSort(.updated),
                     ),
                   ],
                 );
@@ -233,7 +233,7 @@ class _CollectionsHeaderRow extends StatelessWidget {
             flex: 3,
             child: SortHeaderCell(
               label: 'Collection',
-              isActive: sortKey == SortKey.name,
+              isActive: sortKey == .name,
               ascending: sortAscending,
               onTap: onSortName,
               style: labelStyle,
@@ -264,7 +264,7 @@ class _CollectionsHeaderRow extends StatelessWidget {
             flex: 2,
             child: SortHeaderCell(
               label: 'Updated',
-              isActive: sortKey == SortKey.updated,
+              isActive: sortKey == .updated,
               ascending: sortAscending,
               onTap: onSortUpdated,
               style: labelStyle,

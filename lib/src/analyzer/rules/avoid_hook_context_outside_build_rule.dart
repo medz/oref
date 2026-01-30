@@ -13,7 +13,7 @@ class AvoidHookContextOutsideBuildRule extends AnalysisRule {
     'Passing BuildContext to {0} is only allowed inside a build scope.',
     correctionMessage:
         'Move {0} into a build scope, or pass null if supported.',
-    severity: DiagnosticSeverity.ERROR,
+    severity: .ERROR,
     uniqueName: 'oref.lint.avoid_hook_context_outside_build',
   );
 

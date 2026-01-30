@@ -13,7 +13,7 @@ class AvoidScopeDisposeOutsideScopeRule extends AnalysisRule {
     '{0} must be called inside an effect scope callback.',
     correctionMessage:
         'Call {0} only inside the callback passed to effectScope().',
-    severity: DiagnosticSeverity.ERROR,
+    severity: .ERROR,
     uniqueName: 'oref.lint.avoid_scope_dispose_outside_scope',
   );
 

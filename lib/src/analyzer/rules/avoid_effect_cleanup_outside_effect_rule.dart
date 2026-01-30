@@ -12,7 +12,7 @@ class AvoidEffectCleanupOutsideEffectRule extends AnalysisRule {
     'avoid_effect_cleanup_outside_effect',
     '{0} must be called inside an effect callback.',
     correctionMessage: 'Call {0} only inside the callback passed to effect().',
-    severity: DiagnosticSeverity.ERROR,
+    severity: .ERROR,
     uniqueName: 'oref.lint.avoid_effect_cleanup_outside_effect',
   );
 

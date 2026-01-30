@@ -91,7 +91,7 @@ class OrefDevToolsController extends ChangeNotifier {
 
   oref.Snapshot? snapshot;
   List<UiPerformanceSample> performance = const [];
-  OrefServiceStatus status = OrefServiceStatus.disconnected;
+  OrefServiceStatus status = .disconnected;
   String? errorMessage;
 
   Timer? _pollTimer;
@@ -99,10 +99,10 @@ class OrefDevToolsController extends ChangeNotifier {
   _SnapshotTotals? _lastTotals;
 
   bool get connected => serviceManager.connectedState.value.connected;
-  bool get isReady => status == OrefServiceStatus.ready;
-  bool get isUnavailable => status == OrefServiceStatus.unavailable;
-  bool get isConnecting => status == OrefServiceStatus.connecting;
-  bool get hasError => status == OrefServiceStatus.error;
+  bool get isReady => status == .ready;
+  bool get isUnavailable => status == .unavailable;
+  bool get isConnecting => status == .connecting;
+  bool get hasError => status == .error;
 
   Future<void> refresh() async {
     await _fetchSnapshot();
@@ -272,7 +272,7 @@ class OrefDevToolsController extends ChangeNotifier {
 
   void _handleConnection() {
     if (!connected) {
-      status = OrefServiceStatus.disconnected;
+      status = .disconnected;
       _pollTimer?.cancel();
       _retryTimer?.cancel();
       _resetPerformance();
@@ -280,7 +280,7 @@ class OrefDevToolsController extends ChangeNotifier {
       return;
     }
 
-    status = OrefServiceStatus.connecting;
+    status = .connecting;
     errorMessage = null;
     _startPolling();
     notifyListeners();
@@ -298,12 +298,12 @@ class OrefDevToolsController extends ChangeNotifier {
       final payload = await _callExtension(oref.Protocol.snapshotService);
       snapshot = oref.Snapshot.fromJson(payload);
       _updatePerformance(snapshot!);
-      status = OrefServiceStatus.ready;
+      status = .ready;
       errorMessage = null;
       notifyListeners();
     } catch (error) {
       if (_isMissingExtension(error)) {
-        status = OrefServiceStatus.unavailable;
+        status = .unavailable;
         errorMessage = null;
         _resetPerformance();
         _scheduleRetry();
@@ -320,7 +320,7 @@ class OrefDevToolsController extends ChangeNotifier {
   }
 
   void _setError(Object error) {
-    status = OrefServiceStatus.error;
+    status = .error;
     errorMessage = error.toString();
     notifyListeners();
   }

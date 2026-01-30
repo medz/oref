@@ -12,7 +12,7 @@ class AvoidDiscardedGlobalEffectRule extends AnalysisRule {
     'avoid_discarded_global_effect',
     'Discarding the result of {0} can leak resources.',
     correctionMessage: 'Store the result if you need to stop {0} later.',
-    severity: DiagnosticSeverity.WARNING,
+    severity: .WARNING,
     uniqueName: 'oref.lint.avoid_discarded_global_effect',
   );
 

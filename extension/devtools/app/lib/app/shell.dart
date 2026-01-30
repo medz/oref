@@ -305,18 +305,18 @@ class _StatusPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tone = switch (status) {
-      OrefServiceStatus.ready => OrefPalette.lime,
-      OrefServiceStatus.connecting => OrefPalette.teal,
-      OrefServiceStatus.unavailable => OrefPalette.coral,
-      OrefServiceStatus.error => OrefPalette.pink,
-      OrefServiceStatus.disconnected => const Color(0xFF8B97A8),
+      .ready => OrefPalette.lime,
+      .connecting => OrefPalette.teal,
+      .unavailable => OrefPalette.coral,
+      .error => OrefPalette.pink,
+      .disconnected => const Color(0xFF8B97A8),
     };
     final label = switch (status) {
-      OrefServiceStatus.ready => 'Connected',
-      OrefServiceStatus.connecting => 'Connecting',
-      OrefServiceStatus.unavailable => 'Inactive',
-      OrefServiceStatus.error => 'Connection error',
-      OrefServiceStatus.disconnected => 'Disconnected',
+      .ready => 'Connected',
+      .connecting => 'Connecting',
+      .unavailable => 'Inactive',
+      .error => 'Connection error',
+      .disconnected => 'Disconnected',
     };
 
     return GlassPill(

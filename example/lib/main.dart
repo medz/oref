@@ -566,7 +566,7 @@ class FormWorkflowSection extends StatelessWidget {
     });
 
     effect(context, () {
-      if (submit.status == AsyncStatus.success) {
+      if (submit.status case .success) {
         lastSaved.set('just now');
       }
     });
@@ -606,10 +606,10 @@ class FormWorkflowSection extends StatelessWidget {
             final valid = isValid();
             final can = canSubmit();
             final status = switch (submit.status) {
-              AsyncStatus.idle => 'Idle',
-              AsyncStatus.pending => 'Saving...',
-              AsyncStatus.success => submit.data ?? 'Saved',
-              AsyncStatus.error => 'Error: ${submit.error?.error ?? 'unknown'}',
+              .idle => 'Idle',
+              .pending => 'Saving...',
+              .success => submit.data ?? 'Saved',
+              .error => 'Error: ${submit.error?.error ?? 'unknown'}',
             };
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,

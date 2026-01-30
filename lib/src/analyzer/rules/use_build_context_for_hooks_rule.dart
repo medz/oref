@@ -12,7 +12,7 @@ class UseBuildContextForHooksRule extends AnalysisRule {
     'use_build_context_for_hooks',
     'In the {2} scope, {0} must receive {1} as the first argument.',
     correctionMessage: 'Pass {1} as the first argument to {0}.',
-    severity: DiagnosticSeverity.ERROR,
+    severity: .ERROR,
     uniqueName: 'oref.lint.use_build_context_for_hooks',
   );
 

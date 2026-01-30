@@ -12,7 +12,7 @@ class AvoidHooksInNestedFunctionsRule extends AnalysisRule {
     'avoid_hooks_in_nested_functions',
     'Do not call {0} inside nested functions in the {1} scope.',
     correctionMessage: 'Move {0} to the top level of the {1} scope.',
-    severity: DiagnosticSeverity.ERROR,
+    severity: .ERROR,
     uniqueName: 'oref.lint.avoid_hooks_in_nested_functions',
   );
 

@@ -12,7 +12,7 @@ class AvoidCustomHooksOutsideBuildRule extends AnalysisRule {
     'avoid_custom_hooks_outside_build',
     '{0} must be called inside a build scope or another hook.',
     correctionMessage: 'Move {0} into a build scope or another hook.',
-    severity: DiagnosticSeverity.ERROR,
+    severity: .ERROR,
     uniqueName: 'oref.lint.avoid_custom_hooks_outside_build',
   );
 

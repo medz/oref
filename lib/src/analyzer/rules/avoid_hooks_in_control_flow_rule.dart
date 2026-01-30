@@ -12,7 +12,7 @@ class AvoidHooksInControlFlowRule extends AnalysisRule {
     'avoid_hooks_in_control_flow',
     'Call {0} unconditionally at the top level of the {1} scope.',
     correctionMessage: 'Move {0} out of control flow in the {1} scope.',
-    severity: DiagnosticSeverity.ERROR,
+    severity: .ERROR,
     uniqueName: 'oref.lint.avoid_hooks_in_control_flow',
   );
 

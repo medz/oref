@@ -30,12 +30,12 @@ AsyncData<T> useAsyncData<T>(
   ValueGetter<T?>? defaults,
 }) {
   final executor = _AsyncDataExecutor<T>(
-    data: oref.signal<T?>(
+    data: oref.signal(
       context,
       defaults != null ? oref.untrack(defaults) : null,
     ),
-    error: oref.signal<AsyncError?>(context, null),
-    status: oref.signal(context, AsyncStatus.idle),
+    error: oref.signal(context, null),
+    status: oref.signal(context, .idle),
     handler: handler,
   );
 
@@ -80,7 +80,7 @@ class _AsyncDataExecutor<T> {
   }
 
   void schedule() async {
-    if (oref.untrack(status.call) == AsyncStatus.pending) {
+    if (oref.untrack(status.call) case .pending) {
       _queuedAfterRunId = _runId;
       return;
     }

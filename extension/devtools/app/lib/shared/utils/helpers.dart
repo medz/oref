@@ -90,7 +90,7 @@ int compareSort(
   int idB,
 ) {
   int result;
-  if (key == SortKey.name) {
+  if (key == .name) {
     result = nameA.toLowerCase().compareTo(nameB.toLowerCase());
   } else {
     result = updatedA.compareTo(updatedB);
