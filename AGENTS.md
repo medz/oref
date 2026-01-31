@@ -3,13 +3,23 @@
 ## Project Structure
 
 ```txt
-
-├── lib/
-│   ├── devtools.dart    # Dev Tools proto
-│   ├── main.dart        # Analyzer Plugin entry
-│   └── oref,dart        # Public APIs
-└── example/             # is a Flutter app for manual validation and demos
-└── tests/               # mirrors feature areas with focused unit tests
+analysis_tests/      # Unit tests for the analyzer plugin
+lib/
+├── src/             # Source code for the package
+│   ├── analyzer/    # Analyzer plugin source code
+│   ├── async/       # Asynchronous utilities
+│   ├── collections/ # Collection
+│   ├── core/        # Oref core
+│   └── devtools/    # Oref dev tools proto source code
+├── devtools.dart    # Dev Tools proto
+├── main.dart        # Analyzer Plugin entry
+└── oref,dart        # Public APIs
+example/             # Is a Flutter app for manual validation and demos
+extension/
+└── devtools
+    ├── app          # Dev Tools Flutter app
+    └── config.yaml  # Dev Tools configuration
+test/                # Mirrors feature areas with focused unit tests
 ```
 
 ## Build, Test, and Development Commands
