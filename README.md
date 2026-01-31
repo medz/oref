@@ -84,6 +84,12 @@ This repo includes Agent Skills under `skills/` for Oref users. They are maintai
 agent installation and usage, and provide guided Oref usage, tooling, and troubleshooting
 references.
 
+Install in one command:
+
+```bash
+npx skills add medz/oref
+```
+
 ## Analyzer Lints
 
 Oref provides a custom analyzer plugin with lints for hooks, effects, and
