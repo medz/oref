@@ -78,6 +78,12 @@ Notes:
 
 You can view details through the [API Reference in pub.dev](https://pub.dev/documentation/oref/latest/oref/) or source code comments.
 
+## Agent Skills
+
+This repo includes Agent Skills under `skills/` for Oref users. They are maintained for
+agent installation and usage, and provide guided Oref usage, tooling, and troubleshooting
+references.
+
 ## Analyzer Lints
 
 Oref provides a custom analyzer plugin with lints for hooks, effects, and

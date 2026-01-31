@@ -19,6 +19,7 @@ extension/
 └── devtools
     ├── app          # Dev Tools Flutter app
     └── config.yaml  # Dev Tools configuration
+skills/              # Agent Skills for Oref users (SKILL.md + references)
 test/                # Mirrors feature areas with focused unit tests
 ```
 
@@ -69,6 +70,11 @@ test/                # Mirrors feature areas with focused unit tests
 - PRs should describe what changed and why, link relevant issues, and note testing performed.
 - Update `CHANGELOG.md` for user-facing changes or API behavior updates.
 - Include screenshots or GIFs when modifying the `example/` UI.
+
+## Agent Skills
+
+- `skills/` contains Agent Skills meant for Oref users to install and use.
+- Keep skills focused on Oref usage guidance; store long-form material in `references/`.
 
 ## Maintaining Documentation
 
