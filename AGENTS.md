@@ -1,12 +1,16 @@
 # Repository Guidelines
 
-## Project Structure & Module Organization
+## Project Structure
 
-- `lib/` holds the public package API, with `lib/oref.dart` re-exporting internals.
-- `lib/src/` contains implementation organized by area (`core/`, `async/`, `collections/`).
-- `test/` mirrors feature areas with focused unit tests (for example `test/core/signal_test.dart`).
-- `example/` is a Flutter app for manual validation and demos.
-- Root config files include `pubspec.yaml`, `analysis_options.yaml`, and `CHANGELOG.md`.
+```txt
+
+├── lib/
+│   ├── devtools.dart    # Dev Tools proto
+│   ├── main.dart        # Analyzer Plugin entry
+│   └── oref,dart        # Public APIs
+└── example/             # is a Flutter app for manual validation and demos
+└── tests/               # mirrors feature areas with focused unit tests
+```
 
 ## Build, Test, and Development Commands
 
@@ -55,3 +59,10 @@
 - PRs should describe what changed and why, link relevant issues, and note testing performed.
 - Update `CHANGELOG.md` for user-facing changes or API behavior updates.
 - Include screenshots or GIFs when modifying the `example/` UI.
+
+## Maintaining Documentation
+
+When making changes to the project (new APIs, architectural changes, updated conventions):
+
+- **`AGENTS.md`** — Update with technical details, architecture, and best practices for AI agents
+- **`README.md`** — Update with user-facing documentation (usage, installation, examples) for end users
