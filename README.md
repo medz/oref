@@ -87,7 +87,8 @@ references.
 Install in one command:
 
 ```bash
-npx skills add medz/oref
+npx skills add medz/oref # With NPM
+bunx skills add medz/oref # With Bun
 ```
 
 ## Analyzer Lints
