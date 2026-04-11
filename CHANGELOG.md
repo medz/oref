@@ -1,5 +1,17 @@
 ## Unreleased
 
+## 2.8.1
+
+### Compatibility
+
+- Upgrade `alien_signals` to 2.2.0.
+- Refresh the DevTools extension dependency stack and document the current
+  Flutter 3.38.4+ toolchain requirement for rebuilding the extension.
+
+### Documentation
+
+- Clarify the DevTools extension app requirements and rebuild commands.
+
 ## 2.8.0
 
 ### Features
