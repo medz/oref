@@ -640,6 +640,45 @@ void main() {
         expect(runs, 2);
       },
     );
+
+    test(
+      'after stop(), activeSub persists and re-links signals read post-stop',
+      () {
+        // Verifies: when an effect calls its own disposer in the callback,
+        // activeSub is still the effect until _wrapEffectCallback returns.
+        // In alien_signals 2.3.1, SignalNode.get() unconditionally links to
+        // activeSub, so any signal read after stop() re-links the disposed
+        // effect. The effect won't re-execute (run() guard prevents it), but
+        // the stale link causes unnecessary propagation on every signal change.
+        final trigger = signal(null, 0);
+        final postStop = signal(null, 0);
+        Effect? stopper;
+        bool shouldStop = false;
+        int runs = 0;
+
+        stopper = effect(null, () {
+          runs++;
+          trigger();
+          if (shouldStop) {
+            stopper!();
+            postStop(); // re-links via activeSub — unnecessary propagation
+          }
+        });
+
+        expect(runs, 1);
+
+        shouldStop = true;
+        trigger.set(1);
+        expect(runs, 2);
+
+        // postStop was re-linked. Its changes trigger useless propagation
+        // through the stopped effect, but never cause re-execution.
+        postStop.set(1);
+        expect(runs, 2);
+        postStop.set(2);
+        expect(runs, 2);
+      },
+    );
   });
 
   group('Effect auto-dispose with Flutter Widget Context', () {

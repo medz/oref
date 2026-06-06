@@ -192,6 +192,11 @@ class _OrefEffect extends alien.EffectNode implements alien.Effect {
     onDispose?.call();
     onDispose = null;
     alien.stop(this);
+    // If this effect is the active subscriber, clear it so subsequent signal
+    // reads in the same callback won't re-link to this stopped node.
+    if (identical(alien.getActiveSub(), this)) {
+      alien.setActiveSub(null);
+    }
     finalizer.detach(this);
   }
 }
