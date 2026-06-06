@@ -79,15 +79,18 @@ _OrefEffectScope _createEffectScope({
   try {
     callback();
     return scope;
+  } catch (_) {
+    scope();
+    rethrow;
   } finally {
     alien.setActiveSub(prevSub);
   }
 }
 
-class _OrefEffectScope extends alien.ReactiveNode implements alien.EffectScope {
+class _OrefEffectScope extends alien.EffectScopeNode implements alien.EffectScope {
   static final finalizer = Finalizer<_OrefEffectScope>((scope) => scope());
 
-  _OrefEffectScope() : super(flags: .none);
+  _OrefEffectScope() : super(flags: .mutable);
 
   void Function()? onDispose;
 
@@ -95,20 +98,6 @@ class _OrefEffectScope extends alien.ReactiveNode implements alien.EffectScope {
   void call() {
     onDispose?.call();
     onDispose = null;
-    for (alien.Link? link = deps; link != null; link = link.nextDep) {
-      switch (link.dep) {
-        case alien.EffectScope scope:
-          scope();
-          break;
-        case alien.Effect effect:
-          effect();
-          break;
-        case alien.EffectNode node:
-          alien.stop(node);
-          break;
-      }
-    }
-
     alien.stop(this);
     finalizer.detach(this);
   }

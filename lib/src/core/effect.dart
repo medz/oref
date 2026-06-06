@@ -108,7 +108,7 @@ void onEffectDispose(void Function() callback, {bool failSilently = false}) {
 void onEffectCleanup(void Function() callback, {bool failSilently = false}) {
   final sub = alien.getActiveSub();
   if (sub is _OrefEffect) {
-    sub.cleanup = callback;
+    sub._userCleanup = callback;
   } else if (!failSilently) {
     warn(
       '`onEffectCleanup()` was called when there was no active effect to assign the callback to.',
@@ -154,6 +154,9 @@ _OrefEffect _createEffect({
   try {
     run();
     return effect;
+  } catch (_) {
+    effect();
+    rethrow;
   } finally {
     alien.setActiveSub(prevSub);
     effect.flags &= -5 /*~ReactiveFlags.recursedCheck*/;
@@ -171,7 +174,7 @@ class _OrefEffect extends alien.EffectNode implements alien.Effect {
 
   VoidCallback callback;
   void Function()? onDispose;
-  void Function()? cleanup;
+  void Function()? _userCleanup;
   EffectHandle? _devtools;
 
   void attachDevTools(EffectHandle handle) {
@@ -186,20 +189,6 @@ class _OrefEffect extends alien.EffectNode implements alien.Effect {
     _devtools?.dispose();
     onDispose?.call();
     onDispose = null;
-    for (alien.Link? link = deps; link != null; link = link.nextDep) {
-      switch (link.dep) {
-        case alien.EffectScope scope:
-          scope();
-          break;
-        case alien.Effect effect:
-          effect();
-          break;
-        case alien.EffectNode node:
-          alien.stop(node);
-          break;
-      }
-    }
-
     alien.stop(this);
     finalizer.detach(this);
   }
@@ -211,8 +200,8 @@ VoidCallback _wrapEffectCallback(
 ) {
   return () {
     final effect = effectGetter();
-    effect.cleanup?.call();
-    effect.cleanup = null;
+    effect._userCleanup?.call();
+    effect._userCleanup = null;
     final handle = effect._devtools;
     final token = handle?.start();
     try {

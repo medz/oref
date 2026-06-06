@@ -563,4 +563,161 @@ void main() {
       expect(find.text('Output2: 3'), findsOneWidget);
     });
   });
+
+  group('Effect auto-dispose on setup failure', () {
+    test('failed effect setup does not leave a live subscription behind', () {
+      final source = signal(null, 0);
+      int runs = 0;
+
+      expect(
+        () => effect(null, () {
+          runs++;
+          source();
+          throw StateError('setup failed');
+        }),
+        throwsStateError,
+      );
+
+      expect(runs, 1);
+      // If cleanup worked, changing source should not re-run the broken effect.
+      expect(() => source.set(1), returnsNormally);
+      expect(runs, 1);
+    });
+
+    test(
+      'failed effect scope setup disposes child effects created before throw',
+      () {
+        final source = signal(null, 0);
+        int childRuns = 0;
+
+        expect(
+          () => effectScope(null, () {
+            effect(null, () {
+              childRuns++;
+              source();
+            });
+            throw StateError('scope setup failed');
+          }),
+          throwsStateError,
+        );
+
+        expect(childRuns, 1);
+        // If cleanup worked, changing source should not re-run the child effect.
+        source.set(1);
+        expect(childRuns, 1);
+      },
+    );
+
+    test(
+      'stopped effect does not subscribe to signals read later in the same run',
+      () {
+        final rerun = signal(null, 0);
+        final readAfterStop = signal(null, 0);
+        Effect? stop;
+        bool stopDuringRun = false;
+        int runs = 0;
+
+        stop = effect(null, () {
+          runs++;
+          rerun();
+          if (stopDuringRun) {
+            stop!();
+            // Reading a signal after stopping should not create a subscription.
+            readAfterStop();
+          }
+        });
+
+        expect(runs, 1);
+
+        stopDuringRun = true;
+        rerun.set(1);
+
+        // The effect should have run a second time (before stopping itself).
+        expect(runs, 2);
+        // readAfterStop should NOT have a subscription from the stopped effect.
+        expect(() => readAfterStop.set(1), returnsNormally);
+        // No further runs.
+        expect(runs, 2);
+      },
+    );
+  });
+
+  group('Effect auto-dispose with Flutter Widget Context', () {
+    testWidgets('failed effect setup in widget does not leave subscription',
+        (tester) async {
+      final source = signal<Object?>(null, 0);
+      int runs = 0;
+      bool caught = false;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) {
+              if (!caught) {
+                try {
+                  effect(context, () {
+                    runs++;
+                    source();
+                    throw StateError('setup failed');
+                  });
+                } on StateError {
+                  caught = true;
+                }
+              }
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
+
+      expect(runs, 1);
+      expect(caught, isTrue);
+
+      // Trigger the signal — the broken effect should not re-run.
+      (source as WritableSignal<Object?>).set(1);
+      await tester.pump();
+
+      expect(runs, 1);
+    });
+
+    testWidgets(
+        'failed effect scope in widget disposes child effects created before throw',
+        (tester) async {
+      final source = signal<Object?>(null, 0);
+      int childRuns = 0;
+      bool caught = false;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) {
+              if (!caught) {
+                try {
+                  effectScope(context, () {
+                    effect(context, () {
+                      childRuns++;
+                      source();
+                    });
+                    throw StateError('scope setup failed');
+                  });
+                } on StateError {
+                  caught = true;
+                }
+              }
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
+
+      expect(childRuns, 1);
+      expect(caught, isTrue);
+
+      // The child effect should be disposed — signal change should not re-run it.
+      (source as WritableSignal<Object?>).set(1);
+      await tester.pump();
+
+      expect(childRuns, 1);
+    });
+  });
 }
