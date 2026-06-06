@@ -1,4 +1,37 @@
-## Unreleased
+## 2.9.0
+
+### Compatibility
+
+- Upgrade `alien_signals` to 2.3.1. The upstream removed the Dart-only
+  auto-dispose-on-setup-failure behavior — oref now implements this at its
+  own wrapper layer with improved semantics.
+
+### Features
+
+- **Auto-dispose on setup failure**: `effect()` and `effectScope()` now
+  automatically dispose partially-initialized nodes when the setup callback
+  throws, preventing dangling subscriptions.
+- **hasChildEffect flag**: child effects and scopes are now properly flagged
+  so the parent disposes stale children before re-executing, avoiding
+  duplicate work from old child effects.
+
+### Bug Fixes
+
+- **activeSub cleared after stop**: when an effect disposes itself inside its
+  own callback, `activeSub` is now cleared so subsequent signal reads in the
+  same callback won't re-link to the disposed effect.
+- **_userCleanup drained on stop**: cleanup registered via `onEffectCleanup()`
+  is now invoked on disposal, matching alien_signals 2.3.1 `stopEffect()`
+  semantics.
+
+### Refactors
+
+- `_OrefEffectScope` now extends `EffectScopeNode` (new in 2.3.1) instead of
+  `ReactiveNode`, with proper propagation support.
+- Simplified `call()` methods: child disposal is delegated to 2.3.1's built-in
+  `stopEffect()`/`stopScope()` instead of manual `deps` traversal.
+- Renamed `_OrefEffect.cleanup` → `_userCleanup` to avoid shadowing
+  `EffectNode.cleanup`.
 
 ## 2.8.1
 
