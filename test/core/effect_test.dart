@@ -564,7 +564,7 @@ void main() {
     });
   });
 
-  group('Effect auto-dispose on setup failure', () {
+  group('Effect auto-dispose behavior', () {
     test('failed effect setup does not leave a live subscription behind', () {
       final source = signal(null, 0);
       int runs = 0;
@@ -645,7 +645,7 @@ void main() {
   group('Effect auto-dispose with Flutter Widget Context', () {
     testWidgets('failed effect setup in widget does not leave subscription',
         (tester) async {
-      final source = signal<Object?>(null, 0);
+      final source = signal(null, 0);
       int runs = 0;
       bool caught = false;
 
@@ -674,7 +674,7 @@ void main() {
       expect(caught, isTrue);
 
       // Trigger the signal — the broken effect should not re-run.
-      (source as WritableSignal<Object?>).set(1);
+      source.set(1);
       await tester.pump();
 
       expect(runs, 1);
@@ -683,7 +683,7 @@ void main() {
     testWidgets(
         'failed effect scope in widget disposes child effects created before throw',
         (tester) async {
-      final source = signal<Object?>(null, 0);
+      final source = signal(null, 0);
       int childRuns = 0;
       bool caught = false;
 
@@ -714,7 +714,7 @@ void main() {
       expect(caught, isTrue);
 
       // The child effect should be disposed — signal change should not re-run it.
-      (source as WritableSignal<Object?>).set(1);
+      source.set(1);
       await tester.pump();
 
       expect(childRuns, 1);
