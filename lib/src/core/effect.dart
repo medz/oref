@@ -149,6 +149,7 @@ _OrefEffect _createEffect({
   final prevSub = alien.setActiveSub(effect);
   if (prevSub != null && !detach) {
     alien.link(effect, prevSub, 0);
+    prevSub.flags |= 64 as alien.ReactiveFlags; // hasChildEffect
   }
 
   try {

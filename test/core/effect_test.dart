@@ -681,6 +681,41 @@ void main() {
     );
   });
 
+  group('Effect hasChildEffect flag', () {
+    test('parent effect disposes stale child effects before re-running', () {
+      // Without hasChildEffect on the parent, stale child effects from a
+      // previous run stay linked. If the parent callback writes to a signal
+      // that the stale child depends on, the stale child triggers before
+      // purgeDeps cleans it up — causing duplicate work.
+      final toggle = signal(null, true);
+      final source = signal(null, 0);
+      int childRuns = 0;
+
+      effect(null, () {
+        toggle();
+        if (toggle()) {
+          effect(null, () {
+            source();
+            childRuns++;
+          });
+        } else {
+          // Parent re-run: if hasChildEffect is set, the stale child was
+          // already disposed. source.set() should NOT trigger it.
+          source.set(99);
+        }
+      });
+
+      expect(childRuns, 1);
+
+      toggle.set(false);
+
+      // If hasChildEffect is missing: stale child triggers on source.set(99)
+      // → childRuns = 2. If set: stale child already disposed → childRuns = 1.
+      expect(childRuns, 1,
+          reason: 'stale child was disposed before parent re-run');
+    });
+  });
+
   group('Effect auto-dispose with Flutter Widget Context', () {
     testWidgets('failed effect setup in widget does not leave subscription',
         (tester) async {
