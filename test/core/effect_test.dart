@@ -149,7 +149,7 @@ void main() {
       expect(disposed, isFalse);
 
       dispose();
-      expect(cleanupCount, equals(1)); // Cleanup doesn't run on dispose
+      expect(cleanupCount, equals(2)); // Cleanup runs before dispose
       expect(disposed, isTrue);
     });
 

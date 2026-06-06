@@ -187,6 +187,8 @@ class _OrefEffect extends alien.EffectNode implements alien.Effect {
   @override
   void call() {
     _devtools?.dispose();
+    _userCleanup?.call();
+    _userCleanup = null;
     onDispose?.call();
     onDispose = null;
     alien.stop(this);
