@@ -2,7 +2,7 @@ part of 'utils.dart';
 
 bool isComputedGetterFunction(FunctionExpression node) {
   final argumentContainer = _argumentContainer(node);
-  if (argumentContainer == null || argumentContainer is NamedExpression) {
+  if (argumentContainer == null || argumentContainer is NamedArgument) {
     return false;
   }
 
@@ -23,8 +23,8 @@ bool isComputedGetterFunction(FunctionExpression node) {
 
 bool isWritableComputedGetterFunction(FunctionExpression node) {
   final argumentContainer = _argumentContainer(node);
-  if (argumentContainer is! NamedExpression ||
-      argumentContainer.name.label.name != 'get') {
+  if (argumentContainer is! NamedArgument ||
+      argumentContainer.name.lexeme != 'get') {
     return false;
   }
 
@@ -123,12 +123,12 @@ bool _isCallbackArgument(
   }
 
   if (named != null) {
-    return argumentContainer is NamedExpression &&
-        argumentContainer.name.label.name == named;
+    return argumentContainer is NamedArgument &&
+        argumentContainer.name.lexeme == named;
   }
 
   if (positionalIndex != null) {
-    if (argumentContainer is NamedExpression) {
+    if (argumentContainer is NamedArgument) {
       return false;
     }
     return positionalArgumentIndex(argumentContainer, argumentList) ==
@@ -138,19 +138,14 @@ bool _isCallbackArgument(
   return false;
 }
 
-Expression? _argumentContainer(FunctionExpression node) {
-  final parent = node.parent;
-  if (parent is NamedExpression) {
+Argument? _argumentContainer(FunctionExpression node) {
+  Expression expression = node;
+  while (expression.parent is ParenthesizedExpression) {
+    expression = expression.parent as ParenthesizedExpression;
+  }
+  final parent = expression.parent;
+  if (parent is NamedArgument) {
     return parent;
   }
-  if (parent is ArgumentList) {
-    return node;
-  }
-  if (parent is ParenthesizedExpression &&
-      parent.parent is ArgumentList &&
-      parent.expression == node) {
-    return parent;
-  }
-  // Fallback for uncommon wrappers; callers must still validate the container.
-  return parent is Expression ? parent : null;
+  return parent is ArgumentList ? expression : null;
 }

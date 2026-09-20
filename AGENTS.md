@@ -26,7 +26,7 @@ test/                # Mirrors feature areas with focused unit tests
 ## Build, Test, and Development Commands
 
 - `flutter pub get` installs dependencies for the package and the workspace example.
-- `extension/devtools/app` currently requires Flutter `>=3.38.4` to resolve the DevTools extension toolchain.
+- `extension/devtools/app` currently requires Flutter `>=3.41.0` to resolve the DevTools extension toolchain.
 - `dart analyze` runs static analysis using the repo’s `flutter_lints` rules.
 - `dart format .` applies standard Dart formatting across the repo.
 - `flutter test` runs the full unit test suite in `test/`.

@@ -111,10 +111,10 @@ HookCall? matchHookConstructor(InstanceCreationExpression node) {
 
 Expression? firstPositionalArgument(ArgumentList argumentList) {
   for (final argument in argumentList.arguments) {
-    if (argument is NamedExpression) {
+    if (argument is NamedArgument) {
       continue;
     }
-    return argument;
+    return argument.argumentExpression;
   }
   return null;
 }
@@ -155,10 +155,10 @@ bool isOrefFunctionInvocation(MethodInvocation node, String name) {
   return _isOrefLibrary(element.library.uri);
 }
 
-int? positionalArgumentIndex(Expression expression, ArgumentList argumentList) {
+int? positionalArgumentIndex(Argument expression, ArgumentList argumentList) {
   var index = 0;
   for (final argument in argumentList.arguments) {
-    if (argument is NamedExpression) {
+    if (argument is NamedArgument) {
       continue;
     }
     if (identical(argument, expression)) {

@@ -11,6 +11,19 @@ void main() {
 
 @reflectiveTest
 class UseBuildContextForHooksRuleTest extends OrefRuleHarness {
+  void test_reports_missing_context_in_optional_parameter_hook() async {
+    const code = r'''
+import 'package:flutter/widgets.dart';
+import 'package:oref/oref.dart';
+
+void useCounter([BuildContext? context]) {
+  signal(null, 0);
+}
+''';
+    final offset = code.indexOf('null, 0');
+    await assertDiagnostics(code, [lint(offset, 'null'.length)]);
+  }
+
   @override
   void setUp() {
     rule = UseBuildContextForHooksRule();

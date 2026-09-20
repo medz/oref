@@ -81,6 +81,30 @@ void main() {
       expect(computeCount, equals(1)); // Should be cached
     });
 
+    test('caches getter errors until a dependency changes', () {
+      final count = signal(null, 0);
+      final error = StateError('not ready');
+      var calls = 0;
+      final value = computed<int>(null, (_) {
+        calls++;
+        if (count() == 0) throw error;
+        return count();
+      });
+
+      expect(value.call, throwsA(same(error)));
+      expect(value.call, throwsA(same(error)));
+      expect(calls, 1);
+
+      count.set(1);
+      expect(value(), 1);
+      expect(calls, 2);
+
+      count.set(0);
+      expect(value.call, throwsA(same(error)));
+      expect(value.call, throwsA(same(error)));
+      expect(calls, 3);
+    });
+
     test('computed with previous value', () {
       final count = signal(null, 1);
       final accumulated = computed<int>(null, (prev) {

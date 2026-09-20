@@ -44,4 +44,33 @@ void helper() {
 }
 ''');
   }
+
+  void test_reports_write_inside_parenthesized_named_getter() async {
+    const code = r'''
+import 'package:oref/oref.dart';
+
+void helper() {
+  final counter = WritableSignal<int>();
+  writableComputed<int>(null, get: (() {
+    counter.set(1);
+    return 0;
+  }), set: (value) {});
+}
+''';
+    final offset = code.indexOf('set(1)');
+    await assertDiagnostics(code, [lint(offset, 'set'.length)]);
+  }
+
+  void test_allows_write_inside_named_setter() async {
+    await assertNoDiagnostics(r'''
+import 'package:oref/oref.dart';
+
+void helper() {
+  final counter = WritableSignal<int>();
+  writableComputed<int>(null, get: () => 0, set: (value) {
+    counter.set(value);
+  });
+}
+''');
+  }
 }

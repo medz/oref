@@ -1,7 +1,7 @@
 name: oref
 description: A high-performance Flutter state management tool, Oref is one of the fastest Flutter signals and state management solutions.
 
-version: 2.9.0
+version: 2.10.0
 repository: https://github.com/medz/oref
 
 topics:
@@ -15,16 +15,16 @@ funding:
   - https://opencollective.com/openodroe
 
 environment:
-  sdk: ^3.10.0
-  flutter: ">=1.17.0"
+  sdk: ^3.11.0
+  flutter: ">=3.41.0"
 
 dependencies:
   flutter:
     sdk: flutter
-  alien_signals: ^2.3.1
-  analyzer: ^10.0.1
-  analysis_server_plugin: ^0.3.7
-  analyzer_plugin: ^0.14.1
+  alien_signals: ^2.3.2
+  analyzer: ^14.4.0
+  analysis_server_plugin: ^0.3.23
+  analyzer_plugin: ^0.14.17
 
 dev_dependencies:
   flutter_test:
