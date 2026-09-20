@@ -35,7 +35,7 @@ Signals are magically injected into the BuildContext to provide optimal performa
 
 ## Installation
 
-Requires Dart 3.11+ / Flutter 3.41+.
+Requires Dart 3.13+ / Flutter 3.47+.
 
 You can install by editing your `pubspec.yaml` file:
 
@@ -96,7 +96,7 @@ bunx skills add medz/oref # With Bun
 ## Analyzer Lints
 
 Oref provides a custom analyzer plugin with lints for hooks, effects, and
-signal usage. The new analyzer plugin system (Dart 3.11 / Flutter 3.41+) uses a
+signal usage. The new analyzer plugin system (Dart 3.13 / Flutter 3.47+) uses a
 top-level `plugins` section.
 
 Enable the plugin in your `analysis_options.yaml`:

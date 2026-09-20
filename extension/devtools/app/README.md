@@ -5,12 +5,11 @@ extension UI.
 
 ## Requirements
 
-- Flutter 3.41.0 or newer
-- Dart 3.11.0 or newer
+- Flutter 3.47.0 or newer
+- Dart 3.13.0 or newer
 
-The minimum Flutter version is pinned here because the current
-`devtools_extensions` stack resolves to dependencies that require Flutter
-3.41.0+.
+The minimum Flutter version matches Oref: the analyzer toolchain requires
+`meta` 1.18.3+, which conflicts with the versions pinned by older Flutter SDKs.
 
 ## Common Commands
 
