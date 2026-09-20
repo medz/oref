@@ -2,7 +2,7 @@
 
 ## Enable the plugin
 
-Use the top-level `plugins` section (Dart 3.10 / Flutter 3.38+). Match the plugin version to your dependency version.
+Use the top-level `plugins` section (Dart 3.13 / Flutter 3.47+). Match the plugin version to your dependency version.
 
 ```yaml
 plugins:

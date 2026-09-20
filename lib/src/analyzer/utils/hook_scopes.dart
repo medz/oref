@@ -208,13 +208,8 @@ String? buildContextParameterNameFromParameters(
     return null;
   }
 
-  FormalParameter unwrapped = parameter;
-  if (unwrapped is DefaultFormalParameter) {
-    unwrapped = unwrapped.parameter;
-  }
-
-  final element = unwrapped.declaredFragment?.element;
-  final name = unwrapped.name?.lexeme;
+  final element = parameter.declaredFragment?.element;
+  final name = parameter.name?.lexeme;
   if (name == null || element == null || !isBuildContextType(element.type)) {
     return null;
   }

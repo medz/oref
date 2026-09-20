@@ -3,6 +3,18 @@ name: Test
 on: [push, pull_request]
 
 jobs:
+  minimum-flutter:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.0'
+          channel: stable
+      - run: flutter pub get
+      - run: flutter analyze lib test
+      - run: flutter test
+
   test:
     runs-on: ubuntu-latest
     steps:
@@ -12,12 +24,15 @@ jobs:
           channel: stable
       - run: flutter --version
       - run: flutter pub get
+      - run: flutter analyze lib test
       - run: flutter test
       - run: flutter pub get
         working-directory: example
       - run: flutter test
         working-directory: example
       - run: dart pub get
+        working-directory: analysis_tests
+      - run: dart analyze
         working-directory: analysis_tests
       - run: dart test
         working-directory: analysis_tests

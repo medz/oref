@@ -1,3 +1,19 @@
+## 2.10.0
+
+### Compatibility
+
+- Upgrade `analyzer` to 14.4.0, `analysis_server_plugin` to 0.3.23, and
+  `analyzer_plugin` to 0.14.17, resolving dependency conflicts with current
+  Drift, build_runner, and Retrofit generators ([#43](https://github.com/medz/oref/issues/43)).
+- Adapt lint analysis to the current named-argument and formal-parameter AST
+  APIs. The plugin remains bundled with Oref; existing configuration is unchanged.
+- Require Dart 3.13+ / Flutter 3.47+ to match the updated analyzer toolchain.
+- Upgrade `alien_signals` to 2.3.2, including computed getter error caching.
+- Upgrade and rebuild the DevTools extension with `devtools_extensions` 0.5.1,
+  `google_fonts` 8.2.1, and `vm_service` 15.3.0.
+- Refresh analyzer test dependencies and add regression coverage for named
+  computed getters, optional hook parameters, and computed error recovery.
+
 ## 2.9.0
 
 ### Compatibility

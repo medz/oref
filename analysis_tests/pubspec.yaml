@@ -2,15 +2,15 @@ name: oref_analyzer_tests
 publish_to: none
 
 environment:
-  sdk: ^3.10.0
+  sdk: ^3.13.0
 
 dependencies:
-  analyzer: ^10.0.1
-  analyzer_testing: ^0.1.9
+  analyzer: ^14.4.0
+  analyzer_testing: ^0.4.2
   oref:
     path: ..
-  test: ^1.26.1
+  test: ^1.32.0
   test_reflective_loader: ^0.4.0
 
 dev_dependencies:
-  lints: ^6.0.0
+  lints: ^6.1.0

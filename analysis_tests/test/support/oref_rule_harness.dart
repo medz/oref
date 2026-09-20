@@ -41,7 +41,11 @@ Signal<T> signal<T>(BuildContext? context, T value) => Signal<T>();
 
 T computed<T>(BuildContext? context, T Function() compute) => compute();
 
-T writableComputed<T>(BuildContext? context, T Function() compute) => compute();
+WritableComputed<T> writableComputed<T>(
+  BuildContext? context, {
+  required T Function() get,
+  required void Function(T) set,
+}) => WritableComputed<T>();
 
 Object effect(BuildContext? context, void Function() fn) => Object();
 
