@@ -1,43 +1,27 @@
-# Miscellaneous
+# Generated files and local-only references.
 *.class
 *.log
 *.pyc
 *.swp
-.DS_Store
-.atom/
-.buildlog/
-.history
-.svn/
-migrate_working_dir/
-
-# IntelliJ related
 *.iml
-*.ipr
-*.iws
+.DS_Store
 .idea/
-
-# Flutter/Dart/Pub related
-# Libraries should not include pubspec.lock, per https://dart.dev/guides/libraries/private-files#pubspeclock.
-/pubspec.lock
-**/doc/api/
+.vscode/
+.git/
+.local/
 .dart_tool/
 .flutter-plugins
 .flutter-plugins-dependencies
 build/
+node_modules/
+pubspec.lock
+**/doc/api/
 
-# Docs (VitePress)
-docs/node_modules/
-docs/.vitepress/dist/
-docs/.vitepress/cache/
-
-# Keep repository tooling and local experiments out of published archives.
+# Repository documentation and tooling are available on GitHub.
 /.github/
 /AGENTS.md
-/analysis_tests/
 /docs/
+/skills/
 /experiments/
 /sites/
-/skills/
 /renovate.json
-/extension/devtools/app/
-node_modules/

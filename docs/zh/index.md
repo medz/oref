@@ -1,85 +1,33 @@
 ---
 layout: home
 hero:
-  name: Oref
-  text: Flutter Signals，快速又省心
-  tagline: 更少样板代码，自动重建，清晰可预测的响应式。
+  name: Oref 3
+  text: Flutter 的状态与资源
+  tagline: 明确输入、共享实例、清晰所有权。尚未发布的 3.0.0-dev.1 开发 API。
   actions:
     - theme: brand
       text: 快速开始
       link: /zh/guide/getting-started
     - theme: alt
-      text: 核心概念
-      link: /zh/guide/core-concepts
+      text: 资源共享
+      link: /zh/guide/sharing
 features:
-  - title: Signal 优先 API
-    details: "通过 `signal()` 创建响应式值，使用 `.set(...)` 更新。"
-  - title: Computed + Effect
-    details: "`computed()` 负责派生，`effect()` 处理副作用。"
-  - title: 内置异步数据
-    details: "`useAsyncData()` 管理加载/成功/失败状态。"
-  - title: 集合类型封装
-    details: "Reactive List/Map/Set 适合复杂 UI 状态。"
+  - title: 局部状态
+    details: Value 与 Computed，由 Watch 和 StateBuilder 自动观察。
+  - title: 读取与写入资源
+    details: Query、Pages、Action、RemoteValue 各自管理明确的执行协议。
+  - title: 可写模型字段
+    details: 复用一个 Query 模型，统一乐观更新、回退与父级写锁。
+  - title: 明确资源寿命
+    details: 局部拥有、外部借用或通过 Navigator 上方的有界目录共享。
 ---
 
-<p class="section-kicker">为什么选择 Oref</p>
+## 开发版本
 
-<div class="section-grid">
-  <div class="section-card">
-    <h3>可预测的响应式</h3>
-    <p>读取会追踪依赖，写入会通知订阅者，没有隐藏魔法。</p>
-  </div>
-  <div class="section-card">
-    <h3>以 Widget 为中心</h3>
-    <p>信号与组件同域，使用 <code>SignalBuilder</code> 精准控制重建范围。</p>
-  </div>
-  <div class="section-card">
-    <h3>简单又可组合</h3>
-    <p>Signals、Computed、Effects 与 Batch 组合自然。</p>
-  </div>
-</div>
+本页对应尚未发布的 **3.0.0-dev.1**。通过源码 checkout 评估；pub.dev 现有版本 API 不同。
+一个包提供 `oref.dart` 的 Dart 状态与资源，以及 `flutter.dart` 的完整 Flutter 适配器。
+响应底座继续使用 alien_signals。
 
-## 三步快速开始
-
-### 1. 安装
-
-```bash
-flutter pub add oref
-```
-
-### 2. 创建 signal
-
-```dart
-final count = signal(context, 0);
-```
-
-### 3. 派生与更新
-
-```dart
-final doubled = computed(context, (_) => count() * 2);
-count.set(count() + 1);
-```
-
-<div class="callout">
-  <strong>需要完整方案？</strong>
-  <p>查看指南中的异步数据、批处理与集合类型示例。</p>
-</div>
-
-## 推荐上手场景
-
-<div class="section-grid">
-  <div class="section-card">
-    <h3>表单状态</h3>
-    <p>使用 signal 存储输入值，用 computed 派生校验结果。</p>
-  </div>
-  <div class="section-card">
-    <h3>列表筛选</h3>
-    <p>通过 computed 派生过滤后的列表视图。</p>
-  </div>
-  <div class="section-card">
-    <h3>异步加载</h3>
-    <p>用 <code>useAsyncData()</code> 管理请求状态。</p>
-  </div>
-</div>
-
-继续阅读 **快速开始** 了解更多。
+从[局部状态](/zh/guide/local-state)、[查询](/zh/guide/query)开始，或直接了解
+[所有权](/zh/guide/flutter)和[会话共享](/zh/guide/sharing)。
+源码提供完整双页面关注示例，包含模拟服务、乐观字段更新、失败回退与账号切换。

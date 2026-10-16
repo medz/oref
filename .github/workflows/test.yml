@@ -13,7 +13,7 @@ jobs:
           channel: stable
       - run: flutter pub get
       - run: flutter analyze lib test
-      - run: flutter test
+      - run: flutter test --no-pub
 
   test:
     runs-on: ubuntu-latest
@@ -24,15 +24,12 @@ jobs:
           channel: stable
       - run: flutter --version
       - run: flutter pub get
+      - run: dart format --output=none --set-exit-if-changed lib test example/lib example/test
       - run: flutter analyze lib test
-      - run: flutter test
+      - run: flutter test --no-pub
       - run: flutter pub get
         working-directory: example
-      - run: flutter test
+      - run: flutter analyze
         working-directory: example
-      - run: dart pub get
-        working-directory: analysis_tests
-      - run: dart analyze
-        working-directory: analysis_tests
-      - run: dart test
-        working-directory: analysis_tests
+      - run: flutter test --no-pub
+        working-directory: example

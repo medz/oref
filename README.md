@@ -1,391 +1,184 @@
-[![Oref testing](https://github.com/medz/oref/actions/workflows/test.yml/badge.svg)](https://github.com/medz/oref/actions/workflows/test.yml)
-[![Oref version](https://img.shields.io/pub/v/oref)](https://pub.dev/packages/oref)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/medz/oref)
-
 # Oref
 
-A high-performance Flutter state management tool built with [`alien_signals`](https://github.com/medz/alien-signals-dart), Oref is one of the fastest Flutter signals and state management solutions.
+State and asynchronous resources for Dart and Flutter, built on
+[alien_signals](https://github.com/medz/alien-signals-dart).
 
-## Overview
+**3.0.0-dev.1 is an unpublished development version.** This checkout documents
+the new 3.0 API. The package currently published on pub.dev has a different API.
+Requires Dart 3.13+ and Flutter 3.47+.
 
-Much of the pain in state management in Dart & Flutter comes from reacting to changes in given values, because the values themselves are not directly observable. We have to use `StatefulWidget` or other state management tools for state, which use inefficient proactive notifications or a large number of watchers to notify widgets to rebuild, and the boilerplate code is very redundant.
+Oref keeps local values, queries, pagination, actions, and writable remote values
+in ordinary Dart objects. Flutter adapters observe them, own local resources, or
+borrow shared ones. Business callbacks receive data rather than a BuildContext.
 
-The release of `alien_signals` completely changed Flutter's inefficient state management situation, but Flutter state libraries still require a lot of boilerplate code! Oref completely changes this situation. In Flutter, when a Widget accesses a signal value, if that signal's value changes, the Widget is automatically rebuilt.
+## Getting started
+
+Run `flutter pub get` in this checkout. To try 3.0 in another application,
+configure a path dependency pointing at this checkout. An unqualified
+`flutter pub add oref` resolves the published package, not this development API.
+
+One package provides two complete entrypoints:
 
 ```dart
-class Counter extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final count = signal(context, 0);
-    void increment() => count.set(count() + 1);
+import 'package:oref/oref.dart'; // State and resources; no Flutter imports.
+import 'package:oref/flutter.dart'; // Same API plus Flutter adapters.
+```
 
-    return Column(children: [
-      Text('Count: ${count()}'),
+Choose the entrypoint needed by each file. With Material and Oref's Action, hide
+Flutter's Action or use an import prefix:
+
+```dart
+import 'package:flutter/material.dart' hide Action;
+import 'package:oref/flutter.dart';
+```
+
+## Local state
+
+StateBuilder creates an object once and observes the values read by its builder:
+
+```dart
+StateBuilder<Value<int>>(
+  create: () => Value(0),
+  builder: (context, count) => FilledButton(
+    onPressed: () => count.value++,
+    child: Text('Count: ${count.value}'),
+  ),
+)
+```
+
+Use Watch for existing values. Computed derives reusable synchronous values;
+batch groups synchronous changes. Replace collections with new immutable values.
+
+```dart
+final first = Value('Ada');
+final last = Value('Lovelace');
+final fullName = Computed(() => '${first.value} ${last.value}');
+
+batch(() {
+  first.value = 'Grace';
+  last.value = 'Hopper';
+});
+```
+
+## Resources
+
+| API | Purpose |
+| --- | --- |
+| Query<S, T> | Load and refresh one result for an input snapshot. |
+| Pages<S, T, C> | First page, append, cursors, and first-page refresh. |
+| Action<A, R> | Explicit operation with one active write per instance. |
+| RemoteValue<S, T> | Remote reads, optimistic replacement, and failure rollback. |
+| Query.field / fieldAck | A writable field view of the parent model. |
+| Family<K, R> | Stable resource definitions and lazy references by key. |
+| Resources | Namespace isolation and bounded idle retention. |
+
+Construction sends no request. An owning Flutter adapter starts its read after
+mounting:
+
+```dart
+QueryBuilder<String, String>.create(
+  source: () => 'welcome',
+  load: (key, request) async => 'Hello, $key',
+  builder: (context, state, query) => Column(
+    children: [
+      if (state.pending) const LinearProgressIndicator(),
+      if (state.hasValue) Text(state.value),
+      if (state.error != null) Text('${state.error}'),
       TextButton(
-        onPressed: increment,
-        child: Text('click me'),
-      )
-    ]);
-  }
-}
+        onPressed: () => query.refresh().ignore(),
+        child: const Text('Refresh'),
+      ),
+    ],
+  ),
+)
 ```
 
-Signals are magically injected into the BuildContext to provide optimal performance and ergonomic design. In the example above, we access `count()` to get the current value of the signal and complete the responsive binding with the current `Counter`. When the count value is updated, it automatically notifies the Counter to rebuild.
+Only synchronous reads inside source establish request dependencies. Inputs use
+Dart `==`; immutable records work well. Loaders, writers, and actions run without
+collecting dependencies. Widget updates install the latest callbacks without
+repeating requests for equal inputs.
 
-## Installation
+ensureLoaded reuses the current attempt, including its failed Future. Retry with
+refresh. Pagination refresh reloads only the first page. Pending reads share one
+Future; competing writes fail with ResourceReason.busy.
 
-Requires Dart 3.13+ / Flutter 3.47+.
+Explicit operations return native Futures. Await and handle errors, attach an
+error handler, or call ignore when the UI deliberately renders state.error.
+Ignoring a Future does not clear its error state.
 
-You can install by editing your `pubspec.yaml` file:
+## Ownership and sharing
 
-```yaml
-dependencies:
-  oref: ^2.10.0
+| Flutter constructor | Lifetime |
+| --- | --- |
+| create / remote ack | Owns, starts reads, and disposes its resource. |
+| value | Only observes; the external owner starts, configures, and disposes it. |
+| shared | Borrows from ResourceScope, starts reads, and returns the borrow on unmount. |
+
+Actions never run automatically. ResourceScope.create and value follow the same
+ownership rule. Put the scope above Navigator so routes share one directory.
+Set maxIdle and retain explicitly at the root; active consumers and unfinished
+writes are outside the idle-entry limit.
+
+```dart
+final article = Family<int, Query<int, String>>(
+  create: (id) => Query(
+    source: () => id,
+    load: (id, request) async => 'Article $id',
+  ),
+  dispose: (query) => query.dispose(),
+);
+
+// Use a stable Family definition at the application boundary.
+ResourceScope.create(
+  create: () => Resources(
+    namespace: () => null,
+    maxIdle: 32,
+    retain: const Duration(minutes: 2),
+  ),
+  child: MaterialApp(
+    home: QueryBuilder<int, String>.shared(
+      ref: article(42),
+      builder: (context, state, query) => Scaffold(
+        body: Center(child: Text(state.hasValue ? state.value : 'Loading…')),
+      ),
+    ),
+  ),
+)
 ```
 
-Or install by running this command:
+For account-specific resources, give every login/logout a new namespace identity.
+Keep credentials in source snapshots. Accepted writes finish with their original
+parameters; old results cannot publish into the new namespace.
 
-```bash
-flutter pub add oref
-```
-
-## DevTools Extension
-
-Oref ships with a DevTools extension to inspect signals, effects, computed values,
-collections, and performance snapshots.
-
-1. Run your app in **debug** mode and open Flutter DevTools.
-
-2. In DevTools → Extensions, enable **Oref**.
-   If you want it enabled by default, add a `devtools_options.yaml` next to your
-   app’s `pubspec.yaml`:
-
-```yaml
-extensions:
-  - oref: true
-```
-
-Notes:
-
-- The service extensions register automatically once a signal/computed/effect is
-  created in debug mode.
-- The extension relies on DevTools’ VM Service connection, so it only works when
-  DevTools is connected to a running app.
-- Web debug is supported; release builds are intentionally disabled.
+The [complete follow example](example/lib/shared_follow.dart) includes a model,
+fake server, login continuation, session identity, two routes, optimistic field
+writes, rollback, and disposal. The [article example](example/lib/article_pages.dart)
+shows filtering, pagination, refresh, retry, and detail navigation. See the
+[run instructions and Flutter screenshot](example/README.md).
 
 ## Documentation
 
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/medz/oref)
-
-You can view details through the [API Reference in pub.dev](https://pub.dev/documentation/oref/latest/oref/) or source code comments.
-
-## Agent Skills
-
-This repo includes Agent Skills under `skills/` for Oref users. They are maintained for
-agent installation and usage, and provide guided Oref usage, tooling, and troubleshooting
-references.
-
-Install in one command:
-
-```bash
-npx skills add medz/oref # With NPM
-bunx skills add medz/oref # With Bun
-```
-
-## Analyzer Lints
-
-Oref provides a custom analyzer plugin with lints for hooks, effects, and
-signal usage. The new analyzer plugin system (Dart 3.13 / Flutter 3.47+) uses a
-top-level `plugins` section.
-
-Enable the plugin in your `analysis_options.yaml`:
-
-```yaml
-plugins:
-  oref: ^2.10.0
-```
-
-Suppress a diagnostic in code (optional):
-
-```dart
-// ignore: oref/avoid_hooks_in_control_flow
-```
-
-### All lints
-
-#### avoid_custom_hooks_outside_build
-
-Custom hooks must be called inside a build scope or another hook.
-
-**Bad**:
-
-```dart
-void useLocalCounter(BuildContext context) {
-  signal(context, 0);
-}
-
-void helper(BuildContext context) {
-  useLocalCounter(context);
-}
-```
-
-**Good**:
-
-```dart
-class MyWidget extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    useLocalCounter(context);
-    return Widget();
-  }
-}
-```
-
-#### avoid_hooks_in_control_flow
-
-Hooks must be called unconditionally at the top level of a build scope.
-
-**Bad**:
-
-```dart
-class MyWidget extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    if (true) {
-      signal(context, 0);
-    }
-    return Widget();
-  }
-}
-```
-
-**Good**:
-
-```dart
-class MyWidget extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final counter = signal(context, 0);
-    if (true) {
-      counter.set(1);
-    }
-    return Widget();
-  }
-}
-```
-
-#### avoid_hooks_in_nested_functions
-
-Hooks must not be called inside nested functions within a build scope.
-
-**Bad**:
-
-```dart
-class MyWidget extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    void inner() {
-      signal(context, 0);
-    }
-    inner();
-    return Widget();
-  }
-}
-```
-
-**Good**:
-
-```dart
-class MyWidget extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    signal(context, 0);
-    return Widget();
-  }
-}
-```
-
-#### use_build_context_for_hooks
-
-Optional-context hooks must receive `BuildContext` when called inside build
-scopes.
-
-**Bad**:
-
-```dart
-class MyWidget extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    signal(null, 0);
-    return Widget();
-  }
-}
-```
-
-**Good**:
-
-```dart
-class MyWidget extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    signal(context, 0);
-    return Widget();
-  }
-}
-```
-
-#### avoid_hook_context_outside_build
-
-Passing `BuildContext` to hooks is only allowed in build scopes.
-
-**Bad (optional-context hook outside build)**:
-
-```dart
-void helper(BuildContext context) {
-  signal(context, 0);
-}
-```
-
-**Good (optional-context hook outside build)**:
-
-```dart
-void helper() {
-  signal(null, 0);
-}
-```
-
-**Bad (required-context hook outside build)**:
-
-```dart
-void helper(BuildContext context) {
-  watch(context, () => 1);
-}
-```
-
-**Good (required-context hook inside build)**:
-
-```dart
-class MyWidget extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    watch(context, () => 1);
-    return Widget();
-  }
-}
-```
-
-#### avoid_discarded_global_effect
-
-Discarding the result of a global effect/scope can leak resources.
-
-**Bad**:
-
-```dart
-class MyWidget extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    effect(null, () {});
-    return Widget();
-  }
-}
-```
-
-**Good**:
-
-```dart
-class MyWidget extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final dispose = effect(null, () {});
-    return Widget();
-  }
-}
-```
-
-#### avoid_effect_cleanup_outside_effect
-
-`onEffectCleanup`/`onEffectDispose` must be called inside `effect()`.
-
-**Bad**:
-
-```dart
-void helper() {
-  onEffectCleanup(() {});
-}
-```
-
-**Good**:
-
-```dart
-void helper(BuildContext context) {
-  effect(context, () {
-    onEffectCleanup(() {});
-  });
-}
-```
-
-#### avoid_scope_dispose_outside_scope
-
-`onScopeDispose` must be called inside `effectScope()`.
-
-**Bad**:
-
-```dart
-void helper() {
-  onScopeDispose(() {});
-}
-```
-
-**Good**:
-
-```dart
-void helper(BuildContext context) {
-  effectScope(context, () {
-    onScopeDispose(() {});
-  });
-}
-```
-
-#### avoid_writes_in_computed
-
-Avoid writing to signals inside computed getters.
-
-**Bad**:
-
-```dart
-void helper(BuildContext context) {
-  final counter = signal(context, 0);
-  computed(context, () {
-    counter.set(1);
-    return counter();
-  });
-}
-```
-
-**Good**:
-
-```dart
-void helper(BuildContext context) {
-  final counter = signal(context, 0);
-  effect(context, () {
-    counter.set(1);
-  });
-}
-```
-
-## Sponsors
-
-Oref is an [MIT licensed](https://github.com/medz/spry/blob/main/LICENSE) open source project with its ongoing development made possible entirely by the support of these awesome backers. If you'd like to join them, please consider [sponsoring Seven(@medz)](https://github.com/sponsors/medz) development.
-
-<p align="center">
-  <a target="_blank" href="https://github.com/sponsors/medz">
-    <img alt="sponsors" src="https://cdn.jsdelivr.net/gh/medz/public/sponsors.tiers.svg">
-  </a>
-</p>
-
-## Contributing
-
-Thank you to all the people who already contributed to Oref!
-
-[![Contributors](https://contrib.rocks/image?repo=medz/oref)](https://github.com/medz/oref/graphs/contributors)
+- [Getting started](docs/guide/getting-started.md)
+- [Values and subscriptions](docs/guide/local-state.md)
+- [Queries](docs/guide/query.md), [pagination](docs/guide/pages.md), [actions](docs/guide/action.md)
+- [Remote values and fields](docs/guide/remote-value.md)
+- [Sharing and sessions](docs/guide/sharing.md)
+- [Flutter ownership](docs/guide/flutter.md), [errors and cancellation](docs/guide/errors.md)
+- [简体中文](docs/zh/guide/getting-started.md)
+- [Agent usage skill](skills/oref/SKILL.md)
+
+## Moving from 2.x
+
+3.0 replaces the old API. Import flutter.dart for widgets. Use Value/Computed for
+local values, Watch or StateBuilder for observation, and Query/Pages/Action or
+RemoteValue for asynchronous work. Replace mutable collection wrappers with new
+immutable collections. Hooks, analyzer rules, and the DevTools extension were
+removed; remove the old plugin configuration from consuming applications.
+
+## Development
+
+Run `flutter test` and `dart analyze` at the root, and `flutter test` in example.
+Build the documentation with `bun run docs:build` from docs.
+
+Oref is [MIT licensed](LICENSE). Development is supported by
+[sponsors](https://github.com/sponsors/medz).

@@ -1,85 +1,37 @@
 ---
 layout: home
 hero:
-  name: Oref
-  text: Signals for Flutter, without the ceremony
-  tagline: Lightweight reactive primitives that rebuild only what matters.
+  name: Oref 3
+  text: Values and resources for Flutter
+  tagline: Explicit inputs, shared instances, and clear ownership. Unpublished 3.0.0-dev.1 development API.
   actions:
     - theme: brand
-      text: Get Started
+      text: Get started
       link: /guide/getting-started
     - theme: alt
-      text: Core Concepts
-      link: /guide/core-concepts
+      text: Shared resources
+      link: /guide/sharing
 features:
-  - title: Signal-first API
-    details: "Create reactive values with `signal()` and update via `.set(...)`."
-  - title: Computed + effects
-    details: "Derive values with `computed()` and react with `effect()`."
-  - title: Async data built-in
-    details: "`useAsyncData()` handles loading, success, and error states."
-  - title: Collections helpers
-    details: "Reactive List/Map/Set wrappers for complex UI state."
+  - title: Local values
+    details: Value and Computed with automatic observation in Watch and StateBuilder.
+  - title: Read and write resources
+    details: Query, Pages, Action, and RemoteValue describe distinct execution protocols.
+  - title: Writable model fields
+    details: Share one Query model, optimistic updates, rollback, and a parent write lock.
+  - title: Explicit lifetimes
+    details: Own, borrow, or share through a bounded resource directory above Navigator.
 ---
 
-<p class="section-kicker">Why Oref</p>
+## Development version
 
-<div class="section-grid">
-  <div class="section-card">
-    <h3>Predictable reactivity</h3>
-    <p>Reads track dependencies, writes notify subscribers. Nothing hidden.</p>
-  </div>
-  <div class="section-card">
-    <h3>Widget-first ergonomics</h3>
-    <p>Signals live with widgets. Use <code>SignalBuilder</code> to scope rebuilds.</p>
-  </div>
-  <div class="section-card">
-    <h3>Composable primitives</h3>
-    <p>Signals, computed values, effects, and batching compose cleanly.</p>
-  </div>
-</div>
+These pages describe **3.0.0-dev.1**, which has not been published. Use this source
+checkout to evaluate the API; the current pub.dev package differs.
 
-## 3-Step Quick Start
+One package provides `oref.dart` for Dart state/resources and `flutter.dart` for
+the same API plus widgets. The reactive foundation is alien_signals.
 
-### 1. Install
+Start with [local state](/guide/local-state), load a [query](/guide/query), or read
+about [ownership](/guide/flutter) and [session sharing](/guide/sharing).
 
-```bash
-flutter pub add oref
-```
-
-### 2. Create a signal
-
-```dart
-final count = signal(context, 0);
-```
-
-### 3. Derive and update
-
-```dart
-final doubled = computed(context, (_) => count() * 2);
-count.set(count() + 1);
-```
-
-<div class="callout">
-  <strong>Need recipes?</strong>
-  <p>Check the guides for patterns like async data, batching, and collections.</p>
-</div>
-
-## Recipes to Explore
-
-<div class="section-grid">
-  <div class="section-card">
-    <h3>Form state</h3>
-    <p>Keep input state and validation derived from signals.</p>
-  </div>
-  <div class="section-card">
-    <h3>List filtering</h3>
-    <p>Use computed values to derive filtered views from large lists.</p>
-  </div>
-  <div class="section-card">
-    <h3>Async loading</h3>
-    <p>Handle loading and errors with <code>useAsyncData()</code>.</p>
-  </div>
-</div>
-
-Ready to dive in? Start with **Getting Started**.
+The source checkout includes a complete two-route follow example with a fake
+server, optimistic field changes, rollback, and account switching.

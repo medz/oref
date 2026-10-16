@@ -1,20 +1,26 @@
-export 'src/core/alien_signals.dart';
-export 'src/core/computed.dart';
-export 'src/core/effect.dart';
-export 'src/core/effect_scope.dart';
-export 'src/core/memoized.dart';
-export 'src/core/lifecycle.dart';
-export 'src/core/signal.dart';
-export 'src/core/widget_effect.dart';
-export 'src/core/widget_scope.dart';
+/// Signals and asynchronous resources without Flutter widget imports.
+library;
+
 export 'src/core/batch.dart';
-export 'src/core/watch.dart';
-export 'src/core/untrack.dart';
-export 'src/core/signal_builder.dart';
-export 'src/core/reactive.dart';
-
-export 'src/collections/list.dart';
-export 'src/collections/map.dart';
-export 'src/collections/set.dart';
-
-export 'src/async/async_data.dart';
+export 'src/core/computed.dart';
+export 'src/core/readable.dart';
+export 'src/core/subscription.dart';
+export 'src/core/value.dart';
+export 'src/resources/resource.dart'
+    show
+        Action,
+        ActionState,
+        PagePhase,
+        Pages,
+        PagesState,
+        Query,
+        QueryState,
+        ReadReason,
+        ReadRequest,
+        RemoteState,
+        RemoteValue,
+        ResourceException,
+        ResourceReason,
+        Seed;
+export 'src/shared/shared.dart'
+    show Family, QueryFamilyFields, ResourceRef, Resources;

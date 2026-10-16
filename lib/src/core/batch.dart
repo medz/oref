@@ -1,25 +1,11 @@
-import 'package:alien_signals/alien_signals.dart';
+import 'package:alien_signals/preset.dart' as alien;
 
-import '../devtools/devtools.dart';
-
-/// Batch execution of signals.
-///
-/// This function executes a batch of signals, ensuring that all signals are executed atomically.
-///
-/// Example:
-/// ```dart
-/// batch(() {
-///   signal1.set("value1");
-///   signal2.set("value2");
-/// });
-/// ```
-T batch<T>(T Function() getter) {
+/// Groups synchronous changes using the kernel's effect batching.
+R batch<R>(R Function() changes) {
+  alien.startBatch();
   try {
-    startBatch();
-    devtools.batchStart();
-    return getter();
+    return changes();
   } finally {
-    endBatch();
-    devtools.batchEnd();
+    alien.endBatch();
   }
 }

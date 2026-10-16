@@ -1,18 +1,28 @@
 import { defineConfig } from 'vitepress';
 
 const repoName = process.env.GITHUB_REPOSITORY?.split('/')[1] ?? 'oref';
-const base =
-  process.env.GITHUB_PAGES_BASE ??
+const base = process.env.GITHUB_PAGES_BASE ??
   (process.env.GITHUB_ACTIONS ? `/${repoName}/` : '/');
 
+const pages = [
+  ['getting-started', 'Getting started', '快速开始'],
+  ['local-state', 'Local state', '局部状态'],
+  ['query', 'Query', '查询'],
+  ['pages', 'Pages', '分页'],
+  ['action', 'Action', '显式动作'],
+  ['remote-value', 'Remote values and fields', '远端值与字段'],
+  ['sharing', 'Sharing and sessions', '共享与会话'],
+  ['flutter', 'Flutter ownership', 'Flutter 所有权'],
+  ['errors', 'Errors and cancellation', '错误与取消'],
+];
+
 export default defineConfig({
-  title: 'Oref',
-  description: 'High-performance Flutter signals with minimal boilerplate.',
+  title: 'Oref 3',
+  description: 'Values, asynchronous resources, and explicit ownership for Flutter.',
   cleanUrls: true,
   base,
-  markdown: {
-    lineNumbers: true,
-  },
+  srcExclude: ['design/**'],
+  markdown: { lineNumbers: true },
   themeConfig: {
     socialLinks: [{ icon: 'github', link: 'https://github.com/medz/oref' }],
     search: { provider: 'local' },
@@ -25,24 +35,13 @@ export default defineConfig({
       themeConfig: {
         nav: [
           { text: 'Guide', link: '/guide/getting-started' },
-          { text: 'API Reference', link: 'https://pub.dev/documentation/oref/latest/oref/' },
+          { text: '3.0 source', link: 'https://github.com/medz/oref' },
         ],
         sidebar: {
-          '/guide/': [
-            {
-              text: 'Guide',
-              items: [
-                { text: 'Getting Started', link: '/guide/getting-started' },
-                { text: 'Core Concepts', link: '/guide/core-concepts' },
-                { text: 'Effects & Batching', link: '/guide/effects' },
-                { text: 'Async Data', link: '/guide/async-data' },
-                { text: 'Collections', link: '/guide/collections' },
-                { text: 'Best Practices', link: '/guide/best-practices' },
-                { text: 'Walkthroughs', link: '/guide/walkthroughs' },
-                { text: 'Form Walkthrough', link: '/guide/form-walkthrough' },
-              ],
-            },
-          ],
+          '/guide/': [{
+            text: 'Oref 3 · development API',
+            items: pages.map(([slug, title]) => ({ text: title, link: `/guide/${slug}` })),
+          }],
         },
         outlineTitle: 'On this page',
       },
@@ -54,24 +53,13 @@ export default defineConfig({
       themeConfig: {
         nav: [
           { text: '指南', link: '/zh/guide/getting-started' },
-          { text: 'API 参考', link: 'https://pub.dev/documentation/oref/latest/oref/' },
+          { text: '3.0 源码', link: 'https://github.com/medz/oref' },
         ],
         sidebar: {
-          '/zh/guide/': [
-            {
-              text: '指南',
-              items: [
-                { text: '快速开始', link: '/zh/guide/getting-started' },
-                { text: '核心概念', link: '/zh/guide/core-concepts' },
-                { text: 'Effect 与批处理', link: '/zh/guide/effects' },
-                { text: '异步数据', link: '/zh/guide/async-data' },
-                { text: '集合类型', link: '/zh/guide/collections' },
-                { text: '最佳实践', link: '/zh/guide/best-practices' },
-                { text: '上手示例', link: '/zh/guide/walkthroughs' },
-                { text: '表单示例', link: '/zh/guide/form-walkthrough' },
-              ],
-            },
-          ],
+          '/zh/guide/': [{
+            text: 'Oref 3 · 开发 API',
+            items: pages.map(([slug, , title]) => ({ text: title, link: `/zh/guide/${slug}` })),
+          }],
         },
         outlineTitle: '本页目录',
       },

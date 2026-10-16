@@ -1,3 +1,17 @@
+## 3.0.0-dev.1
+
+- Replace the 2.x API with Value, Computed, Subscription and synchronous batch,
+  backed by alien_signals 2.3.5.
+- Add Query, Pages, Action and RemoteValue with native Future results, immutable
+  state, stale-read rejection, explicit cancellation and write coordination.
+- Add writable Query fields with shared optimism, rollback and a parent write lock.
+- Add Family, Resources and ResourceScope for session isolation, bounded caching
+  and accepted-write lifetime management.
+- Add Watch, StateBuilder and owning, borrowed and shared resource Builders.
+- Provide a complete shared-follow example and regression tests.
+- Remove the legacy hooks, collection wrappers, analyzer plugin and DevTools app.
+- Keep `oref.dart` free of Flutter widget imports; use `flutter.dart` for widgets.
+
 ## 2.10.0
 
 ### Compatibility

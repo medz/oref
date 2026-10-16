@@ -1,76 +1,44 @@
 ---
 name: oref
-description: Guidance for using the Oref Flutter signals/state management library and its DevTools/analyzer tooling. Use when answering questions about installing Oref, creating signals/computed/effects, async data, reactive collections, SignalBuilder usage, analyzer lints, DevTools extension setup/usage, or troubleshooting Oref behavior.
+description: Use Oref 3 values, asynchronous resources, shared families, and Flutter builders when building or reviewing Oref applications. Check the resolved package version before applying this development API.
 ---
 
-# Oref
+# Oref usage
 
-> Based on the Oref docs and repository examples. Use BuildContext-bound APIs inside widget builds when possible.
+This skill targets **3.0.0-dev.1**, an unpublished development API. Inspect the
+consumer's resolved dependency and source first. For an older version, use its
+matching documentation; migrate only when the task calls for that.
 
-## Preferences
+Use package:oref/oref.dart for Dart business code and package:oref/flutter.dart
+for widgets. Both belong to one package. With Material and Oref's Action in one
+file, hide Flutter's Action or prefix imports.
 
-- Match the user's language.
-- Prefer concise, runnable snippets over long explanations.
-- Use `signal(context, ...)`/`computed(context, ...)`/`effect(context, ...)` inside `build`.
-- Use `null` context only outside widgets, and keep the dispose handle.
-- Use `SignalBuilder` to scope rebuilds to small subtrees.
-- Use `batch()` for multi-step updates or collection mutations.
-- Avoid writing to signals inside `computed` getters.
-- Call hooks unconditionally at the top level of a build scope.
+| Need | API |
+| --- | --- |
+| Local state / synchronous derivation | Value / Computed |
+| Observe existing state | Watch |
+| Create and observe a local object | StateBuilder |
+| One remote result | Query |
+| Cursor pagination | Pages |
+| Explicit command | Action |
+| Optimistic remote replacement | RemoteValue |
+| A writable field in an existing model | Query.field / fieldAck |
+| Sharing across routes | Family + Resources + ResourceScope |
 
-## Core
+Read the relevant reference:
 
-| Topic             | Description                                                                 | Reference                                        |
-| ----------------- | --------------------------------------------------------------------------- | ------------------------------------------------ |
-| Quick Start       | Install + minimal signal/computed/effect usage                              | [quick-start](references/quick-start.md)         |
-| Reactivity Core   | Signals, computed, writableComputed, effects, batch, untrack, SignalBuilder | [core-api](references/core-api.md)               |
-| Hooks & Lifecycle | Hook ordering rules, onMounted/onUnmounted, cleanup                         | [hooks-lifecycle](references/hooks-lifecycle.md) |
-| Async Data        | `useAsyncData` lifecycle and rendering                                      | [async-data](references/async-data.md)           |
-| Collections       | ReactiveList/Map/Set patterns                                               | [collections](references/collections.md)         |
+- [Values and Flutter](references/core.md): subscriptions, immutable collections,
+  StateBuilder, native controllers, and cleanup.
+- [Resources](references/resources.md): source snapshots, reads, pagination,
+  actions, remote values, fields, and Future errors.
+- [Sharing](references/shared.md): stable definitions, bounded caching, sessions,
+  ownership, and accepted-write lifetime.
 
-## Tooling
+Keep HTTP, JSON, authorization, and navigation visible in application code.
+Do not hide resource/session protocols in an unexplained Store or helper. Use
+immutable records or value objects for inputs. Include credentials in accepted
+write arguments instead of reading mutable authentication state later inside an
+async action. Avoid Computed for one-use formatting.
 
-| Topic           | Description                     | Reference                                        |
-| --------------- | ------------------------------- | ------------------------------------------------ |
-| Analyzer Lints  | Plugin setup + lint catalog     | [analyzer-lints](references/analyzer-lints.md)   |
-| DevTools        | Extension setup + runtime notes | [devtools](references/devtools.md)               |
-| Troubleshooting | Common pitfalls and fixes       | [troubleshooting](references/troubleshooting.md) |
-
-## Quick Reference
-
-### Minimal widget
-
-```dart
-import 'package:flutter/material.dart';
-import 'package:oref/oref.dart';
-
-class Counter extends StatelessWidget {
-  const Counter({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final count = signal(context, 0);
-    final doubled = computed(context, (_) => count() * 2);
-
-    return Column(
-      children: [
-        Text('Count: ${count()} / ${doubled()}'),
-        TextButton(onPressed: () => count.set(count() + 1), child: const Text('Add')),
-      ],
-    );
-  }
-}
-```
-
-### Key imports
-
-```dart
-import 'package:oref/oref.dart';
-```
-
-## Response workflow
-
-1. Identify the question type and open the matching reference.
-2. Provide the smallest snippet that answers the question.
-3. Ask for missing context only if required (Flutter version, target platform, existing code).
-4. Avoid guessing versions; read the user's `pubspec.yaml` or ask them to confirm.
+Examples should show the owner, activation, explicit Future error consumption,
+and cleanup. Match the user's language and focus on the scenario's decisions.
