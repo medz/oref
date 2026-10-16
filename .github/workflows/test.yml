@@ -3,30 +3,31 @@ name: Test
 on: [push, pull_request]
 
 jobs:
-  minimum-flutter:
+  core:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        sdk: ['3.13.0', stable]
     steps:
       - uses: actions/checkout@v6
-      - uses: subosito/flutter-action@v2
+      - uses: dart-lang/setup-dart@v1
         with:
-          flutter-version: '3.47.0'
-          channel: stable
-      - run: flutter pub get
-      - run: flutter analyze lib test
-      - run: flutter test
+          sdk: ${{ matrix.sdk }}
+      - run: dart pub get
+      - run: dart format --output=none --set-exit-if-changed lib test example
+      - run: dart analyze
+      - run: dart test
+      - run: dart run example/oref_example.dart
+      - run: dart pub publish --dry-run
 
-  test:
+  docs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: subosito/flutter-action@v2
+      - uses: oven-sh/setup-bun@v2
         with:
-          channel: stable
-      - run: flutter --version
-      - run: flutter pub get
-      - run: flutter analyze lib test
-      - run: flutter test
-      - run: flutter pub get
-        working-directory: example
-      - run: flutter test
-        working-directory: example
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+        working-directory: docs
+      - run: bun run docs:build
+        working-directory: docs

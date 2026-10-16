@@ -7,74 +7,21 @@ const base =
 
 export default defineConfig({
   title: 'Oref',
-  description: 'High-performance Flutter signals with minimal boilerplate.',
+  description: 'Object-shaped reactive primitives over alien_signals.',
   cleanUrls: true,
   base,
-  markdown: {
-    lineNumbers: true,
-  },
+  markdown: { lineNumbers: true },
   themeConfig: {
     socialLinks: [{ icon: 'github', link: 'https://github.com/medz/oref' }],
     search: { provider: 'local' },
-  },
-  locales: {
-    root: {
-      label: 'English',
-      lang: 'en-US',
-      link: '/',
-      themeConfig: {
-        nav: [
-          { text: 'Guide', link: '/guide/getting-started' },
-          { text: 'API Reference', link: 'https://pub.dev/documentation/oref/latest/oref/' },
-        ],
-        sidebar: {
-          '/guide/': [
-            {
-              text: 'Guide',
-              items: [
-                { text: 'Getting Started', link: '/guide/getting-started' },
-                { text: 'Core Concepts', link: '/guide/core-concepts' },
-                { text: 'Effects & Batching', link: '/guide/effects' },
-                { text: 'Async Data', link: '/guide/async-data' },
-                { text: 'Collections', link: '/guide/collections' },
-                { text: 'Best Practices', link: '/guide/best-practices' },
-                { text: 'Walkthroughs', link: '/guide/walkthroughs' },
-                { text: 'Form Walkthrough', link: '/guide/form-walkthrough' },
-              ],
-            },
-          ],
-        },
-        outlineTitle: 'On this page',
-      },
-    },
-    zh: {
-      label: '简体中文',
-      lang: 'zh-Hans',
-      link: '/zh/',
-      themeConfig: {
-        nav: [
-          { text: '指南', link: '/zh/guide/getting-started' },
-          { text: 'API 参考', link: 'https://pub.dev/documentation/oref/latest/oref/' },
-        ],
-        sidebar: {
-          '/zh/guide/': [
-            {
-              text: '指南',
-              items: [
-                { text: '快速开始', link: '/zh/guide/getting-started' },
-                { text: '核心概念', link: '/zh/guide/core-concepts' },
-                { text: 'Effect 与批处理', link: '/zh/guide/effects' },
-                { text: '异步数据', link: '/zh/guide/async-data' },
-                { text: '集合类型', link: '/zh/guide/collections' },
-                { text: '最佳实践', link: '/zh/guide/best-practices' },
-                { text: '上手示例', link: '/zh/guide/walkthroughs' },
-                { text: '表单示例', link: '/zh/guide/form-walkthrough' },
-              ],
-            },
-          ],
-        },
-        outlineTitle: '本页目录',
-      },
-    },
+    nav: [
+      { text: 'Core Guide', link: '/guide/reactive-core' },
+      { text: 'Design', link: 'https://github.com/medz/oref/issues/47' },
+    ],
+    sidebar: [
+      { text: 'Core', items: [
+        { text: 'Reactive Core', link: '/guide/reactive-core' },
+      ] },
+    ],
   },
 });

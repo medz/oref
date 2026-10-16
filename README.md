@@ -1,98 +1,73 @@
 [![Oref testing](https://github.com/medz/oref/actions/workflows/test.yml/badge.svg)](https://github.com/medz/oref/actions/workflows/test.yml)
-[![Oref version](https://img.shields.io/pub/v/oref)](https://pub.dev/packages/oref)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/medz/oref)
 
 # Oref
 
-A high-performance Flutter state management tool built with [`alien_signals`](https://github.com/medz/alien-signals-dart), Oref is one of the fastest Flutter signals and state management solutions.
+Object-shaped reactive primitives for Dart and Flutter, built on
+[alien_signals](https://github.com/medz/alien-signals-dart).
 
-## Overview
+This is the core-only Oref 3 development API, not a published stable release.
+It replaces the old 2.x implementation rather than providing a compatibility
+layer. Flutter integration and upper-level state APIs are not implemented yet.
+See [design issue #47](https://github.com/medz/oref/issues/47).
 
-Much of the pain in state management in Dart & Flutter comes from reacting to changes in given values, because the values themselves are not directly observable. We have to use `StatefulWidget` or other state management tools for state, which use inefficient proactive notifications or a large number of watchers to notify widgets to rebuild, and the boilerplate code is very redundant.
-
-The release of `alien_signals` completely changed Flutter's inefficient state management situation, but Flutter state libraries still require a lot of boilerplate code! Oref completely changes this situation. In Flutter, when a Widget accesses a signal value, if that signal's value changes, the Widget is automatically rebuilt.
+## Core API
 
 ```dart
-class Counter extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final count = signal(context, 0);
-    void increment() => count.set(count() + 1);
+import 'package:oref/oref.dart';
 
-    return Column(children: [
-      Text('Count: ${count()}'),
-      TextButton(
-        onPressed: increment,
-        child: Text('click me'),
-      )
-    ]);
-  }
-}
+final count = Signal(0);
+final doubled = Computed(() => count.value * 2);
+Readable<int> value = doubled;
+
+final scope = ReactiveScope();
+scope.run(() {
+  Effect((onCleanup) {
+    print(value.value);
+    onCleanup(() => print('Clean up this run'));
+  });
+});
+
+batch(() {
+  count.value = 1;
+  count.value = 2;
+});
+
+print(untracked(() => doubled.value));
+scope.dispose();
 ```
 
-Signals are magically injected into the BuildContext to provide optimal performance and ergonomic design. In the example above, we access `count()` to get the current value of the signal and complete the responsive binding with the current `Counter`. When the count value is updated, it automatically notifies the Counter to rebuild.
+- `Readable<T>` exposes a tracked `.value` getter.
+- `Signal<T>` adds a `.value` setter; comparison follows upstream `identical`.
+- `Computed<T>` is lazy and cached. `Computed.withPrevious` exposes the last
+  successful value when needed.
+- `Effect` runs synchronously on creation, then on dependency changes.
+  `onCleanup` registrations run in reverse order before reruns and disposal.
+- `ReactiveScope.run` groups synchronously created effects and nested scopes.
+  The scope itself does not reactively rerun.
+- `batch` and `untracked` are synchronous boundaries, not async transactions.
 
-## Installation
+Tracking, caching, propagation, and the effect queue remain in `alien_signals`.
+There is no custom notification API, second graph, independent owner context,
+or Zone-based error policy. Read the [core guide](docs/guide/reactive-core.md)
+for cleanup errors, setup failure, nesting, and `await` boundaries.
 
-Requires Dart 3.13+ / Flutter 3.47+.
+## Development
 
-You can install by editing your `pubspec.yaml` file:
+Requires Dart 3.13+. To work with this unpublished version, use this checkout as
+a local path dependency or run its example directly:
 
-```yaml
-dependencies:
-  oref: ^2.10.0
+```sh
+dart pub get
+dart analyze
+dart test
+dart run example/oref_example.dart
 ```
 
-Or install by running this command:
+The old hooks, collection wrappers, async utilities, Flutter adapters, analyzer
+plugin, and DevTools extension have been removed. No replacement resource APIs
+or widget builders are included in this core implementation.
 
-```bash
-flutter pub add oref
-```
+## License
 
-## Package Scope
-
-Oref focuses on reactive primitives, Flutter widget integration, lifecycle hooks,
-async data, and reactive collections. The bundled analyzer plugin and DevTools
-extension have been removed from the development version.
-
-When migrating from 2.x, remove the `oref` entry from the `plugins` section of
-`analysis_options.yaml` and from `devtools_options.yaml`. Remove imports of
-`package:oref/devtools.dart` and the tooling-only `debugLabel`, `debugOwner`,
-`debugScope`, `debugType`, and `debugNote` arguments. Normal Dart/Flutter analysis,
-widget hot reload, and Oref lifecycle behavior remain supported.
-
-## Documentation
-
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/medz/oref)
-
-You can view details through the [API Reference in pub.dev](https://pub.dev/documentation/oref/latest/oref/) or source code comments.
-
-## Agent Skills
-
-This repo includes Agent Skills under `skills/` for Oref users. They are maintained for
-agent installation and usage, and provide guided Oref usage and troubleshooting
-references.
-
-Install in one command:
-
-```bash
-npx skills add medz/oref # With NPM
-bunx skills add medz/oref # With Bun
-```
-
-## Sponsors
-
-Oref is an [MIT licensed](https://github.com/medz/spry/blob/main/LICENSE) open source project with its ongoing development made possible entirely by the support of these awesome backers. If you'd like to join them, please consider [sponsoring Seven(@medz)](https://github.com/sponsors/medz) development.
-
-<p align="center">
-  <a target="_blank" href="https://github.com/sponsors/medz">
-    <img alt="sponsors" src="https://cdn.jsdelivr.net/gh/medz/public/sponsors.tiers.svg">
-  </a>
-</p>
-
-## Contributing
-
-Thank you to all the people who already contributed to Oref!
-
-[![Contributors](https://contrib.rocks/image?repo=medz/oref)](https://github.com/medz/oref/graphs/contributors)
+MIT. See [LICENSE](LICENSE).

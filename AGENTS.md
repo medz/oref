@@ -1,79 +1,49 @@
 # Repository Guidelines
 
-## Project Structure
+## Current scope
 
-```txt
-lib/
-├── src/             # Source code for the package
-│   ├── async/       # Asynchronous utilities
-│   ├── collections/ # Reactive collections
-│   └── core/        # Oref core, widget integration, and lifecycle hooks
-└── oref.dart        # Public APIs
-example/             # Flutter app for manual validation and demos
-skills/              # Agent Skills for Oref users (SKILL.md + references)
-test/                # Mirrors feature areas with focused unit tests
-```
+Oref 3 is a core-only development implementation over alien_signals 2.3.5.
+The old 2.x runtime, Flutter integration, hooks, collections, async utilities,
+analyzer plugin, and DevTools extension are removed. Do not restore them or the
+closed resource RFC without a new explicit direction. See design issue #47.
 
-## Build, Test, and Development Commands
+## Structure
 
-- `flutter pub get` installs package dependencies; run `cd example && flutter pub get` for the example.
-- `dart analyze` runs static analysis using the repo’s `flutter_lints` rules.
-- `dart format .` applies standard Dart formatting across the repo.
-- `flutter test` runs the full unit test suite in `test/`.
-- `cd example && flutter run` launches the sample app locally for interactive checks.
+- `lib/oref.dart`: public core entry point.
+- `lib/src/core/`: object-shaped primitives and synchronous boundaries.
+- `test/`: semantic and regression tests against the actual substrate.
+- `example/oref_example.dart`: runnable core example.
+- `docs/`: VitePress guide and retained site theme/branding.
+- `skills/oref/`: installation guidance for agents using this API.
 
-## Release Process
+## Commands
 
-- Update the version in `pubspec.yaml` and any version references in `README.md`.
-- Move Unreleased notes into a new version section in `CHANGELOG.md`.
-- Run tests:
-  - `flutter test`
-  - `cd example && flutter test`
-- Commit and tag:
-  - `git commit -m "Release x.y.z"`
-  - `git tag vx.y.z`
-- Publish to pub (from repo root):
-  - `dart pub publish --dry-run`
-  - `dart pub publish --force`
-- Create GitHub release:
-  - `git push origin vx.y.z`
-  - `gh release create vx.y.z --title "vX.Y.Z" --notes-file RELEASE_NOTES.md`
+- `dart pub get`
+- `dart format --output=none --set-exit-if-changed lib test example`
+- `dart analyze`
+- `dart test`
+- `dart run example/oref_example.dart`
+- `dart pub publish --dry-run` (validation only, never publish without approval)
+- `cd docs && bun install --frozen-lockfile && bun run docs:build`
 
-## Package Boundaries
+## Architecture
 
-- Keep this package focused on reactive primitives, widget integration, lifecycle,
-  async data, and collections. Analyzer plugins and inspection panels are not bundled.
-- Preserve widget memoization, hot-reload callback replacement, and element/effect
-  cleanup when changing core code. Debug assertions may implement core behavior;
-  they are not automatically removable instrumentation.
+Delegate values, computed caches, dependency tracking, ownership and propagation
+to alien_signals. Do not add a second graph, scheduler, notify API, or independent
+owner/Zone mechanism. Public values use `.value`; lifecycle objects use `.dispose()`.
+The Effect cleanup registration adapter and reusable ReactiveScope.run boundaries
+must clearly distinguish their own policies from upstream guarantees.
 
-## Coding Style & Naming Conventions
+Use public upstream exports, not package-private imports or numeric flag literals.
+Test upstream edge cases rather than promising stronger behavior accidentally.
+All tracking and ownership boundaries are synchronous and do not cross await.
+Keep computed callbacks free of side effects; this is usage guidance, not a new
+runtime write prohibition or a claim that upstream detects arbitrary cycles.
 
-- Use 2-space indentation; rely on `dart format` to enforce style.
-- File names are `snake_case.dart`; types are `UpperCamelCase`; methods and variables are `lowerCamelCase`.
-- Keep public API surface in `lib/` and internal helpers in `lib/src/`, re-exported through `lib/oref.dart`.
+## Changes and review
 
-## Testing Guidelines
-
-- Tests use Flutter’s test framework via `flutter_test`.
-- Name test files with the `_test.dart` suffix and colocate by feature area.
-- Add regression tests for bug fixes; ensure `flutter test` passes before opening a PR.
-
-## Commit & Pull Request Guidelines
-
-- Commit messages follow short, imperative phrasing (examples: “Fix missing tracking…”, “Update effect…”).
-- PRs should describe what changed and why, link relevant issues, and note testing performed.
-- Update `CHANGELOG.md` for user-facing changes or API behavior updates.
-- Include screenshots or GIFs when modifying the `example/` UI.
-
-## Agent Skills
-
-- `skills/` contains Agent Skills meant for Oref users to install and use.
-- Keep skills focused on Oref usage guidance; store long-form material in `references/`.
-
-## Maintaining Documentation
-
-When making changes to the project (new APIs, architectural changes, updated conventions):
-
-- **`AGENTS.md`** — Update with technical details, architecture, and best practices for AI agents
-- **`README.md`** — Update with user-facing documentation (usage, installation, examples) for end users
+Use standard Dart formatting and snake_case file names. Keep public exports small.
+Add regressions for changes to lifecycle, cleanup, exceptions, or reentrancy.
+Update README, the core guide, and Unreleased changelog for public behavior.
+Document actual verification and any limitations in PR descriptions. Draft PRs
+must not be merged, released, or deployed without explicit authorization.
