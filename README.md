@@ -46,6 +46,12 @@ scope.dispose();
 - `ReactiveScope.run` groups synchronously created effects and nested scopes.
   The scope itself does not reactively rerun.
 - `batch` and `untracked` are synchronous boundaries, not async transactions.
+- `trigger(() { value.value; })` explicitly notifies observers after an in-place
+  mutation, using upstream semantics.
+
+`Signal` and `Computed` directly subclass upstream preset nodes behind factory
+interfaces. Lifecycle factories remain upstream-owned to preserve nested
+cleanup and disposal; this is not a complete removal of upstream surface APIs.
 
 Tracking, caching, propagation, and the effect queue remain in `alien_signals`.
 There is no custom notification API, second graph, independent owner context,

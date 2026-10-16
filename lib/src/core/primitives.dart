@@ -12,17 +12,32 @@ abstract interface class Readable<T> {
 /// A writable reactive value using alien_signals' identity comparison.
 ///
 /// Assigning an identical object does not notify observers, including after an
-/// in-place collection mutation. Replace the value with a new object instead.
+/// in-place collection mutation. Replace the value or use [trigger] with a read.
 /// No additional value cache, equality policy, or notification engine is used.
-final class Signal<T> implements Readable<T> {
-  Signal(T initialValue) : _signal = alien.signal(initialValue);
-
-  final alien.WritableSignal<T> _signal;
+abstract interface class Signal<T> implements Readable<T> {
+  factory Signal(T initialValue) = _Signal<T>;
 
   @override
-  T get value => _signal();
+  T get value;
 
-  set value(T nextValue) => _signal.set(nextValue);
+  set value(T nextValue);
+}
+
+// Keep upstream graph fields off the public interface while using one node,
+// not a public wrapper around a callable upstream signal.
+final class _Signal<T> extends preset.SignalNode<T> implements Signal<T> {
+  _Signal(T initialValue)
+    : super(
+        flags: system.ReactiveFlags.mutable,
+        currentValue: initialValue,
+        pendingValue: initialValue,
+      );
+
+  @override
+  T get value => get();
+
+  @override
+  set value(T nextValue) => set(nextValue);
 }
 
 /// A lazy, cached, read-only derived value.
@@ -30,20 +45,26 @@ final class Signal<T> implements Readable<T> {
 /// Dynamic dependencies, identity comparison, error caching and recovery follow
 /// alien_signals. A failed getter is retried after a tracked dependency changes.
 /// This object adds no second cache or dependency graph.
-final class Computed<T> implements Readable<T> {
-  Computed(T Function() compute) : _computed = alien.computed((_) => compute());
+abstract interface class Computed<T> implements Readable<T> {
+  factory Computed(T Function() compute) = _Computed<T>;
 
   /// Provides the last successful value, or null before the first success.
   ///
   /// The previous value remains unchanged after a getter error. A successful
   /// null is indistinguishable from no previous value, as in alien_signals.
-  Computed.withPrevious(T Function(T? previousValue) compute)
-    : _computed = alien.computed(compute);
+  factory Computed.withPrevious(T Function(T? previousValue) compute) =
+      _Computed<T>.withPrevious;
+}
 
-  final alien.Computed<T> _computed;
+final class _Computed<T> extends preset.ComputedNode<T> implements Computed<T> {
+  _Computed(T Function() compute)
+    : super(flags: system.ReactiveFlags.none, getter: (_) => compute());
+
+  _Computed.withPrevious(T Function(T?) compute)
+    : super(flags: system.ReactiveFlags.none, getter: compute);
 
   @override
-  T get value => _computed();
+  T get value => get();
 }
 
 /// Registers the current effect run's cleanup synchronously.
@@ -228,3 +249,16 @@ T untracked<T>(T Function() callback) {
     preset.setActiveSub(previous);
   }
 }
+
+/// Notifies observers of reactive values read synchronously by [callback].
+///
+/// Use after an in-place mutation when assigning the identical object would not
+/// notify. This delegates to the upstream preset, including its batching and
+/// exception behavior. It is not a mutation transaction or a custom-node API.
+/// Only reads directly tracked by the temporary subscriber are selected;
+/// reading a computed selects that computed, not its transitive dependencies.
+/// The caller does not track these reads. Notification still happens when the
+/// callback throws, and a flush error can replace that error. Do not create
+/// effects or scopes inside this temporary tracking boundary. It does not
+/// extend across `await`.
+void trigger(void Function() callback) => preset.trigger(callback);

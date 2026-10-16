@@ -25,7 +25,8 @@ reads change dependencies normally. There is no second value cache or graph.
 
 Both signal and computed change detection use upstream `identical`, not `==` or
 deep equality. Mutating the same List/Map and assigning it back does not notify
-observers. Replace it with a new instance. There is no custom `notify` API.
+observers. Replace it with a new instance, or call `trigger` with a read of the
+value after mutation. There is no custom `notify` API.
 
 Use `Computed<T>.withPrevious((previous) => ...)` when the computation needs the
 upstream previous-value argument. It receives the last successful value, or null
@@ -168,3 +169,53 @@ Implementation references:
 
 - [alien_signals 2.3.5 surface](https://github.com/medz/alien-signals-dart/blob/2.3.5/lib/src/surface.dart)
 - [alien_signals 2.3.5 preset](https://github.com/medz/alien-signals-dart/blob/2.3.5/lib/src/preset.dart)
+
+## Preset-backed values and explicit triggering
+
+`Signal` and `Computed` are factory interfaces backed directly by private
+subclasses of the upstream `SignalNode` and `ComputedNode`. Each value is itself
+a preset node, not a wrapper around a callable surface signal. Their public
+interfaces retain `.value` and do not advertise mutable graph fields. As with
+any Dart interface, a deliberate cast to upstream node types can still access
+those fields; this is API encapsulation, not a security boundary.
+
+The former concrete final value classes are now abstract interface classes with
+factory constructors. Existing construction and reads/writes are unchanged.
+They still cannot be extended outside the library; implementing their public
+interfaces is now possible. An implementation of `Readable` or `Signal` alone
+does not automatically acquire tracking: its getter must use the upstream graph.
+
+```dart
+final items = Signal(<String>[]);
+final effect = Effect((_) => print(items.value.length));
+items.value.add('new item');
+trigger(() { items.value; });
+effect.dispose();
+```
+
+`trigger` delegates to the upstream preset. It selects reactive values read in
+its synchronous callback and notifies their observers, even when the same
+object remains stored. It respects the surrounding batch and does not subscribe
+the calling observer to those reads. Reading a computed selects that computed,
+not all its transitive dependencies. Callback failure still triggers notification
+in upstream's `finally`; a flushing error can replace the callback error. Do not
+create effects or scopes in this temporary subscriber context, and do not expect
+it to survive `await`.
+
+A test-only coarse `ReactiveList` probe subclasses upstream `SignalNode`, uses
+its tracked `get`, and triggers after mutation. It interoperates with Oref
+computeds, effects, batching and scope disposal. This proves the extension path,
+not a public collection API or fine-grained key/index tracking contract. No raw
+node, graph mutation, queue or scheduling APIs are re-exported from Oref.
+
+### Lifecycle migration boundary
+
+`Effect` and `ReactiveScope` still use upstream surface factories for creation
+and ownership attachment. Upstream 2.3.5 hides `hasChildEffect` from its public
+preset entry point. Its factories both link a child and set this parent marker;
+linking alone loses nested cleanup/disposal semantics. Direct initialization
+would require a private import, a copied flag literal, or a new upstream public
+attachment helper. Oref does none of those. A future upstream helper that links
+an effect/scope to the current parent and marks child ownership could enable
+that migration without duplicating ownership policy. All existing lifecycle
+adapters and their documented error/reentrancy limits remain unchanged.
