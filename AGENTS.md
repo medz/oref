@@ -29,8 +29,10 @@ closed resource RFC without a new explicit direction. See design issue #47.
 ## Architecture
 
 Delegate values, computed caches, dependency tracking, ownership and propagation
-to alien_signals. Do not add a second graph, scheduler, notify API, or independent
-owner/Zone mechanism. Public values use `.value`; lifecycle objects use `.dispose()`.
+to alien_signals. The public `trigger` helper is an intentional delegation to
+upstream preset semantics for explicit same-identity notification. Do not add a
+custom notification mechanism, second graph, scheduler, or independent owner/Zone
+mechanism. Public values use `.value`; lifecycle objects use `.dispose()`.
 The Effect cleanup registration adapter and reusable ReactiveScope.run boundaries
 must clearly distinguish their own policies from upstream guarantees.
 
@@ -45,5 +47,7 @@ runtime write prohibition or a claim that upstream detects arbitrary cycles.
 Use standard Dart formatting and snake_case file names. Keep public exports small.
 Add regressions for changes to lifecycle, cleanup, exceptions, or reentrancy.
 Update README, the core guide, and Unreleased changelog for public behavior.
+The current 3.0.0-dev.0 work is unpublished: keep its notes under Unreleased
+until an actual release is prepared, rather than implying it has shipped.
 Document actual verification and any limitations in PR descriptions. Draft PRs
 must not be merged, released, or deployed without explicit authorization.

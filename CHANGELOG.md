@@ -1,5 +1,8 @@
 ## Unreleased
 
+The following changes target the unpublished `3.0.0-dev.0` development version.
+They have not been released.
+
 - Back `Signal` and `Computed` factory interfaces directly with private upstream
   preset-node subclasses instead of wrapping callable surface objects.
 - Export upstream-semantic `trigger` for explicit same-identity notification.
