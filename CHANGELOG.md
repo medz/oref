@@ -1,15 +1,16 @@
 ## Unreleased
 
-### Removed
+### Core-only Oref 3 development API
 
-- Remove the bundled DevTools extension, runtime inspection protocol, collection
-  previews, and signal/computed/effect timing instrumentation.
-- Remove the custom analyzer plugin, its tests and dependencies, and plugin setup
-  from the example and usage guides.
-- Remove the tooling-only `debugLabel`, `debugOwner`, `debugScope`, `debugType`, and
-  `debugNote` arguments and the `package:oref/devtools.dart` entrypoint.
-- Preserve reactive primitives, widget integration, hot reload, lifecycle hooks,
-  async data, and collections. See the README for tooling configuration migration.
+- Replace the old 2.x implementation with `Readable`, `Signal`, `Computed`,
+  `Effect`, `ReactiveScope`, `batch`, and `untracked` in `oref.dart`.
+- Keep alien_signals 2.3.5 as the reactive substrate. Add Dart object accessors,
+  synchronous cleanup registration, and reusable lifecycle-scope entry.
+- Remove old hooks, collections, async utilities, Flutter adapters, tooling,
+  and their obsolete examples, tests, and documentation. No compatibility layer.
+- Replace them with core semantic tests, a runnable example, and core documentation.
+- The development version is `3.0.0-dev.0`, not a published release. Upper-level
+  APIs and Flutter integration remain outside this implementation.
 
 ## 2.10.0
 

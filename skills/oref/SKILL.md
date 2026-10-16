@@ -1,70 +1,22 @@
 ---
 name: oref
-description: Guidance for using the Oref Flutter signals/state management library. Use when answering questions about installing Oref, creating signals/computed/effects, async data, reactive collections, SignalBuilder usage, or troubleshooting Oref behavior.
+description: >-
+  Use the core-only Oref 3 development API: Readable, Signal, Computed, Effect,
+  ReactiveScope, batch, and untracked. Do not suggest removed 2.x hooks, collections,
+  async resources, Flutter builders, analyzer plugins, or DevTools.
 ---
 
-# Oref
+# Oref core
 
-> Based on the Oref docs and repository examples. Use BuildContext-bound APIs inside widget builds when possible.
+This checkout contains an unpublished core-only development API. Read the
+[core reference](references/core-api.md) before suggesting code.
 
-## Preferences
-
-- Match the user's language.
-- Prefer concise, runnable snippets over long explanations.
-- Use `signal(context, ...)`/`computed(context, ...)`/`effect(context, ...)` inside `build`.
-- Use `null` context only outside widgets, and keep the dispose handle.
-- Use `SignalBuilder` to scope rebuilds to small subtrees.
-- Use `batch()` for multi-step updates or collection mutations.
-- Avoid writing to signals inside `computed` getters.
-- Call hooks unconditionally at the top level of a build scope.
-
-## Core
-
-| Topic             | Description                                                                 | Reference                                        |
-| ----------------- | --------------------------------------------------------------------------- | ------------------------------------------------ |
-| Quick Start       | Install + minimal signal/computed/effect usage                              | [quick-start](references/quick-start.md)         |
-| Reactivity Core   | Signals, computed, writableComputed, effects, batch, untrack, SignalBuilder | [core-api](references/core-api.md)               |
-| Hooks & Lifecycle | Hook ordering rules, onMounted/onUnmounted, cleanup                         | [hooks-lifecycle](references/hooks-lifecycle.md) |
-| Async Data        | `useAsyncData` lifecycle and rendering                                      | [async-data](references/async-data.md)           |
-| Collections       | ReactiveList/Map/Set patterns                                               | [collections](references/collections.md)         |
-
-For common pitfalls and fixes, see [troubleshooting](references/troubleshooting.md).
-
-## Quick Reference
-
-### Minimal widget
-
-```dart
-import 'package:flutter/material.dart';
-import 'package:oref/oref.dart';
-
-class Counter extends StatelessWidget {
-  const Counter({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final count = signal(context, 0);
-    final doubled = computed(context, (_) => count() * 2);
-
-    return Column(
-      children: [
-        Text('Count: ${count()} / ${doubled()}'),
-        TextButton(onPressed: () => count.set(count() + 1), child: const Text('Add')),
-      ],
-    );
-  }
-}
-```
-
-### Key imports
-
-```dart
-import 'package:oref/oref.dart';
-```
-
-## Response workflow
-
-1. Identify the question type and open the matching reference.
-2. Provide the smallest snippet that answers the question.
-3. Ask for missing context only if required (Flutter version, target platform, existing code).
-4. Avoid guessing versions; read the user's `pubspec.yaml` or ask them to confirm.
+- Import `package:oref/oref.dart`.
+- Use `.value` to read Signal/Computed and to write Signal.
+- Effects run synchronously once at creation; register cleanup synchronously.
+- Use `ReactiveScope().run(...)` to group effects, then dispose the scope.
+- Tracking and ownership do not cross await. untracked exits both.
+- Delegate to alien_signals semantics; do not invent custom notify, scheduler,
+  owner, Zone-isolation, rollback, or resource protocols.
+- Explain error and cleanup limitations honestly. Keep computed getters pure.
+- Flutter adapters are not implemented. Do not reuse legacy Oref examples.

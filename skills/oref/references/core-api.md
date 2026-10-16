@@ -1,94 +1,170 @@
-# Reactivity Core
+# Reactive core preview
 
-## Context rules (widget-bound vs global)
+This core-only development API follows [design issue #47](https://github.com/medz/oref/issues/47).
+It replaces the old 2.x implementation with object-shaped primitives over
+`alien_signals` 2.3.5. There is no compatibility layer. Flutter integration and
+upper-level state APIs will be discussed after this core; they are not implemented
+here. This development version has not been released.
 
-All core APIs accept `BuildContext?`.
-
-- In `build`: pass `context` to bind to the widget lifecycle.
-- Outside widgets: pass `null` and dispose effects/scopes manually.
-
-```dart
-// Widget-bound
-final count = signal(context, 0);
-final stop = effect(context, () => debugPrint('${count()}'));
-
-// Global
-final globalCount = signal<int>(null, 0);
-final stopGlobal = effect(null, () => debugPrint('${globalCount()}'));
-// later...
-stopGlobal();
-```
-
-## Signals
-
-Read by calling, write with `.set(...)`.
+## Values
 
 ```dart
-final name = signal(context, 'Oref');
-name();
-name.set('Oref v2');
+import 'package:oref/oref.dart';
+
+final count = Signal(0);
+final doubled = Computed(() => count.value * 2);
+Readable<int> readOnly = doubled;
+
+count.value++;
+print(readOnly.value); // 2
 ```
 
-## Computed and writableComputed
+`Readable<T>` exposes a tracked `value` getter. `Signal<T>` also has a setter.
+`Computed<T>` is lazy and caches through the upstream computed node. Conditional
+reads change dependencies normally. There is no second value cache or graph.
 
-```dart
-final count = signal(context, 2);
-final squared = computed(context, (_) => count() * count());
-```
+Both signal and computed change detection use upstream `identical`, not `==` or
+deep equality. Mutating the same List/Map and assigning it back does not notify
+observers. Replace it with a new instance. There is no custom `notify` API.
 
-```dart
-import 'dart:math' as math;
+Use `Computed<T>.withPrevious((previous) => ...)` when the computation needs the
+upstream previous-value argument. It receives the last successful value, or null
+before the first successful computation. A successful null cannot be distinguished
+from an initial null through this argument. Getter errors are cached and rethrown
+until a tracked dependency changes; a retry keeps the last successful value.
 
-final count = signal<double>(context, 0);
-final squared = writableComputed<double>(
-  context,
-  get: (_) => count() * count(),
-  set: (value) => count.set(math.sqrt(value)),
-);
-```
+Signals and computed values do not expose a new disposal protocol. Their dependency
+and cache lifetimes remain upstream behavior; keeping a computed object can retain
+its last value or error. Do not assume an unobserved computed has no cache or edges.
 
 ## Effects and cleanup
 
 ```dart
-final stop = effect(context, () {
-  onEffectCleanup(() => debugPrint('cleanup before re-run'));
-  onEffectDispose(() => debugPrint('dispose'));
-});
+final logging = Effect((onCleanup) {
+  print('Count: ${count.value}');
+  onCleanup(() => print('End this run'));
+}); // Runs immediately.
 
-stop();
+count.value = 1; // Cleans up the old run, then executes the next run.
+logging.dispose();
 ```
 
-## SignalBuilder
+An effect runs synchronously on construction and tracks reads performed during
+its callback. It delegates reruns and nested ownership to `alien_signals`.
 
-Use `SignalBuilder` to limit rebuilds to a subtree.
+The Dart adapter collects synchronous `onCleanup` registrations into one upstream
+cleanup function. Multiple registrations run in reverse order, so a later resource
+is released first. This order is an adapter policy, not an extra upstream feature.
+Registration after the effect callback returns throws `StateError`.
+
+Upstream invokes the cleanup before a rerun and on disposal, outside tracking.
+Nested effects and scopes are stopped before their parent's cleanup. Repeated
+successful disposal does not invoke the same cleanup again. A thrown cleanup error
+propagates and stops the remaining callbacks; the adapter does not catch, retry, or
+continue them. Upstream disposal traversal can also be interrupted by such an error.
+Callbacks should release their resources without throwing where possible.
+Explicit `.dispose()` calls ignore recursive calls through the same handle while
+it is already stopping. This small adapter guard prevents double traversal from
+those recursive calls; it does not change automatic upstream parent disposal.
+Do not recursively dispose an ancestor from cleanup invoked by upstream parent
+traversal, which can still corrupt upstream links in 2.3.5.
+
+A throwing initial effect callback follows the upstream factory: it propagates
+and does not automatically roll back the partially created effect. Its constructor
+cannot return a disposal handle on failure. A containing `ReactiveScope` gives the
+caller a handle to dispose the owned work. Cleanup registrations made by a callback
+that throws are not returned to upstream, so they are not installed. This applies
+to failed reruns as well as initial failures. Disposing an effect during its own
+active callback also does not guarantee cleanup registered by that unfinished run.
+This preview
+does not promise setup rollback or error isolation.
+
+## Lifecycle scopes
 
 ```dart
-SignalBuilder(
-  builder: (context) {
-    final count = signal(context, 0);
-    return Text('Count: ${count()}');
-  },
-);
+final scope = ReactiveScope();
+try {
+  scope.run(() {
+    Effect((onCleanup) {
+      print(doubled.value);
+    });
+  });
+  // Other synchronous setup may also be entered through scope.run(...).
+} finally {
+  scope.dispose();
+}
 ```
 
-## Effect scope
+Construction creates a real upstream `effectScope` in the current subscriber.
+`run` temporarily enters that same scope, invokes its callback once, returns the
+callback result, and restores the previous subscriber in `finally`. The scope does
+not rerun because its callback read a signal. Synchronously created nested effects
+and scopes follow upstream ownership and are disposed together.
+
+`run` rejects an already disposed scope, including one stopped by its parent.
+A callback error does not dispose the scope automatically: the previously created
+scope handle remains available for explicit cleanup. If a scope is stopped while
+`run` is still executing, the adapter drains children attached by the remaining
+synchronous callback before returning. It does not abort callback code or prevent
+those children's initial runs. This is a reusable-run adapter guard, not an
+upstream guarantee. If both the callback and this final disposal throw, the final
+disposal error takes precedence; the previous context is still restored.
+
+Scopes capture their upstream ownership at construction. Entering a scope created
+outside an effect captures direct reads in that scope, not in the calling effect.
+Conversely, reads through a scope created inside an effect can invalidate the
+owning parent. Repeated direct reads in a long-lived scope may accumulate upstream
+links as propagation cycles advance; dispose the scope when finished. There is no
+separate owner context, Zone-based ownership, or new reactive engine.
+
+Keep computed getters free of side effects. In upstream 2.3.5, a computed getter
+that disposes its observing parent during dirty checking can throw an internal
+null-check error and alter a stopped scope's flags. This also reproduces with raw
+`effectScope`; the adapter does not repair the graph or guarantee scope liveness
+detection after that substrate failure. This usage guidance is not a new runtime
+write prohibition. Avoid arbitrary cyclic or reentrant mutations during derived
+computation.
+
+## Synchronous boundaries
 
 ```dart
-final disposeScope = effectScope(context, () {
-  effect(context, () => debugPrint('A'));
-  effect(context, () => debugPrint('B'));
+final answer = batch(() {
+  count.value = 2;
+  count.value = 3;
+  return doubled.value;
 });
 
-disposeScope();
+final snapshot = untracked(() => doubled.value);
 ```
 
-## Batch and untrack
+`batch` wraps upstream `startBatch` / `endBatch`. Nested batches flush when the
+outermost synchronous batch ends, and reads inside a batch see current values.
+The `finally` still ends the batch if the callback throws. It is not a rollback
+transaction. A flush error can replace a callback error, following Dart `finally`
+and upstream exception behavior; other queued effects are not guaranteed to run.
 
-```dart
-batch(() {
-  a.set(1);
-  b.set(2);
-});
+`untracked` temporarily clears the active subscriber and restores it in `finally`.
+A computed read still tracks its own computation. In 2.3.5, tracking and nested
+ownership use the same subscriber: effects or scopes created inside `untracked`
+are detached from the caller and need their own disposal handles. It does not
+preserve an independent owner.
 
-final snapshot = untrack(() => count());
-```
+All these boundaries are synchronous. Returning a Future does not keep a batch or
+scope active while awaiting it. Reads and new effects after `await` are not tracked
+or owned by the earlier callback. Register cleanup before returning and manage
+asynchronous errors, cancellation, and later-created effects explicitly.
+
+## Scope of this implementation
+
+The object primitives interoperate with the same upstream runtime. This core does
+not implement implicit Flutter widget tracking, hooks, async resources, mutable
+collection wrappers, or developer tooling. Old 2.x APIs, examples, and related tests
+have been removed and replaced with core documentation and semantic coverage.
+
+There are no Query, Pages, RemoteValue, shared catalogs, resource builders, or
+upper-level state-management protocols. No release or merge is included.
+
+Implementation references:
+
+- [alien_signals 2.3.5 surface](https://github.com/medz/alien-signals-dart/blob/2.3.5/lib/src/surface.dart)
+- [alien_signals 2.3.5 preset](https://github.com/medz/alien-signals-dart/blob/2.3.5/lib/src/preset.dart)
