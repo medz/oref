@@ -82,6 +82,9 @@ Query 拥有唯一完整模型。select 读取字段，apply 只替换所属字�
 期望字段值。field 的 writer 返回 canonical 值；fieldAck 只确认 desired。
 字段继承父 source、GET、写锁和缓存条目，不另建输入订阅、TTL、identity 或 seed。
 
+select 和 apply 应保持纯粹。投影按模型身份缓存；刷新得到同一模型时复用已完成的投影。
+即使回调重入资源，旧投影也不能在释放后发布或覆盖父模型的新结果。
+
 字段写开始废弃旧 GET；写入时父读取和兄弟字段写都返回 busy。乐观、提交和回退一起更新父模型
 与各字段。父 source 中 token 改变也会清值并重读，字段不独立保留 identity。
 

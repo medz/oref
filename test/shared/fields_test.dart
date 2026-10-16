@@ -9,6 +9,55 @@ typedef _Item = ({bool followed, String title});
 
 void main() {
   test(
+    'same-field recursive projection fails before creating another view',
+    () async {
+      final resources = Resources(
+        namespace: () => null,
+        maxIdle: 1,
+        retain: const Duration(minutes: 1),
+      );
+      addTearDown(resources.dispose);
+      final family = Family<int, oref.Query<int, _Item>>(
+        create: (id) => oref.Query(
+          source: () => id,
+          load: (_, _) => (followed: false, title: 'one'),
+        ),
+        dispose: (query) => query.dispose(),
+      );
+      final parent = borrowResource(resources, family(1));
+      await parent.value.ensureLoaded();
+      late ResourceRef<oref.RemoteValue<int, bool>> Function(int) followed;
+      Object? recursiveError;
+      var projections = 0;
+      followed = family.fieldAck<bool>(
+        select: (item) {
+          projections++;
+          if (projections == 1) {
+            try {
+              final recursive = borrowResource(resources, followed(1));
+              recursive.release();
+            } catch (error) {
+              recursiveError = error;
+            }
+          }
+          return item.followed;
+        },
+        apply: (item, value) => (followed: value, title: item.title),
+        write: (_, _) {},
+      );
+      final first = borrowResource(resources, followed(1));
+      final next = borrowResource(resources, followed(1));
+      expect(recursiveError, isStateError);
+      expect(projections, 1);
+      expect(next.value, same(first.value));
+      expect(first.value.state.peek().value, isFalse);
+      first.release();
+      next.release();
+      parent.release();
+    },
+  );
+
+  test(
     'field references share the parent lease, view, read and idle entry',
     () async {
       var created = 0;

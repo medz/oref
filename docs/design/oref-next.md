@@ -991,12 +991,16 @@ final setting = RemoteValue<String, bool>.ack(
 
 执行环境：Flutter 3.47.6 stable、Dart 3.13.5、alien_signals 2.3.5。
 
-- 库测试148项通过，覆盖信号、四类资源、字段视图、目录、Flutter生命周期与4项真实本地HTTP集成。
+- 库测试159项通过，覆盖信号、四类资源、字段视图、目录、Flutter生命周期与4项真实本地HTTP集成。
 - 示例测试13项通过，覆盖双页乐观关注/回滚、登录续接与取消、身份/页面/条目守卫、unknown不写，以及分类分页、追加重试、刷新和详情返回。
 - dart analyze与格式校验通过；Flutter Web release构建通过；中英文文档站点构建通过。
 - 同一共享项的20次并发读取实际只有1次GET；写入busy拒绝不新增GET/POST。旧GET被写入替代后，其结果不覆盖提交值，请求级abort不关闭共享客户端。
 - 同source连续100次Widget重建不新增读取。分页1000条/10页，每次20个调用加入同一Future，总共10次loader调用；刷新仅增加1次并回到100条第一页。这里是请求次数与行为验证，不是速度跑分。
 - 最后消费者离开后暂停source；在途写保活、TTL/LRU、0容量/时长、namespace切换与ABA、回调异常和取消重入都有独立回归。
+
+二次审查新增11项回归，修复游标/投影回调重入、销毁后发布、派生Future双结算、共享字段递归构造，以及闲置写结算后丢失token重验证。无字段Query跳过投影列表快照分配；没有新增依赖、公开API或响应图。
+
+Dart VM JIT强制GC探针：1000个标量Query依次借用并完成读取，maxIdle=8、retain=1小时，实际保留8个Query/8个目录entry、0个读取operation，仅1个namespace effect。修改输入未触发闲置GET；关闭目录后Query/entry/effect均为0。此结果只验证该标量路径的对象保留边界，不代表真实响应体的峰值内存或速度基准。
 
 验收未对分配、峰值堆内存、首帧或帧耗时给出跑分，也未迁移或调用私有应用。模拟服务计数与真实HTTP计数明确区分。文档首页保留既有Three.js大chunk构建提示；Flutter Web构建有未使用CupertinoIcons字体提示，示例使用MaterialIcons。
 

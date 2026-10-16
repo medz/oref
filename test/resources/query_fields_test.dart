@@ -18,6 +18,54 @@ RemoteValue<S, bool> followField<S>(
 );
 
 void main() {
+  for (final disposeParent in [false, true]) {
+    test(
+      'a selector invalidates remaining field publications (dispose=$disposeParent)',
+      () async {
+        final source = Value(1);
+        final query = Query<int, int>(
+          source: () => source.value,
+          load: (input, _) => input,
+        );
+        addTearDown(query.dispose);
+        var selections = 0;
+        query.fieldAck<int>(
+          select: (model) {
+            if (model == 1) {
+              if (disposeParent) {
+                query.dispose();
+              } else {
+                source.value = 2;
+                query.ensureLoaded().ignore();
+              }
+            }
+            return model;
+          },
+          apply: (_, value) => value,
+          write: (_, _) {},
+        );
+        final other = query.fieldAck<int>(
+          select: (model) {
+            selections++;
+            return model;
+          },
+          apply: (_, value) => value,
+          write: (_, _) {},
+        );
+        await query.ensureLoaded();
+        if (disposeParent) {
+          expect(selections, 0);
+          expect(other.state.peek().hasValue, isFalse);
+        } else {
+          await flush();
+          expect(selections, 1);
+          expect(other.state.peek().source, 2);
+          expect(other.state.peek().value, 2);
+        }
+      },
+    );
+  }
+
   for (final duringApply in [false, true]) {
     test(
       'a field callback ResourceException is a recorded failure (apply=$duringApply)',

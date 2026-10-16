@@ -396,12 +396,13 @@ final class _IndependentRemoteValue<S, T> extends RemoteValue<S, T> {
           _needsRead = false;
           if (needsRead &&
               !_control.closed &&
-              !_source.paused &&
               !_control.writing &&
               _source.hasValue &&
               _activeRead == null &&
               _read != null) {
-            _startRead(ReadReason.initial).ignore();
+            // Idle entries defer revalidation until their next explicit read.
+            _attempt = null;
+            if (!_source.paused) _startRead(ReadReason.initial).ignore();
           }
         }),
       );

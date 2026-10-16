@@ -7,6 +7,9 @@
 - Add writable Query fields with shared optimism, rollback and a parent write lock.
 - Add Family, Resources and ResourceScope for session isolation, bounded caching
   and accepted-write lifetime management.
+- Guard cursor and field projection reentrancy, including source changes,
+  disposal and same-model refresh; reject recursive shared-field construction.
+- Preserve deferred token revalidation when a remote write settles while idle.
 - Add Watch, StateBuilder and owning, borrowed and shared resource Builders.
 - Provide a complete shared-follow example and regression tests.
 - Remove the legacy hooks, collection wrappers, analyzer plugin and DevTools app.

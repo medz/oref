@@ -44,6 +44,9 @@ lowerCamelCase members. Format changed Dart files.
   Pages refresh replaces the list with the first page.
 - One instance accepts one write. Query fields share its model, source, GET,
   parent write lock, and cache entry.
+- Stage projection results until callbacks return, then recheck the parent model
+  and lifetime. Reentrant callbacks must not publish stale fields; same-model
+  refresh must keep a completed projection. Guard recursive shared-view creation.
 - Preserve business errors and stacks. ResourceException represents control
   conditions produced by this resource. An accepted writer's returned errors,
   including ResourceException from delegated resources, remain business failures.
@@ -55,7 +58,8 @@ lowerCamelCase members. Format changed Dart files.
 - Namespace identity separates sessions. Capture transport credentials in inputs.
   Check ownership at operation acceptance and result publication.
 - Resources requires explicit nonnegative maxIdle and retain. Idle entries pause
-  source observation; expiration uses one directory timer.
+  source observation; expiration uses one directory timer. Deferred source
+  revalidation must survive a writer settling while its last consumer is gone.
 
 ## Flutter invariants
 

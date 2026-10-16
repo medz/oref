@@ -89,6 +89,10 @@ field value. field returns a canonical writer; fieldAck uses an acknowledgment.
 The field view shares the parent's source, GET, write lock, and directory entry.
 It creates no second input subscription, field TTL, or initial seed.
 
+Keep select and apply pure. Projections are cached by model identity; refreshing
+the same model reuses its completed projection. Results cannot publish after
+disposal or overwrite a newer parent model if a callback reenters the resource.
+
 An accepted field write invalidates an old GET. Reads and writes of sibling fields
 are busy while the parent write is pending. Optimism, success, and rollback update
 the parent model and all affected views together. A token change in the parent's

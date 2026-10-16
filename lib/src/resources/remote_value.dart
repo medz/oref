@@ -114,7 +114,7 @@ final class _QueryField<S, M, V> extends RemoteValue<S, V>
 
   @override
   void refreshState(QueryState<S, M> parent, {bool readSucceeded = false}) {
-    if (_disposed) return;
+    if (_disposed || _control.closed) return;
     if (_seenEpoch != _parent._epoch || readSucceeded) {
       _writeError = null;
       _writeStack = null;
@@ -124,14 +124,29 @@ final class _QueryField<S, M, V> extends RemoteValue<S, V>
         (!_projected || !identical(_projectedModel, parent.value))) {
       _projected = true;
       _projectedModel = parent.value;
-      _projectionError = null;
-      _projectionStack = null;
+      // A selector may accept another model or dispose a view before returning.
+      V? value;
+      Object? error;
+      StackTrace? stackTrace;
       try {
-        _projectedValue = untracked(() => _select(parent.value));
-      } catch (error, stack) {
-        _projectedValue = null;
-        _projectionError = error;
-        _projectionStack = stack;
+        value = untracked(() => _select(parent.value));
+      } catch (failure, stack) {
+        error = failure;
+        stackTrace = stack;
+      }
+      if (_disposed ||
+          _control.closed ||
+          !_projected ||
+          !identical(_projectedModel, parent.value)) {
+        return;
+      }
+      _projectedValue = value;
+      _projectionError = error;
+      _projectionStack = stackTrace;
+      final current = _parent._state.peek();
+      if (!identical(current, parent)) {
+        refreshState(current);
+        return;
       }
     } else if (!parent.hasValue) {
       _projected = false;
@@ -178,10 +193,12 @@ final class _QueryField<S, M, V> extends RemoteValue<S, V>
             value = _projectedValue as V;
           } else {
             value = untracked(() => _select(model));
+            if (attempt.isCompleted) return;
+            _check();
           }
-          attempt.complete(value);
+          if (!attempt.isCompleted) attempt.complete(value);
         } catch (error, stack) {
-          attempt.completeError(error, stack);
+          if (!attempt.isCompleted) attempt.completeError(error, stack);
         }
       },
       onError: (Object error, StackTrace stack) {

@@ -64,6 +64,8 @@ final class ResourceRef<R> {
 }
 
 // Package-internal: projections share their parent's entry and lifetime.
+final _creatingView = Object();
+
 ResourceRef<R> deriveResourceRef<P, R>(
   ResourceRef<P> parent,
   Object definition,
@@ -74,13 +76,21 @@ ResourceRef<R> deriveResourceRef<P, R>(
   path: List<Object>.unmodifiable([...parent._path, definition]),
   resolve: (resource, views) {
     final cached = views[definition];
+    if (identical(cached, _creatingView)) {
+      throw StateError('A shared projection cannot recursively create itself.');
+    }
     if (cached is RemoteValue && resourceDisposed(cached)) {
       views.remove(definition);
+    } else if (cached != null || views.containsKey(definition)) {
+      return cached as R;
     }
-    return views.putIfAbsent(
-      definition,
-      () => project(parent._resolve(resource, views)),
-    ) as R;
+    views[definition] = _creatingView;
+    try {
+      return views[definition] = project(parent._resolve(resource, views));
+    } catch (_) {
+      views.remove(definition);
+      rethrow;
+    }
   },
 );
 

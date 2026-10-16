@@ -185,10 +185,18 @@ final class Query<S, T> {
   }
 
   void _emit(QueryState<S, T> snapshot, {bool readSucceeded = false}) {
+    if (_control.closed) return;
+    final epoch = _epoch;
     Zone.current.runGuarded(
       () => batch(() {
         _state.value = snapshot;
+        if (_views.isEmpty) return;
         for (final view in _views.toList(growable: false)) {
+          if (_control.closed ||
+              _epoch != epoch ||
+              !identical(_state.peek(), snapshot)) {
+            break;
+          }
           view.refreshState(snapshot, readSucceeded: readSucceeded);
         }
       }),

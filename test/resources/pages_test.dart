@@ -9,6 +9,40 @@ Matcher reason(ResourceReason reason) =>
     isA<ResourceException>().having((error) => error.reason, 'reason', reason);
 
 void main() {
+  for (final throwsAfterChange in [false, true]) {
+    test(
+      'cursor callback source changes discard its old result (throws=$throwsAfterChange)',
+      () async {
+        var source = 1;
+        final calls = <int>[];
+        final pages = Pages<int, int, int>(
+          source: () => source,
+          load: (input, _, _) {
+            calls.add(input);
+            return [input];
+          },
+          nextCursor: (input, _) {
+            if (input == 1) {
+              source = 2;
+              if (throwsAfterChange) throw StateError('old cursor');
+            }
+            return null;
+          },
+        );
+        addTearDown(pages.dispose);
+        await expectLater(
+          pages.ensureLoaded(),
+          throwsA(reason(ResourceReason.sourceChanged)),
+        );
+        await Future<void>.delayed(Duration.zero);
+        expect(calls, [1, 2]);
+        expect(pages.state.peek().source, 2);
+        expect(pages.state.peek().items, [2]);
+        expect(pages.state.peek().error, isNull);
+      },
+    );
+  }
+
   test(
     '1000 items across ten pages keep one request per joined attempt',
     () async {

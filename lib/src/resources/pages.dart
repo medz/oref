@@ -204,6 +204,26 @@ class Pages<S, T, C extends Object> {
   bool _isCurrent(_ReadOperation<List<T>> operation) =>
       !_control.closed && identical(_active, operation) && !operation.finished;
 
+  bool _resolveCurrent(_ReadOperation<List<T>> operation) {
+    try {
+      _source.resolve();
+    } on Object catch (failure, trace) {
+      if (_isCurrent(operation)) {
+        _active = null;
+        operation.failSource(failure, trace);
+      }
+      return false;
+    }
+    if (_isCurrent(operation)) return true;
+    if (!_control.closed &&
+        !_source.paused &&
+        _source.hasValue &&
+        _attempt == null) {
+      _start(ReadReason.initial).ignore();
+    }
+    return false;
+  }
+
   void _settle(
     _ReadOperation<List<T>> operation,
     S source,
@@ -222,24 +242,7 @@ class Pages<S, T, C extends Object> {
         return;
       }
       if (!_isCurrent(operation)) return;
-      try {
-        _source.resolve();
-      } on Object catch (failure, trace) {
-        if (_isCurrent(operation)) {
-          _active = null;
-          operation.failSource(failure, trace);
-        }
-        return;
-      }
-      if (!_isCurrent(operation)) {
-        if (!_control.closed &&
-            !_source.paused &&
-            _source.hasValue &&
-            _attempt == null) {
-          _start(ReadReason.initial).ignore();
-        }
-        return;
-      }
+      if (!_resolveCurrent(operation)) return;
       List<T>? page;
       C? next;
       if (error == null) {
@@ -253,6 +256,7 @@ class Pages<S, T, C extends Object> {
           error = failure;
           stackTrace = trace;
         }
+        if (!_isCurrent(operation) || !_resolveCurrent(operation)) return;
       }
       if (!_isCurrent(operation)) return;
       _active = null;
