@@ -1,6 +1,6 @@
 ---
 name: oref
-description: Guidance for using the Oref Flutter signals/state management library and its DevTools/analyzer tooling. Use when answering questions about installing Oref, creating signals/computed/effects, async data, reactive collections, SignalBuilder usage, analyzer lints, DevTools extension setup/usage, or troubleshooting Oref behavior.
+description: Guidance for using the Oref Flutter signals/state management library. Use when answering questions about installing Oref, creating signals/computed/effects, async data, reactive collections, SignalBuilder usage, or troubleshooting Oref behavior.
 ---
 
 # Oref
@@ -28,13 +28,7 @@ description: Guidance for using the Oref Flutter signals/state management librar
 | Async Data        | `useAsyncData` lifecycle and rendering                                      | [async-data](references/async-data.md)           |
 | Collections       | ReactiveList/Map/Set patterns                                               | [collections](references/collections.md)         |
 
-## Tooling
-
-| Topic           | Description                     | Reference                                        |
-| --------------- | ------------------------------- | ------------------------------------------------ |
-| Analyzer Lints  | Plugin setup + lint catalog     | [analyzer-lints](references/analyzer-lints.md)   |
-| DevTools        | Extension setup + runtime notes | [devtools](references/devtools.md)               |
-| Troubleshooting | Common pitfalls and fixes       | [troubleshooting](references/troubleshooting.md) |
+For common pitfalls and fixes, see [troubleshooting](references/troubleshooting.md).
 
 ## Quick Reference
 

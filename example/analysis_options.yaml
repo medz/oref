@@ -3,7 +3,3 @@ analyzer:
     - build/**
     - web/**
 include: package:flutter_lints/flutter.yaml
-
-plugins:
-  oref:
-    path: ..

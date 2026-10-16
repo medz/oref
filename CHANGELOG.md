@@ -1,3 +1,16 @@
+## Unreleased
+
+### Removed
+
+- Remove the bundled DevTools extension, runtime inspection protocol, collection
+  previews, and signal/computed/effect timing instrumentation.
+- Remove the custom analyzer plugin, its tests and dependencies, and plugin setup
+  from the example and usage guides.
+- Remove the tooling-only `debugLabel`, `debugOwner`, `debugScope`, `debugType`, and
+  `debugNote` arguments and the `package:oref/devtools.dart` entrypoint.
+- Preserve reactive primitives, widget integration, hot reload, lifecycle hooks,
+  async data, and collections. See the README for tooling configuration migration.
+
 ## 2.10.0
 
 ### Compatibility
