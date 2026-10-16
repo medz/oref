@@ -7,7 +7,6 @@ import '_warn.dart';
 import '_element_disposer.dart';
 import 'memoized.dart';
 import 'widget_scope.dart';
-import '../devtools/devtools.dart';
 
 /// Creates a reactive effect that automatically tracks its dependencies and re-runs when they change.
 ///
@@ -36,22 +35,9 @@ alien.Effect effect(
   BuildContext? context,
   void Function() callback, {
   bool detach = false,
-  String? debugLabel,
-  Object? debugOwner,
-  String? debugScope,
-  String? debugType,
-  String? debugNote,
 }) {
   if (context == null) {
-    return _createEffect(
-      callback: callback,
-      detach: detach,
-      debugLabel: debugLabel,
-      debugOwner: debugOwner,
-      debugScope: debugScope,
-      debugType: debugType,
-      debugNote: debugNote,
-    );
+    return _createEffect(callback: callback, detach: detach);
   }
 
   final e = useMemoized(context, () {
@@ -60,27 +46,13 @@ alien.Effect effect(
         context: context,
         callback: callback,
         detach: detach,
-        debugLabel: debugLabel,
-        debugOwner: debugOwner,
-        debugScope: debugScope,
-        debugType: debugType,
-        debugNote: debugNote,
       );
     }
 
     final scope = useWidgetScope(context);
     final prevSub = alien.setActiveSub(scope as alien.ReactiveNode);
     try {
-      return _createEffect(
-        context: context,
-        callback: callback,
-        detach: false,
-        debugLabel: debugLabel,
-        debugOwner: debugOwner,
-        debugScope: debugScope,
-        debugType: debugType,
-        debugNote: debugNote,
-      );
+      return _createEffect(context: context, callback: callback, detach: false);
     } finally {
       alien.setActiveSub(prevSub);
     }
@@ -120,11 +92,6 @@ _OrefEffect _createEffect({
   BuildContext? context,
   required void Function() callback,
   required bool detach,
-  String? debugLabel,
-  Object? debugOwner,
-  String? debugScope,
-  String? debugType,
-  String? debugNote,
 }) {
   late final _OrefEffect effect;
   late final VoidCallback run;
@@ -134,17 +101,6 @@ _OrefEffect _createEffect({
     _OrefEffect.finalizer.attach(context, effect, detach: effect);
     registerElementDisposer(context, effect.call);
   }
-
-  final handle = devtools.bindEffect(
-    effect,
-    context: context,
-    debugLabel: debugLabel,
-    debugOwner: debugOwner,
-    debugScope: debugScope,
-    debugType: debugType,
-    debugNote: debugNote,
-  );
-  effect.attachDevTools(handle);
 
   final prevSub = alien.setActiveSub(effect);
   if (prevSub != null && !detach) {
@@ -176,18 +132,12 @@ class _OrefEffect extends alien.EffectNode implements alien.Effect {
   VoidCallback callback;
   void Function()? onDispose;
   void Function()? _userCleanup;
-  EffectHandle? _devtools;
-
-  void attachDevTools(EffectHandle handle) {
-    _devtools = handle;
-  }
 
   @override
   VoidCallback get fn => callback;
 
   @override
   void call() {
-    _devtools?.dispose();
     _userCleanup?.call();
     _userCleanup = null;
     onDispose?.call();
@@ -210,12 +160,6 @@ VoidCallback _wrapEffectCallback(
     final effect = effectGetter();
     effect._userCleanup?.call();
     effect._userCleanup = null;
-    final handle = effect._devtools;
-    final token = handle?.start();
-    try {
-      callback();
-    } finally {
-      handle?.finish(token);
-    }
+    callback();
   };
 }

@@ -1,12 +1,5 @@
 # Troubleshooting
 
-## DevTools extension not showing
-
-- Ensure the app is running in debug mode.
-- Confirm DevTools is connected to the running app.
-- Enable the Oref extension in DevTools -> Extensions.
-- Create at least one signal/computed/effect after startup.
-
 ## Widget not rebuilding
 
 - Ensure the signal is read inside `build` or a `SignalBuilder` builder.
@@ -14,7 +7,7 @@
 - Verify you are calling `.set(...)` to update the signal.
 - If many writes happen, wrap them in `batch()`.
 
-## Lint errors about hooks
+## Hook ordering and context
 
 - Call hooks unconditionally at the top level of a build scope.
 - Do not call hooks inside nested functions or control flow.

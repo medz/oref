@@ -1,7 +1,5 @@
 import 'package:alien_signals/alien_signals.dart';
 
-import '../devtools/devtools.dart';
-
 /// Batch execution of signals.
 ///
 /// This function executes a batch of signals, ensuring that all signals are executed atomically.
@@ -16,10 +14,8 @@ import '../devtools/devtools.dart';
 T batch<T>(T Function() getter) {
   try {
     startBatch();
-    devtools.batchStart();
     return getter();
   } finally {
     endBatch();
-    devtools.batchEnd();
   }
 }

@@ -3,30 +3,20 @@
 ## Project Structure
 
 ```txt
-analysis_tests/      # Unit tests for the analyzer plugin
 lib/
 ├── src/             # Source code for the package
-│   ├── analyzer/    # Analyzer plugin source code
 │   ├── async/       # Asynchronous utilities
-│   ├── collections/ # Collection
-│   ├── core/        # Oref core
-│   └── devtools/    # Oref dev tools proto source code
-├── devtools.dart    # Dev Tools proto
-├── main.dart        # Analyzer Plugin entry
-└── oref,dart        # Public APIs
-example/             # Is a Flutter app for manual validation and demos
-extension/
-└── devtools
-    ├── app          # Dev Tools Flutter app
-    └── config.yaml  # Dev Tools configuration
+│   ├── collections/ # Reactive collections
+│   └── core/        # Oref core, widget integration, and lifecycle hooks
+└── oref.dart        # Public APIs
+example/             # Flutter app for manual validation and demos
 skills/              # Agent Skills for Oref users (SKILL.md + references)
 test/                # Mirrors feature areas with focused unit tests
 ```
 
 ## Build, Test, and Development Commands
 
-- `flutter pub get` installs dependencies for the package and the workspace example.
-- `extension/devtools/app` currently requires Flutter `>=3.47.0` to resolve the DevTools extension toolchain.
+- `flutter pub get` installs package dependencies; run `cd example && flutter pub get` for the example.
 - `dart analyze` runs static analysis using the repo’s `flutter_lints` rules.
 - `dart format .` applies standard Dart formatting across the repo.
 - `flutter test` runs the full unit test suite in `test/`.
@@ -34,15 +24,11 @@ test/                # Mirrors feature areas with focused unit tests
 
 ## Release Process
 
-- Update versions in `pubspec.yaml`, `extension/devtools/app/pubspec.yaml`, `extension/devtools/config.yaml`, and any version references in `README.md`.
+- Update the version in `pubspec.yaml` and any version references in `README.md`.
 - Move Unreleased notes into a new version section in `CHANGELOG.md`.
-- Rebuild DevTools extension (from `extension/devtools/app`):
-  - `flutter pub get`
-  - `dart run devtools_extensions validate --package=../../..`
-  - `dart run devtools_extensions build_and_copy --source=. --dest=../`
 - Run tests:
   - `flutter test`
-  - `cd analysis_tests && dart test`
+  - `cd example && flutter test`
 - Commit and tag:
   - `git commit -m "Release x.y.z"`
   - `git tag vx.y.z`
@@ -52,6 +38,14 @@ test/                # Mirrors feature areas with focused unit tests
 - Create GitHub release:
   - `git push origin vx.y.z`
   - `gh release create vx.y.z --title "vX.Y.Z" --notes-file RELEASE_NOTES.md`
+
+## Package Boundaries
+
+- Keep this package focused on reactive primitives, widget integration, lifecycle,
+  async data, and collections. Analyzer plugins and inspection panels are not bundled.
+- Preserve widget memoization, hot-reload callback replacement, and element/effect
+  cleanup when changing core code. Debug assertions may implement core behavior;
+  they are not automatically removable instrumentation.
 
 ## Coding Style & Naming Conventions
 

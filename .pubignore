@@ -33,11 +33,9 @@ docs/.vitepress/cache/
 # Keep repository tooling and local experiments out of published archives.
 /.github/
 /AGENTS.md
-/analysis_tests/
 /docs/
 /experiments/
 /sites/
 /skills/
 /renovate.json
-/extension/devtools/app/
 node_modules/
